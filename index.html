@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XGO Check-In</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #ff3c3c;
+      font-family: monospace;
+      text-align: center;
+      padding: 50px;
+    }
+    button {
+      background-color: #ff3c3c;
+      border: none;
+      color: white;
+      padding: 15px 30px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>XGO CHECK-IN</h1>
+  <p id="status">Loading...</p>
+  <button id="checkin-btn" disabled>Check In</button>
+
+  <script>
+    const supabaseUrl = 'https://your-project.supabase.co'; // заменишь на свой
+    const supabaseKey = 'your-public-anon-key'; // заменишь на свой
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    const status = document.getElementById('status');
+    const checkinBtn = document.getElementById('checkin-btn');
+
+    const user = window.Telegram.WebApp.initDataUnsafe.user;
+
+    async function handleCheckIn(user) {
+      const today = new Date().toISOString().slice(0, 10);
+
+      const { data: existingUser, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (!existingUser) {
+        await supabase.from('users').insert([{
+          id: user.id,
+          username: user.username,
+          first_name: user.first_name,
+          last_checkin: today,
+          checkin_streak: 1,
+          xp: 10
+        }]);
+        return { success: true, xp: 10, xgo: 0, streak: 1 };
+      }
+
+      if (existingUser.last_checkin === today) {
+        return { success: false, message: 'Уже чекался сегодня' };
+      }
+
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().slice(0, 10);
+      const newStreak = (existingUser.last_checkin === yesterdayStr) ? existingUser.checkin_streak + 1 : 1;
+
+      const xpReward = 10;
+      let xgoReward = 0;
+
+      if (existingUser.xgo > 0) {
+        const { data: pool } = await supabase
+          .from('bonus_pool')
+          .select('*')
+          .eq('id', 1)
+          .single();
+
+        if (pool.amount >= 5) {
+          xgoReward = 5;
+          await supabase
+            .from('bonus_pool')
+            .update({ amount: pool.amount - xgoReward })
+            .eq('id', 1);
+        }
+      }
+
+      await supabase
+        .from('users')
+        .update({
+          last_checkin: today,
+          checkin_streak: newStreak,
+          xp: existingUser.xp + xpReward,
+          xgo: existingUser.xgo + xgoReward
+        })
+        .eq('id', user.id);
+
+      return {
+        success: true,
+        xp: xpReward,
+        xgo: xgoReward,
+        streak: newStreak
+      };
+    }
+
+    checkinBtn.addEventListener('click', async () => {
+      status.innerText = 'Проверка...';
+      const result = await handleCheckIn(user);
+
+      if (result.success) {
+        status.innerText = `✅ +${result.xp} XP${result.xgo > 0 ? `, +${result.xgo} XGO` : ''}\nСтрик: ${result.streak}`;
+      } else {
+        status.innerText = `⚠️ ${result.message}`;
+      }
+    });
+
+    window.onload = () => {
+      if (user) {
+        status.innerText = `Привет, ${user.first_name || user.username}`;
+        checkinBtn.disabled = false;
+      } else {
+        status.innerText = 'Ошибка Telegram авторизации';
+      }
+    };
+  </script>
+</body>
+</html>
