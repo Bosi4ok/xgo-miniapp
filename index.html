@@ -118,14 +118,16 @@
       }
     });
 
-    window.onload = () => {
-      if (user) {
-        status.innerText = `Привет, ${user.first_name || user.username}`;
-        checkinBtn.disabled = false;
-      } else {
-        status.innerText = 'Ошибка Telegram авторизации';
-      }
-    };
+    window.Telegram.WebApp.ready();
+
+const user = window.Telegram.WebApp.initDataUnsafe?.user;
+
+if (user) {
+  status.innerText = `Привет, ${user.first_name || user.username}`;
+  checkinBtn.disabled = false;
+} else {
+  status.innerText = 'Ошибка Telegram авторизации (запусти Mini App в Telegram)';
+};
   </script>
 </body>
 </html>
