@@ -5,73 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XGO Mini App</title>
   <style>
-    body {
+    html, body {
       margin: 0;
       padding: 0;
-      background-color: #0d0d0d;
-      color: #fff;
-      font-family: monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background-image: url('стиль1.png');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
+      height: 100%;
+      overflow: hidden;
     }
 
-    .overlay {
-      background-color: rgba(0, 0, 0, 0.6);
+    body {
+      position: relative;
+      background-color: #000;
+      font-family: monospace;
+    }
+
+    .background {
       position: absolute;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
     }
 
-    .content {
-      position: relative;
-      z-index: 1;
-      text-align: center;
-    }
-
-    .xgo-button {
-      background-color: #ff3c3c;
-      border: none;
-      color: white;
-      padding: 15px 30px;
-      font-size: 20px;
-      font-weight: bold;
-      border-radius: 12px;
+    .button {
+      position: absolute;
+      width: 53%;
+      left: 23.5%;
       cursor: pointer;
-      margin: 10px;
-      transition: background-color 0.3s ease;
+      z-index: 1;
     }
 
-    .xgo-button:hover {
-      background-color: #ff1c1c;
+    #checkin-btn {
+      top: 69.5%;
+    }
+
+    #referral-btn {
+      top: 79.5%;
     }
   </style>
 </head>
 <body>
-  <div class="overlay"></div>
-  <div class="content">
-    <h1>XGO</h1>
-    <p>Добро пожаловать в мем-вселенную Мониторменов</p>
-    <button class="xgo-button" onclick="showCheckIn()">Check In</button>
-    <button class="xgo-button" onclick="showReferral()">Referral</button>
-  </div>
+  <img src="стиль1.png" alt="XGO Background" class="background">
 
-  <script>
-    function showCheckIn() {
-      window.location.href = '/checkin'; // или подгрузка блока, если внутри SPA
-    }
-
-    function showReferral() {
-      window.location.href = '/referral'; // или подгрузка блока, если внутри SPA
-    }
-  </script>
+  <img src="checkin_button.png" alt="Check In" class="button" id="checkin-btn" onclick="location.href='/checkin'">
+  <img src="referral_button.png" alt="Referral" class="button" id="referral-btn" onclick="location.href='/referral'">
 </body>
 </html>
