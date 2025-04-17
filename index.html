@@ -10,22 +10,36 @@
       padding: 0;
       height: 100%;
       overflow: hidden;
-    }
-
-    body {
-      position: relative;
-      background-color: #000;
       font-family: monospace;
+      background-color: #000;
     }
 
-    .background-video {
+    video.background-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .screen {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      z-index: 0;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: #ff3c3c;
+      z-index: 1;
+    }
+
+    .active {
+      display: flex !important;
     }
 
     .button-img {
@@ -33,7 +47,7 @@
       width: 58%;
       left: 21%;
       cursor: pointer;
-      z-index: 1;
+      z-index: 2;
     }
 
     #checkin-btn {
@@ -56,6 +70,18 @@
         filter: drop-shadow(0 0 6px #ff3c3c) drop-shadow(0 0 12px #ff3c3c);
       }
     }
+
+    .reward-btn {
+      background: #000;
+      border: 2px solid #ff3c3c;
+      color: #ff3c3c;
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 8px;
+      animation: neonGlow 2s infinite;
+    }
   </style>
 </head>
 <body>
@@ -64,7 +90,40 @@
     Your browser does not support the video tag.
   </video>
 
-  <img src="checkin_button.png" alt="Check In" class="button-img glow" id="checkin-btn" onclick="location.href='/checkin'">
-  <img src="referral_button.png" alt="Referral" class="button-img glow" id="referral-btn" onclick="location.href='/referral'">
+  <!-- Стартовый экран -->
+  <div class="screen active" id="start-screen">
+    <img src="checkin_button.png" alt="Check In" class="button-img glow" id="checkin-btn">
+    <img src="referral_button.png" alt="Referral" class="button-img glow" id="referral-btn">
+  </div>
+
+  <!-- Check-In экран -->
+  <div class="screen" id="checkin-screen">
+    <h1>CHECK-IN COMPLETE</h1>
+    <p>You've checked in<br><span id="streak">0</span> days in a row!</p>
+    <div>
+      <button class="reward-btn" onclick="claimXP()">+10 XP</button>
+      <button class="reward-btn" onclick="claimXGO()">+5 XGO</button>
+    </div>
+  </div>
+
+  <!-- Позже добавим Referral экран -->
+
+  <script>
+    const startScreen = document.getElementById('start-screen');
+    const checkinScreen = document.getElementById('checkin-screen');
+
+    document.getElementById('checkin-btn').addEventListener('click', () => {
+      startScreen.classList.remove('active');
+      checkinScreen.classList.add('active');
+    });
+
+    function claimXP() {
+      alert("Получено +10 XP");
+    }
+
+    function claimXGO() {
+      alert("Получено +5 XGO");
+    }
+  </script>
 </body>
 </html>
