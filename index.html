@@ -18,7 +18,7 @@
       font-family: monospace;
     }
 
-    .background {
+    .background-video {
       position: absolute;
       top: 0;
       left: 0;
@@ -46,7 +46,10 @@
   </style>
 </head>
 <body>
-  <img src="стиль1.png" alt="XGO Background" class="background">
+  <video autoplay muted loop class="background-video">
+    <source src="стиль1.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
 
   <img src="checkin_button.png" alt="Check In" class="button-img" id="checkin-btn" onclick="location.href='/checkin'">
   <img src="referral_button.png" alt="Referral" class="button-img" id="referral-btn" onclick="location.href='/referral'">
