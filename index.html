@@ -82,6 +82,28 @@
       border-radius: 8px;
       animation: neonGlow 2s infinite;
     }
+
+    .active-label {
+      margin-top: 20vh;
+      text-align: center;
+    }
+
+    .active-label span {
+      display: block;
+    }
+
+    .label {
+      color: white;
+      font-size: 20px;
+      letter-spacing: 2px;
+    }
+
+    .days {
+      font-size: 48px;
+      font-weight: bold;
+      color: #ff3c3c;
+      line-height: 1.2;
+    }
   </style>
 </head>
 <body>
@@ -105,8 +127,10 @@
 
   <!-- Check-In экран -->
   <div class="screen" id="checkin-screen">
-    <h1>CHECK-IN COMPLETE</h1>
-    <p>You've checked in<br><span id="streak">0</span> days in a row!</p>
+    <div class="active-label">
+      <span class="label">ACTIVE DAYS</span>
+      <span class="days" id="streak">0</span>
+    </div>
     <div>
       <button class="reward-btn" onclick="claimXP()">+10 XP</button>
       <button class="reward-btn" onclick="claimXGO()">+5 XGO</button>
@@ -124,6 +148,10 @@
       checkinScreen.classList.add('active');
       startBg.style.display = 'none';
       checkinBg.style.display = 'block';
+
+      // Пример динамического значения streak:
+      const streakValue = Math.floor(Math.random() * 10) + 1; // заменить на реальное значение из базы
+      document.getElementById('streak').innerText = streakValue;
     });
 
     function claimXP() {
