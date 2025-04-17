@@ -126,6 +126,12 @@
     Your browser does not support the video tag.
   </video>
 
+  <!-- Referral фон -->
+  <video autoplay muted loop class="background-video" id="referral-bg" style="display: none;">
+    <source src="referral.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
   <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
     <img src="checkin_button.png" alt="Check In" class="button-img glow" id="checkin-btn">
@@ -144,21 +150,36 @@
     </div>
   </div>
 
+  <!-- Referral экран (пока пустой) -->
+  <div class="screen" id="referral-screen">
+    <div style="color: white; font-size: 24px;">Referral Page Coming Soon</div>
+  </div>
+
   <script>
     const startScreen = document.getElementById('start-screen');
     const checkinScreen = document.getElementById('checkin-screen');
+    const referralScreen = document.getElementById('referral-screen');
     const startBg = document.getElementById('start-bg');
     const checkinBg = document.getElementById('checkin-bg');
+    const referralBg = document.getElementById('referral-bg');
 
     document.getElementById('checkin-btn').addEventListener('click', () => {
       startScreen.classList.remove('active');
       checkinScreen.classList.add('active');
       startBg.style.display = 'none';
+      referralBg.style.display = 'none';
       checkinBg.style.display = 'block';
 
-      // Пример динамического значения streak:
-      const streakValue = Math.floor(Math.random() * 10) + 1; // заменить на реальное значение из базы
+      const streakValue = Math.floor(Math.random() * 10) + 1;
       document.getElementById('streak').innerText = streakValue;
+    });
+
+    document.getElementById('referral-btn').addEventListener('click', () => {
+      startScreen.classList.remove('active');
+      referralScreen.classList.add('active');
+      startBg.style.display = 'none';
+      checkinBg.style.display = 'none';
+      referralBg.style.display = 'block';
     });
 
     function claimXP() {
