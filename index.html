@@ -85,8 +85,15 @@
   </style>
 </head>
 <body>
-  <video autoplay muted loop class="background-video">
+  <!-- Стартовый фон -->
+  <video autoplay muted loop class="background-video" id="start-bg">
     <source src="стиль1.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <!-- Check-In фон -->
+  <video autoplay muted loop class="background-video" id="checkin-bg" style="display: none;">
+    <source src="chek-in.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
 
@@ -106,15 +113,17 @@
     </div>
   </div>
 
-  <!-- Позже добавим Referral экран -->
-
   <script>
     const startScreen = document.getElementById('start-screen');
     const checkinScreen = document.getElementById('checkin-screen');
+    const startBg = document.getElementById('start-bg');
+    const checkinBg = document.getElementById('checkin-bg');
 
     document.getElementById('checkin-btn').addEventListener('click', () => {
       startScreen.classList.remove('active');
       checkinScreen.classList.add('active');
+      startBg.style.display = 'none';
+      checkinBg.style.display = 'block';
     });
 
     function claimXP() {
