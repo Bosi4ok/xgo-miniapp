@@ -71,7 +71,7 @@
       }
     }
 
-    .reward-btn {
+    .reward-btn, .back-btn {
       background: #000;
       border: 2px solid #ff3c3c;
       color: #ff3c3c;
@@ -147,12 +147,16 @@
     <div>
       <button class="reward-btn" onclick="claimXP()">+10 XP</button>
       <button class="reward-btn" onclick="claimXGO()">+5 XGO</button>
+      <button class="back-btn" onclick="goBackToStart()">⬅ Назад</button>
     </div>
   </div>
 
-  <!-- Referral экран (пока пустой) -->
+  <!-- Referral экран -->
   <div class="screen" id="referral-screen">
-    <div style="color: white; font-size: 24px;">Referral Page Coming Soon</div>
+    <div style="color: white; font-size: 24px; text-align: center;">
+      <p>Referral Page Coming Soon</p>
+      <button class="back-btn" onclick="goBackToStart()">⬅ Назад</button>
+    </div>
   </div>
 
   <script>
@@ -181,6 +185,15 @@
       checkinBg.style.display = 'none';
       referralBg.style.display = 'block';
     });
+
+    function goBackToStart() {
+      startScreen.classList.add('active');
+      checkinScreen.classList.remove('active');
+      referralScreen.classList.remove('active');
+      startBg.style.display = 'block';
+      checkinBg.style.display = 'none';
+      referralBg.style.display = 'none';
+    }
 
     function claimXP() {
       alert("Получено +10 XP");
