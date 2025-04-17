@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XGO Mini App</title>
   <style>
     html, body {
@@ -11,183 +11,126 @@
       height: 100%;
       overflow: hidden;
       font-family: monospace;
-      background-color: #000;
     }
-
-    video.background-video {
-      position: fixed;
+    .screen {
+      display: none;
+      position: absolute;
+      width: 100%;
+      height: 100%;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      z-index: 0;
     }
-
-    .screen {
+    .active {
+      display: block;
+    }
+    .bg-video {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      display: none;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      color: #ff3c3c;
+      object-fit: cover;
+      z-index: -1;
+    }
+    .container {
+      position: relative;
       z-index: 1;
-    }
-
-    .active {
-      display: flex !important;
-    }
-
-    .button-img {
-      position: absolute;
-      width: 58%;
-      left: 21%;
-      cursor: pointer;
-      z-index: 2;
-    }
-
-    #checkin-btn {
-      top: 69.5%;
-    }
-
-    #referral-btn {
-      top: 80.5%;
-    }
-
-    .glow {
-      animation: neonGlow 1.5s infinite ease-in-out;
-    }
-
-    @keyframes neonGlow {
-      0%, 100% {
-        filter: drop-shadow(0 0 2px #ff3c3c) drop-shadow(0 0 4px #ff3c3c);
-      }
-      50% {
-        filter: drop-shadow(0 0 6px #ff3c3c) drop-shadow(0 0 12px #ff3c3c);
-      }
-    }
-
-    .reward-btn {
-      background: #000;
-      border: 2px solid #ff3c3c;
-      color: #ff3c3c;
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 18px;
-      cursor: pointer;
-      border-radius: 8px;
-      animation: neonGlow 2s infinite;
-    }
-
-    .active-label {
-      margin-top: 42vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: white;
       text-align: center;
     }
-
-    .active-label span {
-      display: block;
+    .button {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
     }
-
-    .label {
-      font-size: 36px;
-      font-weight: bold;
-      letter-spacing: 2px;
+    .button img {
+      width: 240px;
+      margin: 12px 0;
+    }
+    .ref-link {
+      font-size: 18px;
+      background-color: rgba(0, 0, 0, 0.6);
+      border: 1px solid #ff3c3c;
+      padding: 10px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .copy-btn {
+      background-color: #ff3c3c;
       color: white;
-      text-shadow:
-        0 0 2px #ff3c3c,
-        0 0 4px #ff3c3c;
+      border: none;
+      padding: 10px 16px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 40px;
     }
-
-    .days {
-      font-size: 60px;
-      font-weight: bold;
-      color: #ff3c3c;
-      text-shadow:
-        0 0 2px #ffffff,
-        0 0 4px #ffffff,
-        0 0 6px #ffffff;
+    .rewards, .stats {
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 16px 24px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      border: 1px solid #ff3c3c;
+      width: 80%;
+      max-width: 400px;
+    }
+    .rewards p, .stats p {
+      margin: 6px 0;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
-  <!-- Стартовый фон -->
-  <video autoplay muted loop class="background-video" id="start-bg">
-    <source src="стиль1.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-
-  <!-- Check-In фон -->
-  <video autoplay muted loop class="background-video" id="checkin-bg" style="display: none;">
-    <source src="chek-in.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-
-  <!-- Referral фон -->
-  <video autoplay muted loop class="background-video" id="referral-bg" style="display: none;">
-    <source src="referral.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-
-  <!-- Стартовый экран -->
-  <div class="screen active" id="start-screen">
-    <img src="checkin_button.png" alt="Check In" class="button-img glow" id="checkin-btn">
-    <img src="referral_button.png" alt="Referral" class="button-img glow" id="referral-btn">
-  </div>
-
-  <!-- Check-In экран -->
-  <div class="screen" id="checkin-screen">
-    <div class="active-label">
-      <span class="label">ACTIVE DAYS</span>
-      <span class="days" id="streak">0</span>
-    </div>
-    <div>
-      <button class="reward-btn" onclick="claimXP()">+10 XP</button>
-      <button class="reward-btn" onclick="claimXGO()">+5 XGO</button>
+  <!-- Check-In Screen -->
+  <div id="checkin-screen" class="screen active">
+    <video class="bg-video" autoplay muted loop src="check-in.mp4"></video>
+    <div class="container">
+      <button class="button" onclick="openReferral()">
+        <img src="checkin_button.png" alt="Check In">
+      </button>
+      <button class="button" onclick="openReferral()">
+        <img src="referral_button.png" alt="Referral">
+      </button>
     </div>
   </div>
 
-  <!-- Referral экран (пока пустой) -->
-  <div class="screen" id="referral-screen">
-    <div style="color: white; font-size: 24px;">Referral Page Coming Soon</div>
+  <!-- Referral Screen -->
+  <div id="referral-screen" class="screen">
+    <img src="ref.jpg" class="bg-video" />
+    <div class="container">
+      <div class="title" style="font-size: 40px; font-weight: bold; color: #ff3c3c; letter-spacing: 2px; margin-bottom: 30px;">
+        ПРИГЛАСИ ДРУЗЕЙ
+      </div>
+      <div class="ref-link" id="ref-link">https://xgo.app/invite/ArtemX</div>
+      <button class="copy-btn" onclick="copyToClipboard()">Скопировать ссылку</button>
+      <div class="rewards">
+        <p>+5 XGO и +15 XP за каждого активного друга</p>
+      </div>
+      <div class="stats">
+        <p>Приглашено: <strong>12</strong></p>
+        <p>Активировали чек-ин: <strong>8</strong></p>
+        <p>Получено наград: <strong>40 XGO / 120 XP</strong></p>
+      </div>
+    </div>
   </div>
 
   <script>
-    const startScreen = document.getElementById('start-screen');
-    const checkinScreen = document.getElementById('checkin-screen');
-    const referralScreen = document.getElementById('referral-screen');
-    const startBg = document.getElementById('start-bg');
-    const checkinBg = document.getElementById('checkin-bg');
-    const referralBg = document.getElementById('referral-bg');
-
-    document.getElementById('checkin-btn').addEventListener('click', () => {
-      startScreen.classList.remove('active');
-      checkinScreen.classList.add('active');
-      startBg.style.display = 'none';
-      referralBg.style.display = 'none';
-      checkinBg.style.display = 'block';
-
-      const streakValue = Math.floor(Math.random() * 10) + 1;
-      document.getElementById('streak').innerText = streakValue;
-    });
-
-    document.getElementById('referral-btn').addEventListener('click', () => {
-      startScreen.classList.remove('active');
-      referralScreen.classList.add('active');
-      startBg.style.display = 'none';
-      checkinBg.style.display = 'none';
-      referralBg.style.display = 'block';
-    });
-
-    function claimXP() {
-      alert("Получено +10 XP");
+    function openReferral() {
+      document.getElementById('checkin-screen').classList.remove('active');
+      document.getElementById('referral-screen').classList.add('active');
     }
 
-    function claimXGO() {
-      alert("Получено +5 XGO");
+    function copyToClipboard() {
+      const text = document.getElementById('ref-link').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Ссылка скопирована!');
+      });
     }
   </script>
 </body>
