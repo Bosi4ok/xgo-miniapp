@@ -43,6 +43,19 @@
     #referral-btn {
       top: 80.5%;
     }
+
+    .glow {
+      animation: neonGlow 1.5s infinite ease-in-out;
+    }
+
+    @keyframes neonGlow {
+      0%, 100% {
+        filter: drop-shadow(0 0 2px #ff3c3c) drop-shadow(0 0 4px #ff3c3c);
+      }
+      50% {
+        filter: drop-shadow(0 0 6px #ff3c3c) drop-shadow(0 0 12px #ff3c3c);
+      }
+    }
   </style>
 </head>
 <body>
@@ -51,7 +64,7 @@
     Your browser does not support the video tag.
   </video>
 
-  <img src="checkin_button.png" alt="Check In" class="button-img" id="checkin-btn" onclick="location.href='/checkin'">
-  <img src="referral_button.png" alt="Referral" class="button-img" id="referral-btn" onclick="location.href='/referral'">
+  <img src="checkin_button.png" alt="Check In" class="button-img glow" id="checkin-btn" onclick="location.href='/checkin'">
+  <img src="referral_button.png" alt="Referral" class="button-img glow" id="referral-btn" onclick="location.href='/referral'">
 </body>
 </html>
