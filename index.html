@@ -53,6 +53,29 @@
       width: 240px;
       margin: 12px 0;
     }
+    .glow-btn {
+      background-color: #000;
+      border: 2px solid #ff3c3c;
+      color: #ff3c3c;
+      padding: 14px 28px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 12px;
+      margin: 14px;
+      box-shadow: 0 0 20px #ff3c3c99;
+    }
+    .neon-text {
+      font-size: 36px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 0 8px #ff3c3c;
+    }
+    .neon-number {
+      font-size: 48px;
+      font-weight: bold;
+      color: #ff3c3c;
+      text-shadow: 0 0 10px #ffffff;
+    }
     .ref-link {
       font-size: 18px;
       background-color: rgba(0, 0, 0, 0.6);
@@ -87,11 +110,11 @@
   </style>
 </head>
 <body>
-  <!-- Check-In Screen -->
-  <div id="checkin-screen" class="screen active">
-    <video class="bg-video" autoplay muted loop src="check-in.mp4"></video>
+  <!-- Start Screen -->
+  <div id="start-screen" class="screen active">
+    <img src="стиль1.png" class="bg-video" />
     <div class="container">
-      <button class="button" onclick="openReferral()">
+      <button class="button" onclick="openCheckin()">
         <img src="checkin_button.png" alt="Check In">
       </button>
       <button class="button" onclick="openReferral()">
@@ -100,9 +123,22 @@
     </div>
   </div>
 
+  <!-- Check-In Screen -->
+  <div id="checkin-screen" class="screen">
+    <video class="bg-video" autoplay muted loop src="check-in.mp4"></video>
+    <div class="container">
+      <h1 style="font-size: 36px; color: #ff3c3c; margin-bottom: 20px;">CHECK-IN COMPLETE</h1>
+      <div class="neon-text">ACTIVE DAYS</div>
+      <div class="neon-number" id="checkin-days">9</div>
+      <button class="glow-btn">+10 XP</button>
+      <button class="glow-btn">+5 XGO</button>
+      <button class="glow-btn" onclick="openStart()">⬅ Назад</button>
+    </div>
+  </div>
+
   <!-- Referral Screen -->
   <div id="referral-screen" class="screen">
-    <img src="ref.jpg" class="bg-video" />
+    <img src="реф.jpg" class="bg-video" />
     <div class="container">
       <div class="title" style="font-size: 40px; font-weight: bold; color: #ff3c3c; letter-spacing: 2px; margin-bottom: 30px;">
         ПРИГЛАСИ ДРУЗЕЙ
@@ -117,15 +153,24 @@
         <p>Активировали чек-ин: <strong>8</strong></p>
         <p>Получено наград: <strong>40 XGO / 120 XP</strong></p>
       </div>
+      <button class="glow-btn" onclick="openStart()">⬅ Назад</button>
     </div>
   </div>
 
   <script>
-    function openReferral() {
-      document.getElementById('checkin-screen').classList.remove('active');
-      document.getElementById('referral-screen').classList.add('active');
+    function openCheckin() {
+      switchScreen('checkin-screen');
     }
-
+    function openReferral() {
+      switchScreen('referral-screen');
+    }
+    function openStart() {
+      switchScreen('start-screen');
+    }
+    function switchScreen(id) {
+      document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
     function copyToClipboard() {
       const text = document.getElementById('ref-link').innerText;
       navigator.clipboard.writeText(text).then(() => {
