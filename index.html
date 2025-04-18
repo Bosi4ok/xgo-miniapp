@@ -7,7 +7,7 @@
   <style>
     @font-face {
       font-family: 'Brinnan';
-      src: url('Brinnan Bold.otf') format('opentype');
+      src: url('Brinnan-Bold.otf') format('opentype');
       font-weight: bold;
     }
 
@@ -49,47 +49,46 @@
 
     .btn {
       padding: 12px 28px;
-      margin: 12px;
       font-size: 20px;
       font-weight: bold;
       border: none;
       border-radius: 12px;
       cursor: pointer;
-      box-shadow: 0 0 10px #ff3c3c, 0 0 20px #ff3c3c;
-    }
-
-    .btn-checkin {
+      font-family: 'Brinnan', monospace;
       background: #000;
-      color: white;
       border: 2px solid #ff3c3c;
+      box-shadow: 0 0 4px #ff3c3c, 0 0 8px #ff3c3c;
+      transition: all 0.2s ease-in-out;
     }
 
-    .btn-referral {
-      background: #000;
-      color: #ff3c3c;
-      border: 2px solid #ff3c3c;
+    .btn-checkin { color: white; }
+    .btn-referral { color: #ff3c3c; }
+
+    .btn:hover {
+      transform: scale(1.05);
     }
 
-    .btn-glow {
-      animation: neonGlow 1.5s infinite ease-in-out;
+    .button-group {
+      display: flex;
+      gap: 40px;
+      margin-top: 20px;
     }
 
-    @keyframes neonGlow {
-      0%, 100% {
-        filter: drop-shadow(0 0 2px #ff3c3c) drop-shadow(0 0 4px #ff3c3c);
-      }
-      50% {
-        filter: drop-shadow(0 0 6px #ff3c3c) drop-shadow(0 0 12px #ff3c3c);
-      }
+    .button-container {
+      position: absolute;
+      bottom: 9%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
     }
 
     .label {
-      font-size: 32px;
+      font-size: 36px;
       font-weight: bold;
       color: white;
       text-shadow: 1px 1px 0 #ff3c3c, -1px -1px 0 #ff3c3c, 2px 2px 10px #ff3c3c;
-      margin-top: 48vh;
-      margin-bottom: 10px;
+      margin-top: 54vh;
     }
 
     .days {
@@ -97,41 +96,46 @@
       font-weight: bold;
       color: #ff3c3c;
       text-shadow: 0 0 2px #ffffff, 0 0 4px #ffffff, 0 0 6px #ffffff;
-      margin-bottom: 20px;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <video muted loop playsinline autoplay class="background-video" id="start-bg">
-    <source src="стиль1.mp4" type="video/mp4">
+    <source src="стиль1.mp4" type="video/mp4" />
   </video>
 
   <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;">
-    <source src="chek-in.mp4" type="video/mp4">
+    <source src="chek-in.mp4" type="video/mp4" />
   </video>
 
   <video muted loop playsinline class="background-video" id="referral-bg" style="display: none;">
-    <source src="referral.mp4" type="video/mp4">
+    <source src="referral.mp4" type="video/mp4" />
   </video>
 
+  <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
-    <button class="btn btn-checkin btn-glow" id="checkin-btn">CHECK IN</button>
-    <button class="btn btn-referral btn-glow" id="referral-btn">REFERRAL</button>
+    <div class="button-container">
+      <button class="btn btn-checkin" id="checkin-btn">CHECK IN</button>
+      <button class="btn btn-referral" id="referral-btn">REFERRAL</button>
+    </div>
   </div>
 
+  <!-- Чекин экран -->
   <div class="screen" id="checkin-screen">
     <div class="label">ACTIVE DAYS</div>
     <div class="days" id="streak">0</div>
-    <button class="btn btn-checkin">+10 XP</button>
-    <button class="btn btn-checkin">+5 XGO</button>
-    <button class="btn btn-referral" onclick="goBack()">⬅ Назад</button>
+    <div class="button-group">
+      <button class="btn btn-checkin">+10 XP</button>
+      <button class="btn btn-checkin">+5 XGO</button>
+    </div>
+    <button class="btn btn-referral" style="margin-top: 40px;" onclick="goBack()">⬅ Назад</button>
   </div>
 
+  <!-- Реферал экран -->
   <div class="screen" id="referral-screen">
     <div style="color: white; font-size: 24px; margin-top: 50vh;">Referral Page Coming Soon</div>
-    <div>
-      <button class="btn btn-referral" onclick="goBack()">⬅ Назад</button>
-    </div>
+    <button class="btn btn-referral" style="margin-top: 20px;" onclick="goBack()">⬅ Назад</button>
   </div>
 
   <script>
@@ -158,9 +162,7 @@
       referralBg.style.display = 'none';
       checkinBg.style.display = 'block';
       checkinBg.play().catch(() => {});
-
-      const streakValue = Math.floor(Math.random() * 10) + 1;
-      document.getElementById('streak').innerText = streakValue;
+      document.getElementById('streak').innerText = Math.floor(Math.random() * 10) + 1;
     });
 
     document.getElementById('referral-btn').addEventListener('click', () => {
