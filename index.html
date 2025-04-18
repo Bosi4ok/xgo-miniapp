@@ -48,6 +48,7 @@
       left: 21%;
       cursor: pointer;
       z-index: 2;
+      display: none;
     }
 
     #checkin-btn {
@@ -97,48 +98,38 @@
       font-weight: bold;
       letter-spacing: 2px;
       color: white;
-      text-shadow:
-        0 0 2px #ff3c3c,
-        0 0 4px #ff3c3c;
+      text-shadow: 0 0 2px #ff3c3c, 0 0 4px #ff3c3c;
     }
 
     .days {
       font-size: 60px;
       font-weight: bold;
       color: #ff3c3c;
-      text-shadow:
-        0 0 2px #ffffff,
-        0 0 4px #ffffff,
-        0 0 6px #ffffff;
+      text-shadow: 0 0 2px #ffffff, 0 0 4px #ffffff, 0 0 6px #ffffff;
     }
   </style>
 </head>
 <body>
-  <!-- Стартовый фон -->
-  <video autoplay muted loop class="background-video" id="start-bg">
+  <video muted loop class="background-video" id="start-bg">
     <source src="стиль1.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
 
-  <!-- Check-In фон -->
-  <video autoplay muted loop class="background-video" id="checkin-bg" style="display: none;">
+  <video muted loop class="background-video" id="checkin-bg" style="display: none;">
     <source src="chek-in.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
 
-  <!-- Referral фон -->
-  <video autoplay muted loop class="background-video" id="referral-bg" style="display: none;">
+  <video muted loop class="background-video" id="referral-bg" style="display: none;">
     <source src="referral.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
 
-  <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
     <img src="checkin_button.png" alt="Check In" class="button-img glow" id="checkin-btn">
     <img src="referral_button.png" alt="Referral" class="button-img glow" id="referral-btn">
   </div>
 
-  <!-- Check-In экран -->
   <div class="screen" id="checkin-screen">
     <div class="active-label">
       <span class="label">ACTIVE DAYS</span>
@@ -153,7 +144,6 @@
     </div>
   </div>
 
-  <!-- Referral экран -->
   <div class="screen" id="referral-screen">
     <div style="color: white; font-size: 24px; margin-top: 50vh;">Referral Page Coming Soon</div>
     <div>
@@ -162,6 +152,23 @@
   </div>
 
   <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      window.Telegram.WebApp.ready();
+
+      const startBg = document.getElementById("start-bg");
+      const checkinBtn = document.getElementById("checkin-btn");
+      const referralBtn = document.getElementById("referral-btn");
+
+      if (startBg) {
+        startBg.play().catch(err => {
+          console.log("Не удалось запустить видео:", err);
+        });
+      }
+
+      checkinBtn.style.display = "block";
+      referralBtn.style.display = "block";
+    });
+
     const startScreen = document.getElementById('start-screen');
     const checkinScreen = document.getElementById('checkin-screen');
     const referralScreen = document.getElementById('referral-screen');
@@ -176,6 +183,8 @@
       checkinBg.style.display = 'none';
       referralBg.style.display = 'none';
       startBg.style.display = 'block';
+
+      startBg.play().catch(() => {});
     }
 
     document.getElementById('checkin-btn').addEventListener('click', () => {
@@ -184,6 +193,7 @@
       startBg.style.display = 'none';
       referralBg.style.display = 'none';
       checkinBg.style.display = 'block';
+      checkinBg.play().catch(() => {});
 
       const streakValue = Math.floor(Math.random() * 10) + 1;
       document.getElementById('streak').innerText = streakValue;
@@ -195,14 +205,15 @@
       startBg.style.display = 'none';
       checkinBg.style.display = 'none';
       referralBg.style.display = 'block';
+      referralBg.play().catch(() => {});
     });
 
     function claimXP() {
-      alert("Получено +10 XP");
+      alert("\u041f\u043e\u043b\u0443\u0447\u0435\u043d\u043e +10 XP");
     }
 
     function claimXGO() {
-      alert("Получено +5 XGO");
+      alert("\u041f\u043e\u043b\u0443\u0447\u0435\u043d\u043e +5 XGO");
     }
   </script>
 </body>
