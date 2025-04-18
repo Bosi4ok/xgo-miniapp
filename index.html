@@ -83,6 +83,14 @@
       align-items: center;
       width: 100%;
     }
+
+    .text-label {
+      font-size: 32px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 0 4px #ff3c3c;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
@@ -90,6 +98,15 @@
     <source src="стиль1.mp4" type="video/mp4" />
   </video>
 
+  <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;">
+    <source src="chek-in.mp4" type="video/mp4" />
+  </video>
+
+  <video muted loop playsinline class="background-video" id="referral-bg" style="display: none;">
+    <source src="referral.mp4" type="video/mp4" />
+  </video>
+
+  <!-- Start screen -->
   <div class="screen active" id="start-screen">
     <div class="button-container">
       <button class="button" id="checkin-btn">CHECK IN</button>
@@ -97,25 +114,57 @@
     </div>
   </div>
 
-  <!-- Check-In и Referral экраны подгружаются дальше -->
-  <!-- Здесь можно вставить оставшиеся блоки позже -->
+  <!-- Check-in screen -->
+  <div class="screen" id="checkin-screen">
+    <div class="text-label">ACTIVE DAYS</div>
+    <div class="text-label" id="streak">0</div>
+    <div class="button-container">
+      <button class="button" onclick="goBack()">⬅ Назад</button>
+    </div>
+  </div>
+
+  <!-- Referral screen -->
+  <div class="screen" id="referral-screen">
+    <div class="text-label">Your Referral Stats</div>
+    <div class="button-container">
+      <button class="button" onclick="goBack()">⬅ Назад</button>
+    </div>
+  </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      try {
-        document.getElementById("start-bg").play().catch(() => {});
-      } catch(e) {
-        console.log("Видео не запустилось: ", e);
-      }
+    const startScreen = document.getElementById('start-screen');
+    const checkinScreen = document.getElementById('checkin-screen');
+    const referralScreen = document.getElementById('referral-screen');
+    const startBg = document.getElementById('start-bg');
+    const checkinBg = document.getElementById('checkin-bg');
+    const referralBg = document.getElementById('referral-bg');
 
-      // пока кнопки просто логируют действия
-      document.getElementById("checkin-btn").addEventListener("click", () => {
-        alert("CHECK-IN CLICKED");
-      });
+    function goBack() {
+      checkinScreen.classList.remove('active');
+      referralScreen.classList.remove('active');
+      startScreen.classList.add('active');
+      checkinBg.style.display = 'none';
+      referralBg.style.display = 'none';
+      startBg.style.display = 'block';
+    }
 
-      document.getElementById("referral-btn").addEventListener("click", () => {
-        alert("REFERRAL CLICKED");
-      });
+    document.getElementById('checkin-btn').addEventListener('click', () => {
+      startScreen.classList.remove('active');
+      checkinScreen.classList.add('active');
+      startBg.style.display = 'none';
+      referralBg.style.display = 'none';
+      checkinBg.style.display = 'block';
+      checkinBg.play().catch(() => {});
+      document.getElementById('streak').innerText = Math.floor(Math.random() * 10) + 1;
+    });
+
+    document.getElementById('referral-btn').addEventListener('click', () => {
+      startScreen.classList.remove('active');
+      referralScreen.classList.add('active');
+      startBg.style.display = 'none';
+      checkinBg.style.display = 'none';
+      referralBg.style.display = 'block';
+      referralBg.play().catch(() => {});
     });
   </script>
 </body>
