@@ -14,7 +14,7 @@
       background-color: #000;
     }
 
-    video.background-video {
+    .background-video {
       position: fixed;
       top: 0;
       left: 0;
@@ -36,6 +36,9 @@
       flex-direction: column;
       color: #ff3c3c;
       z-index: 1;
+      background-image: url('fallback.jpg'); /* резервный фон */
+      background-size: cover;
+      background-position: center;
     }
 
     .active {
@@ -48,7 +51,6 @@
       left: 21%;
       cursor: pointer;
       z-index: 2;
-      display: none;
     }
 
     #checkin-btn {
@@ -110,19 +112,16 @@
   </style>
 </head>
 <body>
-  <video muted loop class="background-video" id="start-bg">
+  <video muted loop playsinline autoplay class="background-video" id="start-bg">
     <source src="стиль1.mp4" type="video/mp4">
-    Your browser does not support the video tag.
   </video>
 
-  <video muted loop class="background-video" id="checkin-bg" style="display: none;">
+  <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;">
     <source src="chek-in.mp4" type="video/mp4">
-    Your browser does not support the video tag.
   </video>
 
-  <video muted loop class="background-video" id="referral-bg" style="display: none;">
+  <video muted loop playsinline class="background-video" id="referral-bg" style="display: none;">
     <source src="referral.mp4" type="video/mp4">
-    Your browser does not support the video tag.
   </video>
 
   <div class="screen active" id="start-screen">
@@ -152,29 +151,26 @@
   </div>
 
   <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      window.Telegram.WebApp.ready();
-
-      const startBg = document.getElementById("start-bg");
-      const checkinBtn = document.getElementById("checkin-btn");
-      const referralBtn = document.getElementById("referral-btn");
-
-      if (startBg) {
-        startBg.play().catch(err => {
-          console.log("Не удалось запустить видео:", err);
-        });
-      }
-
-      checkinBtn.style.display = "block";
-      referralBtn.style.display = "block";
-    });
-
     const startScreen = document.getElementById('start-screen');
     const checkinScreen = document.getElementById('checkin-screen');
     const referralScreen = document.getElementById('referral-screen');
     const startBg = document.getElementById('start-bg');
     const checkinBg = document.getElementById('checkin-bg');
     const referralBg = document.getElementById('referral-bg');
+
+    const checkinBtn = document.getElementById("checkin-btn");
+    const referralBtn = document.getElementById("referral-btn");
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // fallback запуск видео при доступности API
+      try {
+        startBg.play().catch(() => {});
+        checkinBtn.style.display = "block";
+        referralBtn.style.display = "block";
+      } catch(e) {
+        console.log("Видео не запустилось: ", e);
+      }
+    });
 
     function goBack() {
       checkinScreen.classList.remove('active');
@@ -183,11 +179,9 @@
       checkinBg.style.display = 'none';
       referralBg.style.display = 'none';
       startBg.style.display = 'block';
-
-      startBg.play().catch(() => {});
     }
 
-    document.getElementById('checkin-btn').addEventListener('click', () => {
+    checkinBtn.addEventListener('click', () => {
       startScreen.classList.remove('active');
       checkinScreen.classList.add('active');
       startBg.style.display = 'none';
@@ -199,7 +193,7 @@
       document.getElementById('streak').innerText = streakValue;
     });
 
-    document.getElementById('referral-btn').addEventListener('click', () => {
+    referralBtn.addEventListener('click', () => {
       startScreen.classList.remove('active');
       referralScreen.classList.add('active');
       startBg.style.display = 'none';
