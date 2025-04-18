@@ -14,7 +14,7 @@
       background-color: #000;
     }
 
-    .background-video {
+    video.background-video {
       position: fixed;
       top: 0;
       left: 0;
@@ -36,9 +36,6 @@
       flex-direction: column;
       color: #ff3c3c;
       z-index: 1;
-      background-image: url('fallback.jpg'); /* резервный фон */
-      background-size: cover;
-      background-position: center;
     }
 
     .active {
@@ -100,35 +97,54 @@
       font-weight: bold;
       letter-spacing: 2px;
       color: white;
-      text-shadow: 0 0 2px #ff3c3c, 0 0 4px #ff3c3c;
+      text-shadow:
+        0 0 2px #ff3c3c,
+        0 0 4px #ff3c3c;
     }
 
     .days {
       font-size: 60px;
       font-weight: bold;
       color: #ff3c3c;
-      text-shadow: 0 0 2px #ffffff, 0 0 4px #ffffff, 0 0 6px #ffffff;
+      text-shadow:
+        0 0 2px #ffffff,
+        0 0 4px #ffffff,
+        0 0 6px #ffffff;
     }
   </style>
 </head>
 <body>
-  <video muted loop playsinline autoplay class="background-video" id="start-bg">
+  <!-- Префетчинг кнопок -->
+  <link rel="preload" as="image" href="checkin_button.png">
+  <link rel="preload" as="image" href="referral_button.png">
+  <img src="checkin_button.png" style="display:none;" />
+  <img src="referral_button.png" style="display:none;" />
+
+  <!-- Стартовый фон -->
+  <video autoplay muted loop class="background-video" id="start-bg">
     <source src="стиль1.mp4" type="video/mp4">
+    Your browser does not support the video tag.
   </video>
 
-  <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;">
+  <!-- Check-In фон -->
+  <video autoplay muted loop class="background-video" id="checkin-bg" style="display: none;">
     <source src="chek-in.mp4" type="video/mp4">
+    Your browser does not support the video tag.
   </video>
 
-  <video muted loop playsinline class="background-video" id="referral-bg" style="display: none;">
+  <!-- Referral фон -->
+  <video autoplay muted loop class="background-video" id="referral-bg" style="display: none;">
     <source src="referral.mp4" type="video/mp4">
+    Your browser does not support the video tag.
   </video>
 
+  <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
     <img src="checkin_button.png" alt="Check In" class="button-img glow" id="checkin-btn">
     <img src="referral_button.png" alt="Referral" class="button-img glow" id="referral-btn">
   </div>
 
+  <!-- Check-In экран -->
   <div class="screen" id="checkin-screen">
     <div class="active-label">
       <span class="label">ACTIVE DAYS</span>
@@ -143,6 +159,7 @@
     </div>
   </div>
 
+  <!-- Referral экран -->
   <div class="screen" id="referral-screen">
     <div style="color: white; font-size: 24px; margin-top: 50vh;">Referral Page Coming Soon</div>
     <div>
@@ -158,20 +175,6 @@
     const checkinBg = document.getElementById('checkin-bg');
     const referralBg = document.getElementById('referral-bg');
 
-    const checkinBtn = document.getElementById("checkin-btn");
-    const referralBtn = document.getElementById("referral-btn");
-
-    document.addEventListener("DOMContentLoaded", () => {
-      // fallback запуск видео при доступности API
-      try {
-        startBg.play().catch(() => {});
-        checkinBtn.style.display = "block";
-        referralBtn.style.display = "block";
-      } catch(e) {
-        console.log("Видео не запустилось: ", e);
-      }
-    });
-
     function goBack() {
       checkinScreen.classList.remove('active');
       referralScreen.classList.remove('active');
@@ -181,33 +184,31 @@
       startBg.style.display = 'block';
     }
 
-    checkinBtn.addEventListener('click', () => {
+    document.getElementById('checkin-btn').addEventListener('click', () => {
       startScreen.classList.remove('active');
       checkinScreen.classList.add('active');
       startBg.style.display = 'none';
       referralBg.style.display = 'none';
       checkinBg.style.display = 'block';
-      checkinBg.play().catch(() => {});
 
       const streakValue = Math.floor(Math.random() * 10) + 1;
       document.getElementById('streak').innerText = streakValue;
     });
 
-    referralBtn.addEventListener('click', () => {
+    document.getElementById('referral-btn').addEventListener('click', () => {
       startScreen.classList.remove('active');
       referralScreen.classList.add('active');
       startBg.style.display = 'none';
       checkinBg.style.display = 'none';
       referralBg.style.display = 'block';
-      referralBg.play().catch(() => {});
     });
 
     function claimXP() {
-      alert("\u041f\u043e\u043b\u0443\u0447\u0435\u043d\u043e +10 XP");
+      alert("Получено +10 XP");
     }
 
     function claimXGO() {
-      alert("\u041f\u043e\u043b\u0443\u0447\u0435\u043d\u043e +5 XGO");
+      alert("Получено +5 XGO");
     }
   </script>
 </body>
