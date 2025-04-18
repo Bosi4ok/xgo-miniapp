@@ -4,11 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XGO Mini App</title>
-
-  <!-- Прелоад кнопок -->
-  <link rel="preload" as="image" href="checkin_button.png">
-  <link rel="preload" as="image" href="referral_button.png">
-
   <style>
     html, body {
       margin: 0;
@@ -41,42 +36,35 @@
       flex-direction: column;
       color: #ff3c3c;
       z-index: 1;
-      background-image: url('fallback.jpg');
-      background-size: cover;
-      background-position: center;
     }
 
     .active {
       display: flex !important;
     }
 
-    .button-img {
-      position: absolute;
-      width: 58%;
-      left: 21%;
+    .xgo-button {
+      background-color: #000;
+      border: 4px solid #ff3c3c;
+      color: #fff;
+      font-weight: bold;
+      font-size: 24px;
+      letter-spacing: 1px;
+      padding: 15px 40px;
+      border-radius: 12px;
+      text-shadow: 0 0 3px #fff;
+      box-shadow: 0 0 10px #ff3c3c, 0 0 20px #ff3c3c;
       cursor: pointer;
-      z-index: 2;
-      display: none;
+      font-family: monospace;
+      animation: glowPulse 2s infinite ease-in-out;
+      margin: 20px;
     }
 
-    #checkin-btn {
-      top: 69.5%;
-    }
-
-    #referral-btn {
-      top: 80.5%;
-    }
-
-    .glow {
-      animation: neonGlow 1.5s infinite ease-in-out;
-    }
-
-    @keyframes neonGlow {
+    @keyframes glowPulse {
       0%, 100% {
-        filter: drop-shadow(0 0 2px #ff3c3c) drop-shadow(0 0 4px #ff3c3c);
+        box-shadow: 0 0 8px #ff3c3c, 0 0 16px #ff3c3c;
       }
       50% {
-        filter: drop-shadow(0 0 6px #ff3c3c) drop-shadow(0 0 12px #ff3c3c);
+        box-shadow: 0 0 14px #ff3c3c, 0 0 28px #ff3c3c;
       }
     }
 
@@ -89,7 +77,7 @@
       font-size: 18px;
       cursor: pointer;
       border-radius: 8px;
-      animation: neonGlow 2s infinite;
+      animation: glowPulse 2s infinite;
     }
 
     .active-label {
@@ -118,10 +106,6 @@
   </style>
 </head>
 <body>
-  <!-- Прогрузка невидимых картинок (страховка) -->
-  <img src="checkin_button.png" alt="" style="display: none;">
-  <img src="referral_button.png" alt="" style="display: none;">
-
   <!-- Видеофоны -->
   <video muted loop playsinline autoplay class="background-video" id="start-bg">
     <source src="стиль1.mp4" type="video/mp4">
@@ -137,8 +121,8 @@
 
   <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
-    <img src="checkin_button.png" alt="Check In" class="button-img glow" id="checkin-btn">
-    <img src="referral_button.png" alt="Referral" class="button-img glow" id="referral-btn">
+    <button class="xgo-button" id="checkin-btn">CHECK IN</button>
+    <button class="xgo-button" id="referral-btn">REFERRAL</button>
   </div>
 
   <!-- Check-In -->
@@ -177,8 +161,6 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       startBg.play().catch(() => {});
-      checkinBtn.style.display = "block";
-      referralBtn.style.display = "block";
     });
 
     function goBack() {
