@@ -7,9 +7,8 @@
   <style>
     @font-face {
       font-family: 'Brinnan';
-      src: url('Brinnan-Bold.otf') format('opentype');
+      src: url('Brinnan Bold.otf') format('opentype');
       font-weight: bold;
-      font-style: normal;
     }
 
     html, body {
@@ -48,86 +47,90 @@
       display: flex !important;
     }
 
-    .button {
-      font-family: 'Brinnan', monospace;
+    .btn {
+      padding: 12px 28px;
+      margin: 12px;
       font-size: 20px;
       font-weight: bold;
-      padding: 14px 32px;
+      border: none;
       border-radius: 12px;
-      background-color: #000;
-      border: 2px solid #ff3c3c;
-      box-shadow: 0 0 8px #ff3c3c, 0 0 16px #ff3c3c;
-      margin: 14px 0;
       cursor: pointer;
-      transition: all 0.3s ease-in-out;
+      box-shadow: 0 0 10px #ff3c3c, 0 0 20px #ff3c3c;
     }
 
-    .button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 12px #ff3c3c, 0 0 24px #ff3c3c;
-    }
-
-    #checkin-btn {
+    .btn-checkin {
+      background: #000;
       color: white;
+      border: 2px solid #ff3c3c;
     }
 
-    #referral-btn {
+    .btn-referral {
+      background: #000;
       color: #ff3c3c;
+      border: 2px solid #ff3c3c;
     }
 
-    .button-container {
-      position: absolute;
-      bottom: 13%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
+    .btn-glow {
+      animation: neonGlow 1.5s infinite ease-in-out;
     }
 
-    .text-label {
+    @keyframes neonGlow {
+      0%, 100% {
+        filter: drop-shadow(0 0 2px #ff3c3c) drop-shadow(0 0 4px #ff3c3c);
+      }
+      50% {
+        filter: drop-shadow(0 0 6px #ff3c3c) drop-shadow(0 0 12px #ff3c3c);
+      }
+    }
+
+    .label {
       font-size: 32px;
       font-weight: bold;
       color: white;
-      text-shadow: 0 0 4px #ff3c3c;
+      text-shadow: 1px 1px 0 #ff3c3c, -1px -1px 0 #ff3c3c, 2px 2px 10px #ff3c3c;
+      margin-top: 48vh;
+      margin-bottom: 10px;
+    }
+
+    .days {
+      font-size: 60px;
+      font-weight: bold;
+      color: #ff3c3c;
+      text-shadow: 0 0 2px #ffffff, 0 0 4px #ffffff, 0 0 6px #ffffff;
       margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
   <video muted loop playsinline autoplay class="background-video" id="start-bg">
-    <source src="стиль1.mp4" type="video/mp4" />
+    <source src="стиль1.mp4" type="video/mp4">
   </video>
 
   <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;">
-    <source src="chek-in.mp4" type="video/mp4" />
+    <source src="chek-in.mp4" type="video/mp4">
   </video>
 
   <video muted loop playsinline class="background-video" id="referral-bg" style="display: none;">
-    <source src="referral.mp4" type="video/mp4" />
+    <source src="referral.mp4" type="video/mp4">
   </video>
 
-  <!-- Start screen -->
   <div class="screen active" id="start-screen">
-    <div class="button-container">
-      <button class="button" id="checkin-btn">CHECK IN</button>
-      <button class="button" id="referral-btn">REFERRAL</button>
-    </div>
+    <button class="btn btn-checkin btn-glow" id="checkin-btn">CHECK IN</button>
+    <button class="btn btn-referral btn-glow" id="referral-btn">REFERRAL</button>
   </div>
 
-  <!-- Check-in screen -->
   <div class="screen" id="checkin-screen">
-    <div class="text-label">ACTIVE DAYS</div>
-    <div class="text-label" id="streak">0</div>
-    <div class="button-container">
-      <button class="button" onclick="goBack()">⬅ Назад</button>
-    </div>
+    <div class="label">ACTIVE DAYS</div>
+    <div class="days" id="streak">0</div>
+    <button class="btn btn-checkin">+10 XP</button>
+    <button class="btn btn-checkin">+5 XGO</button>
+    <button class="btn btn-referral" onclick="goBack()">⬅ Назад</button>
   </div>
 
-  <!-- Referral screen -->
   <div class="screen" id="referral-screen">
-    <div class="text-label">Your Referral Stats</div>
-    <div class="button-container">
-      <button class="button" onclick="goBack()">⬅ Назад</button>
+    <div style="color: white; font-size: 24px; margin-top: 50vh;">Referral Page Coming Soon</div>
+    <div>
+      <button class="btn btn-referral" onclick="goBack()">⬅ Назад</button>
     </div>
   </div>
 
@@ -155,7 +158,9 @@
       referralBg.style.display = 'none';
       checkinBg.style.display = 'block';
       checkinBg.play().catch(() => {});
-      document.getElementById('streak').innerText = Math.floor(Math.random() * 10) + 1;
+
+      const streakValue = Math.floor(Math.random() * 10) + 1;
+      document.getElementById('streak').innerText = streakValue;
     });
 
     document.getElementById('referral-btn').addEventListener('click', () => {
