@@ -5,12 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XGO Mini App</title>
   <style>
+    @font-face {
+      font-family: 'Brinnan';
+      src: url('Brinnan-Bold.otf') format('opentype');
+      font-weight: bold;
+      font-style: normal;
+    }
+
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
       overflow: hidden;
-      font-family: monospace;
+      font-family: 'Brinnan', monospace;
       background-color: #000;
     }
 
@@ -34,7 +41,6 @@
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      color: #ff3c3c;
       z-index: 1;
     }
 
@@ -42,165 +48,75 @@
       display: flex !important;
     }
 
-    .xgo-button {
-      background-color: #000;
-      border: 4px solid #ff3c3c;
-      color: #fff;
+    .button {
+      font-family: 'Brinnan', monospace;
+      font-size: 20px;
       font-weight: bold;
-      font-size: 24px;
-      letter-spacing: 1px;
-      padding: 15px 40px;
+      padding: 14px 32px;
       border-radius: 12px;
-      text-shadow: 0 0 3px #fff;
-      box-shadow: 0 0 10px #ff3c3c, 0 0 20px #ff3c3c;
-      cursor: pointer;
-      font-family: monospace;
-      animation: glowPulse 2s infinite ease-in-out;
-      margin: 20px;
-    }
-
-    @keyframes glowPulse {
-      0%, 100% {
-        box-shadow: 0 0 8px #ff3c3c, 0 0 16px #ff3c3c;
-      }
-      50% {
-        box-shadow: 0 0 14px #ff3c3c, 0 0 28px #ff3c3c;
-      }
-    }
-
-    .reward-btn, .back-btn {
-      background: #000;
+      background-color: #000;
       border: 2px solid #ff3c3c;
-      color: #ff3c3c;
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 18px;
+      box-shadow: 0 0 8px #ff3c3c, 0 0 16px #ff3c3c;
+      margin: 14px 0;
       cursor: pointer;
-      border-radius: 8px;
-      animation: glowPulse 2s infinite;
+      transition: all 0.3s ease-in-out;
     }
 
-    .active-label {
-      margin-top: 47vh;
-      text-align: center;
+    .button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px #ff3c3c, 0 0 24px #ff3c3c;
     }
 
-    .active-label span {
-      display: block;
-    }
-
-    .label {
-      font-size: 36px;
-      font-weight: bold;
-      letter-spacing: 2px;
+    #checkin-btn {
       color: white;
-      text-shadow: 0 0 2px #ff3c3c, 0 0 4px #ff3c3c;
     }
 
-    .days {
-      font-size: 60px;
-      font-weight: bold;
+    #referral-btn {
       color: #ff3c3c;
-      text-shadow: 0 0 2px #ffffff, 0 0 4px #ffffff, 0 0 6px #ffffff;
+    }
+
+    .button-container {
+      position: absolute;
+      bottom: 13%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
     }
   </style>
 </head>
 <body>
-  <!-- Видеофоны -->
   <video muted loop playsinline autoplay class="background-video" id="start-bg">
-    <source src="стиль1.mp4" type="video/mp4">
+    <source src="стиль1.mp4" type="video/mp4" />
   </video>
 
-  <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;">
-    <source src="chek-in.mp4" type="video/mp4">
-  </video>
-
-  <video muted loop playsinline class="background-video" id="referral-bg" style="display: none;">
-    <source src="referral.mp4" type="video/mp4">
-  </video>
-
-  <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
-    <button class="xgo-button" id="checkin-btn">CHECK IN</button>
-    <button class="xgo-button" id="referral-btn">REFERRAL</button>
-  </div>
-
-  <!-- Check-In -->
-  <div class="screen" id="checkin-screen">
-    <div class="active-label">
-      <span class="label">ACTIVE DAYS</span>
-      <span class="days" id="streak">0</span>
-    </div>
-    <div>
-      <button class="reward-btn" onclick="claimXP()">+10 XP</button>
-      <button class="reward-btn" onclick="claimXGO()">+5 XGO</button>
-    </div>
-    <div>
-      <button class="back-btn" onclick="goBack()">⬅ Назад</button>
+    <div class="button-container">
+      <button class="button" id="checkin-btn">CHECK IN</button>
+      <button class="button" id="referral-btn">REFERRAL</button>
     </div>
   </div>
 
-  <!-- Реферал -->
-  <div class="screen" id="referral-screen">
-    <div style="color: white; font-size: 24px; margin-top: 50vh;">Referral Page Coming Soon</div>
-    <div>
-      <button class="back-btn" onclick="goBack()">⬅ Назад</button>
-    </div>
-  </div>
+  <!-- Check-In и Referral экраны подгружаются дальше -->
+  <!-- Здесь можно вставить оставшиеся блоки позже -->
 
   <script>
-    const startScreen = document.getElementById('start-screen');
-    const checkinScreen = document.getElementById('checkin-screen');
-    const referralScreen = document.getElementById('referral-screen');
-    const startBg = document.getElementById('start-bg');
-    const checkinBg = document.getElementById('checkin-bg');
-    const referralBg = document.getElementById('referral-bg');
-
-    const checkinBtn = document.getElementById("checkin-btn");
-    const referralBtn = document.getElementById("referral-btn");
-
     document.addEventListener("DOMContentLoaded", () => {
-      startBg.play().catch(() => {});
+      try {
+        document.getElementById("start-bg").play().catch(() => {});
+      } catch(e) {
+        console.log("Видео не запустилось: ", e);
+      }
+
+      // пока кнопки просто логируют действия
+      document.getElementById("checkin-btn").addEventListener("click", () => {
+        alert("CHECK-IN CLICKED");
+      });
+
+      document.getElementById("referral-btn").addEventListener("click", () => {
+        alert("REFERRAL CLICKED");
+      });
     });
-
-    function goBack() {
-      checkinScreen.classList.remove('active');
-      referralScreen.classList.remove('active');
-      startScreen.classList.add('active');
-      checkinBg.style.display = 'none';
-      referralBg.style.display = 'none';
-      startBg.style.display = 'block';
-      startBg.play().catch(() => {});
-    }
-
-    checkinBtn.addEventListener('click', () => {
-      startScreen.classList.remove('active');
-      checkinScreen.classList.add('active');
-      startBg.style.display = 'none';
-      referralBg.style.display = 'none';
-      checkinBg.style.display = 'block';
-      checkinBg.play().catch(() => {});
-
-      const streakValue = Math.floor(Math.random() * 10) + 1;
-      document.getElementById('streak').innerText = streakValue;
-    });
-
-    referralBtn.addEventListener('click', () => {
-      startScreen.classList.remove('active');
-      referralScreen.classList.add('active');
-      startBg.style.display = 'none';
-      checkinBg.style.display = 'none';
-      referralBg.style.display = 'block';
-      referralBg.play().catch(() => {});
-    });
-
-    function claimXP() {
-      alert("Получено +10 XP");
-    }
-
-    function claimXGO() {
-      alert("Получено +5 XGO");
-    }
   </script>
 </body>
 </html>
