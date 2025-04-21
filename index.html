@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XGO Mini App</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     @font-face {
       font-family: 'Brinnan';
@@ -137,42 +138,127 @@
     <div style="color: white; font-size: 24px; margin-top: 50vh;">Referral Page Coming Soon</div>
     <button class="btn btn-referral" style="margin-top: 20px;" onclick="goBack()">⬅ Назад</button>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+  const supabaseUrl = 'https://YOUR_PROJECT_ID.supabase.co';
+  const supabaseKey = 'YOUR_PUBLIC_ANON_KEY';
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-  <script>
-    const startScreen = document.getElementById('start-screen');
-    const checkinScreen = document.getElementById('checkin-screen');
-    const referralScreen = document.getElementById('referral-screen');
-    const startBg = document.getElementById('start-bg');
-    const checkinBg = document.getElementById('checkin-bg');
-    const referralBg = document.getElementById('referral-bg');
+  const startScreen = document.getElementById('start-screen');
+  const checkinScreen = document.getElementById('checkin-screen');
+  const referralScreen = document.getElementById('referral-screen');
+  const startBg = document.getElementById('start-bg');
+  const checkinBg = document.getElementById('checkin-bg');
+  const referralBg = document.getElementById('referral-bg');
 
-    function goBack() {
-      checkinScreen.classList.remove('active');
-      referralScreen.classList.remove('active');
-      startScreen.classList.add('active');
-      checkinBg.style.display = 'none';
-      referralBg.style.display = 'none';
-      startBg.style.display = 'block';
+  const streakDisplay = document.getElementById('streak');
+  const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+
+  function goBack() {
+    checkinScreen.classList.remove('active');
+    referralScreen.classList.remove('active');
+    startScreen.classList.add('active');
+    checkinBg.style.display = 'none';
+    referralBg.style.display = 'none';
+    startBg.style.display = 'block';
+  }
+
+  document.getElementById('checkin-btn').addEventListener('click', () => {
+    startScreen.classList.remove('active');
+    checkinScreen.classList.add('active');
+    startBg.style.display = 'none';
+    referralBg.style.display = 'none';
+    checkinBg.style.display = 'block';
+    checkinBg.play().catch(() => {});
+    loadStreak(); // загрузка актуального значения
+  });
+
+  document.getElementById('referral-btn').addEventListener('click', () => {
+    startScreen.classList.remove('active');
+    referralScreen.classList.add('active');
+    startBg.style.display = 'none';
+    checkinBg.style.display = 'none';
+    referralBg.style.display = 'block';
+    referralBg.play().catch(() => {});
+  });
+
+  async function loadStreak() {
+    const { data: user } = await supabase
+      .from('users')
+      .select('checkin_streak')
+      .eq('id', tgUser.id)
+      .single();
+    if (user) streakDisplay.innerText = user.checkin_streak;
+  }
+
+  async function handleCheckIn() {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', tgUser.id)
+      .single();
+
+    if (!existingUser) {
+      await supabase.from('users').insert([{
+        id: tgUser.id,
+        username: tgUser.username,
+        first_name: tgUser.first_name,
+        last_checkin: today,
+        checkin_streak: 1,
+        xp: 10,
+        xgo: 0
+      }]);
+      streakDisplay.innerText = 1;
+      alert('✅ Первый чек-ин! +10 XP');
+      return;
     }
 
-    document.getElementById('checkin-btn').addEventListener('click', () => {
-      startScreen.classList.remove('active');
-      checkinScreen.classList.add('active');
-      startBg.style.display = 'none';
-      referralBg.style.display = 'none';
-      checkinBg.style.display = 'block';
-      checkinBg.play().catch(() => {});
-      document.getElementById('streak').innerText = Math.floor(Math.random() * 10) + 1;
-    });
+    if (existingUser.last_checkin === today) {
+      alert('⚠️ Уже чекался сегодня!');
+      return;
+    }
 
-    document.getElementById('referral-btn').addEventListener('click', () => {
-      startScreen.classList.remove('active');
-      referralScreen.classList.add('active');
-      startBg.style.display = 'none';
-      checkinBg.style.display = 'none';
-      referralBg.style.display = 'block';
-      referralBg.play().catch(() => {});
-    });
-  </script>
-</body>
-</html>
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const ystr = yesterday.toISOString().slice(0, 10);
+    const newStreak = existingUser.last_checkin === ystr ? existingUser.checkin_streak + 1 : 1;
+
+    let xgoReward = 0;
+
+    const { data: pool } = await supabase
+      .from('bonus_pool')
+      .select('*')
+      .eq('id', 1)
+      .single();
+
+    if (pool && pool.amount >= 5) {
+      xgoReward = 5;
+      await supabase
+        .from('bonus_pool')
+        .update({ amount: pool.amount - 5 })
+        .eq('id', 1);
+    }
+
+    await supabase
+      .from('users')
+      .update({
+        last_checkin: today,
+        checkin_streak: newStreak,
+        xp: existingUser.xp + 10,
+        xgo: existingUser.xgo + xgoReward
+      })
+      .eq('id', tgUser.id);
+
+    streakDisplay.innerText = newStreak;
+    alert(`✅ +10 XP${xgoReward ? ' и +5 XGO' : ''}`);
+  }
+
+  // Привязка обеих кнопок к одной логике
+  document.querySelectorAll('.btn-checkin').forEach(btn => {
+    if (btn.textContent.includes('XP') || btn.textContent.includes('XGO')) {
+      btn.addEventListener('click', handleCheckIn);
+    }
+  });
+</script>
