@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XGO Mini App</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     @font-face {
       font-family: 'Brinnan';
@@ -102,6 +101,18 @@
   </style>
 </head>
 <body>
+  <video muted loop playsinline autoplay class="background-video" id="start-bg">
+    <source src="стиль1.mp4" type="video/mp4" />
+  </video>
+
+  <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;">
+    <source src="chek-in.mp4" type="video/mp4" />
+  </video>
+
+  <video muted loop playsinline class="background-video" id="referral-bg" style="display: none;">
+    <source src="referral.mp4" type="video/mp4" />
+  </video>
+
   <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
     <div class="button-container">
@@ -115,112 +126,130 @@
     <div class="label">ACTIVE DAYS</div>
     <div class="days" id="streak">0</div>
     <div class="button-group">
-      <button class="btn btn-checkin" id="xp-btn">+10 XP</button>
-      <button class="btn btn-checkin" id="xgo-btn">+5 XGO</button>
+      <button class="btn btn-checkin">+10 XP</button>
+      <button class="btn btn-checkin">+5 XGO</button>
     </div>
-    <button class="btn btn-referral" style="margin-top: 40px;" id="back-from-checkin">⬅ Назад</button>
+    <button class="btn btn-referral" style="margin-top: 40px;" onclick="goBack()">⬅ Назад</button>
   </div>
 
   <!-- Реферал экран -->
   <div class="screen" id="referral-screen">
     <div style="color: white; font-size: 24px; margin-top: 50vh;">Referral Page Coming Soon</div>
-    <button class="btn btn-referral" style="margin-top: 20px;" id="back-from-referral">⬅ Назад</button>
+    <button class="btn btn-referral" style="margin-top: 20px;" onclick="goBack()">⬅ Назад</button>
   </div>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const supabaseUrl = 'https://wtwjgyvaeggutjahhysp.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0d2pneXZhZWdndXRqYWhoeXNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDIxODksImV4cCI6MjA2MDM3ODE4OX0.m58eY3O4wcK9qdSTKXf83kuImpGnQ6ro8Gw2KTCdA9Q';
-      const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+  const supabase = supabase.createClient(
+    'https://wtwjgyvaeggutjahhysp.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  );
 
-      // Временный тест-пользователь
-      let tgUser = {
-        id: 1001,
-        username: "test_user",
-        first_name: "Test"
-      };
+  const startScreen = document.getElementById('start-screen');
+  const checkinScreen = document.getElementById('checkin-screen');
+  const referralScreen = document.getElementById('referral-screen');
+  const startBg = document.getElementById('start-bg');
+  const checkinBg = document.getElementById('checkin-bg');
+  const referralBg = document.getElementById('referral-bg');
+  const streakEl = document.getElementById('streak');
 
-      const startScreen = document.getElementById('start-screen');
-      const checkinScreen = document.getElementById('checkin-screen');
-      const referralScreen = document.getElementById('referral-screen');
-      const streakDisplay = document.getElementById('streak');
+  const user = window.Telegram.WebApp.initDataUnsafe.user;
 
-      function goBack() {
-        checkinScreen.classList.remove('active');
-        referralScreen.classList.remove('active');
-        startScreen.classList.add('active');
-      }
+  async function loadStreak() {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('checkin_streak')
+      .eq('id', user.id)
+      .single();
 
-      document.getElementById('checkin-btn').addEventListener('click', () => {
-        startScreen.classList.remove('active');
-        checkinScreen.classList.add('active');
-        loadStreak();
-      });
+    if (userData) {
+      streakEl.innerText = userData.checkin_streak;
+    } else {
+      streakEl.innerText = '0';
+    }
+  }
 
-      document.getElementById('referral-btn').addEventListener('click', () => {
-        startScreen.classList.remove('active');
-        referralScreen.classList.add('active');
-      });
+  async function handleCheckIn() {
+    const today = new Date().toISOString().split('T')[0];
 
-      document.getElementById('back-from-checkin').addEventListener('click', goBack);
-      document.getElementById('back-from-referral').addEventListener('click', goBack);
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
 
-      async function loadStreak() {
-        const { data: user } = await supabase.from('users').select('checkin_streak').eq('id', tgUser.id).single();
-        if (user) streakDisplay.innerText = user.checkin_streak;
-        else streakDisplay.innerText = '0';
-      }
+    if (!existingUser) {
+      await supabase.from('users').insert([{
+        id: user.id,
+        username: user.username,
+        first_name: user.first_name,
+        last_checkin: today,
+        checkin_streak: 1,
+        xp: 10,
+        xgo: 0
+      }]);
+      streakEl.innerText = 1;
+      alert('✅ Первый чек-ин! +10 XP');
+      return;
+    }
 
-      async function handleCheckIn() {
-        const today = new Date().toISOString().slice(0, 10);
-        const { data: existingUser } = await supabase.from('users').select('*').eq('id', tgUser.id).single();
+    if (existingUser.last_checkin === today) {
+      alert('⚠️ Уже чекался сегодня!');
+      return;
+    }
 
-        if (!existingUser) {
-          await supabase.from('users').insert([{
-            id: tgUser.id,
-            username: tgUser.username,
-            first_name: tgUser.first_name,
-            last_checkin: today,
-            checkin_streak: 1,
-            xp: 10,
-            xgo: 0
-          }]);
-          streakDisplay.innerText = 1;
-          alert('✅ Первый чек-ин! +10 XP');
-          return;
-        }
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const ystr = yesterday.toISOString().split('T')[0];
+    const newStreak = (existingUser.last_checkin === ystr) ? existingUser.checkin_streak + 1 : 1;
 
-        if (existingUser.last_checkin === today) {
-          alert('⚠️ Уже чекался сегодня!');
-          return;
-        }
+    let xgoReward = 0;
+    const { data: pool } = await supabase.from('bonus_pool').select('*').eq('id', 1).single();
+    if (pool && pool.amount >= 5) {
+      xgoReward = 5;
+      await supabase.from('bonus_pool').update({ amount: pool.amount - 5 }).eq('id', 1);
+    }
 
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const ystr = yesterday.toISOString().slice(0, 10);
-        const newStreak = existingUser.last_checkin === ystr ? existingUser.checkin_streak + 1 : 1;
+    await supabase.from('users').update({
+      last_checkin: today,
+      checkin_streak: newStreak,
+      xp: existingUser.xp + 10,
+      xgo: existingUser.xgo + xgoReward
+    }).eq('id', user.id);
 
-        let xgoReward = 0;
-        const { data: pool } = await supabase.from('bonus_pool').select('*').eq('id', 1).single();
-        if (pool && pool.amount >= 5) {
-          xgoReward = 5;
-          await supabase.from('bonus_pool').update({ amount: pool.amount - 5 }).eq('id', 1);
-        }
+    streakEl.innerText = newStreak;
+    alert(`✅ +10 XP${xgoReward ? ' и +5 XGO' : ''}`);
+  }
 
-        await supabase.from('users').update({
-          last_checkin: today,
-          checkin_streak: newStreak,
-          xp: existingUser.xp + 10,
-          xgo: existingUser.xgo + xgoReward
-        }).eq('id', tgUser.id);
+  function goBack() {
+    checkinScreen.classList.remove('active');
+    referralScreen.classList.remove('active');
+    startScreen.classList.add('active');
+    checkinBg.style.display = 'none';
+    referralBg.style.display = 'none';
+    startBg.style.display = 'block';
+  }
 
-        streakDisplay.innerText = newStreak;
-        alert(`✅ +10 XP${xgoReward ? ' и +5 XGO' : ''}`);
-      }
+  document.getElementById('checkin-btn').addEventListener('click', () => {
+    startScreen.classList.remove('active');
+    checkinScreen.classList.add('active');
+    startBg.style.display = 'none';
+    referralBg.style.display = 'none';
+    checkinBg.style.display = 'block';
+    checkinBg.play().catch(() => {});
+    loadStreak();
+  });
 
-      document.getElementById('xp-btn').addEventListener('click', handleCheckIn);
-      document.getElementById('xgo-btn').addEventListener('click', handleCheckIn);
-    });
-  </script>
+  document.getElementById('referral-btn').addEventListener('click', () => {
+    startScreen.classList.remove('active');
+    referralScreen.classList.add('active');
+    startBg.style.display = 'none';
+    checkinBg.style.display = 'none';
+    referralBg.style.display = 'block';
+    referralBg.play().catch(() => {});
+  });
+
+  document.querySelector('.button-group').addEventListener('click', handleCheckIn);
+</script>
 </body>
 </html>
