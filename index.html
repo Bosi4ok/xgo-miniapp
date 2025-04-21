@@ -102,18 +102,6 @@
   </style>
 </head>
 <body>
-  <video muted loop playsinline autoplay class="background-video" id="start-bg">
-    <source src="стиль1.mp4" type="video/mp4" />
-  </video>
-
-  <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;">
-    <source src="chek-in.mp4" type="video/mp4" />
-  </video>
-
-  <video muted loop playsinline class="background-video" id="referral-bg" style="display: none;">
-    <source src="referral.mp4" type="video/mp4" />
-  </video>
-
   <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
     <div class="button-container">
@@ -145,47 +133,33 @@
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0d2pneXZhZWdndXRqYWhoeXNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDIxODksImV4cCI6MjA2MDM3ODE4OX0.m58eY3O4wcK9qdSTKXf83kuImpGnQ6ro8Gw2KTCdA9Q';
       const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-
-      if (!tgUser) {
-        alert('❌ Не удалось определить пользователя Telegram.');
-        return;
-      }
+      // Временный тест-пользователь
+      let tgUser = {
+        id: 1001,
+        username: "test_user",
+        first_name: "Test"
+      };
 
       const startScreen = document.getElementById('start-screen');
       const checkinScreen = document.getElementById('checkin-screen');
       const referralScreen = document.getElementById('referral-screen');
-      const startBg = document.getElementById('start-bg');
-      const checkinBg = document.getElementById('checkin-bg');
-      const referralBg = document.getElementById('referral-bg');
       const streakDisplay = document.getElementById('streak');
 
-      const goBack = () => {
+      function goBack() {
         checkinScreen.classList.remove('active');
         referralScreen.classList.remove('active');
         startScreen.classList.add('active');
-        checkinBg.style.display = 'none';
-        referralBg.style.display = 'none';
-        startBg.style.display = 'block';
-      };
+      }
 
       document.getElementById('checkin-btn').addEventListener('click', () => {
         startScreen.classList.remove('active');
         checkinScreen.classList.add('active');
-        startBg.style.display = 'none';
-        referralBg.style.display = 'none';
-        checkinBg.style.display = 'block';
-        checkinBg.play().catch(() => {});
         loadStreak();
       });
 
       document.getElementById('referral-btn').addEventListener('click', () => {
         startScreen.classList.remove('active');
         referralScreen.classList.add('active');
-        startBg.style.display = 'none';
-        checkinBg.style.display = 'none';
-        referralBg.style.display = 'block';
-        referralBg.play().catch(() => {});
       });
 
       document.getElementById('back-from-checkin').addEventListener('click', goBack);
@@ -194,6 +168,7 @@
       async function loadStreak() {
         const { data: user } = await supabase.from('users').select('checkin_streak').eq('id', tgUser.id).single();
         if (user) streakDisplay.innerText = user.checkin_streak;
+        else streakDisplay.innerText = '0';
       }
 
       async function handleCheckIn() {
