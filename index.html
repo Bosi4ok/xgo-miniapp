@@ -5,122 +5,160 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XGO Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* Стили остаются без изменений */
-    @font-face { font-family: 'Brinnan'; src: url('Brinnan-Bold.otf') format('opentype'); font-weight: bold; }
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Brinnan', monospace; background-color: #000; }
-    .background-video { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 0; }
-    .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; flex-direction: column; z-index: 1; }
-    .active { display: flex !important; }
-    .btn { padding: 16px 40px; font-size: 24px; font-weight: bold; border: none; border-radius: 50px; cursor: pointer; 
-      font-family: 'Brinnan', monospace; background: transparent; border: 2px solid #ff3c3c; color: white; 
-      box-shadow: 0 0 10px #ff3c3c, 0 0 20px rgba(255, 60, 60, 0.4); transition: all 0.3s ease; margin: 15px 0; letter-spacing: 1px; }
-    .btn:hover, .btn:focus { transform: scale(1.05); box-shadow: 0 0 15px #ff3c3c, 0 0 30px rgba(255, 60, 60, 0.6); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .button-container { position: absolute; bottom: 120px; display: flex; flex-direction: column; align-items: center; width: 100%; z-index: 5; }
-    #user-info { position: absolute; top: 20px; right: 20px; font-size: 16px; color: white; background: rgba(0, 0, 0, 0.6); 
-      padding: 8px 15px; border-radius: 20px; z-index: 10; backdrop-filter: blur(5px); border: 1px solid rgba(255, 60, 60, 0.3); }
-    /* Остальные стили остаются без изменений */
+    @font-face {
+      font-family: 'Brinnan';
+      src: url('Brinnan-Bold.otf') format('opentype');
+      font-weight: bold;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Brinnan', monospace;
+      background-color: #000;
+      color: white;
+    }
+
+    .background-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 1;
+    }
+
+    .active {
+      display: flex !important;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      font-size: 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: 'Brinnan', monospace;
+      background: #000;
+      border: 2px solid #ff3c3c;
+      box-shadow: 0 0 4px #ff3c3c, 0 0 8px #ff3c3c;
+      transition: all 0.2s ease-in-out;
+      color: white;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .button-container {
+      position: absolute;
+      bottom: 9%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      gap: 20px;
+    }
+
+    .user-info {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      text-align: right;
+      font-size: 14px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
   </style>
 </head>
 <body>
-  <!-- Видео фоны -->
   <video muted loop playsinline autoplay class="background-video" id="start-bg">
     <source src="стиль1.mp4" type="video/mp4" />
   </video>
-  <video muted loop playsinline class="background-video hidden" id="checkin-bg">
-    <source src="chek-in.mp4" type="video/mp4" />
-  </video>
-  <video muted loop playsinline class="background-video hidden" id="referral-bg">
-    <source src="referral.mp4" type="video/mp4" />
-  </video>
 
-  <!-- Информация о пользователе -->
-  <div id="user-info">Загрузка...</div>
+  <div class="user-info" id="user-info"></div>
 
-  <!-- Главный экран -->
+  <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
     <div class="button-container">
       <button class="btn" id="checkin-btn" disabled>CHECK IN</button>
-      <button class="btn" id="referral-btn" disabled>REFERRAL</button>
+      <button class="btn" id="referral-btn">REFERRAL</button>
     </div>
   </div>
 
-  <!-- Остальные экраны остаются без изменений -->
-
-  <script type="module">
-    import { SUPABASE_URL, SUPABASE_KEY } from './supabase.js';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+  <script>
     const tg = window.Telegram?.WebApp;
-    let telegramId = null;
-    let isTestMode = false;
+    let userData = null;
 
-    // Основная функция инициализации
-    async function init() {
-      // Инициализация Telegram Web App
+    // Инициализация Web App
+    function initTelegram() {
       if (tg) {
         tg.expand();
-        tg.ready();
+        tg.enableClosingConfirmation();
+        userData = tg.initDataUnsafe?.user;
         
-        // Получаем данные пользователя
-        const user = tg.initDataUnsafe?.user;
-        if (user) {
-          telegramId = user.id.toString();
-          document.getElementById('user-info').innerHTML = `👤 ${user.first_name || 'User'}`;
-          activateButtons();
-          await loadUserData();
-        } else {
-          activateTestMode();
-        }
-      } else {
-        activateTestMode();
+        document.getElementById('user-info').innerHTML = userData 
+          ? `👤 ${userData.first_name || 'User'}<br>@${userData.username || 'no_username'}` 
+          : '⚠️ Откройте через Telegram';
+        
+        document.getElementById('checkin-btn').disabled = !userData;
       }
     }
 
-    // Активация кнопок
-    function activateButtons() {
-      document.getElementById('checkin-btn').disabled = false;
-      document.getElementById('referral-btn').disabled = false;
-    }
+    // Логика ежедневного чекина
+    async function handleCheckin() {
+      if (!userData) return;
+      
+      const lastCheckin = localStorage.getItem('lastCheckin');
+      const now = Date.now();
+      
+      if (lastCheckin && (now - lastCheckin) < 86400000) {
+        alert('Вы уже выполняли чекин сегодня!');
+        return;
+      }
 
-    // Тестовый режим
-    function activateTestMode() {
-      isTestMode = true;
-      telegramId = 'test_' + Math.floor(Math.random() * 1000);
-      document.getElementById('user-info').innerHTML = '🧪 Тестовый режим';
-      activateButtons();
-      console.log('Активирован тестовый режим');
-    }
-
-    // Загрузка данных пользователя
-    async function loadUserData() {
       try {
-        const { data } = await supabase
-          .from('user_checkins')
-          .select('*')
-          .eq('telegram_id', telegramId)
-          .single();
-
-        if (!data) {
-          await supabase
-            .from('user_checkins')
-            .insert([{ telegram_id: telegramId, streak_days: 0, total_xp: 0 }]);
-        }
+        // Здесь будет интеграция с вашим смарт-контрактом
+        localStorage.setItem('lastCheckin', now);
+        tg.showAlert('✅ Чекин успешно выполнен!');
       } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
+        tg.showAlert('⚠️ Ошибка при выполнении чекина');
       }
     }
 
-    // Обработчики событий
-    document.getElementById('checkin-btn').addEventListener('click', handleCheckin);
-    document.getElementById('referral-btn').addEventListener('click', () => {
-      tg.showAlert('Реферальная система в разработке 🛠️');
+    // Инициализация при загрузке
+    window.addEventListener('DOMContentLoaded', () => {
+      initTelegram();
+      
+      document.getElementById('checkin-btn').addEventListener('click', handleCheckin);
+      
+      document.getElementById('referral-btn').addEventListener('click', () => {
+        tg.showAlert('Реферальная система в разработке 🛠️');
+      });
     });
 
-    // Запуск приложения
-    document.addEventListener('DOMContentLoaded', init);
+    // Адаптация под мобильные устройства
+    if (tg?.isExpanded) {
+      document.documentElement.style.fontSize = tg.viewportHeight / 50 + 'px';
+    }
   </script>
 </body>
 </html>
