@@ -235,8 +235,7 @@
 
   <!-- Главный экран -->
   <div class="screen active" id="start-screen">
-    <div class="title">XGO Mini App</div>
-    <div class="button-container">
+      <div class="button-container">
       <button class="btn" id="checkin-btn">CHECK IN</button>
       <button class="btn" id="referral-btn">REFERRAL</button>
     </div>
@@ -557,10 +556,27 @@
     }
     
     // Запуск приложения
-    document.addEventListener('DOMContentLoaded', async () => {
-      await initApp();
-      checkReferralParam();
-    });
+   document.addEventListener('DOMContentLoaded', async () => {
+  let tg = window.Telegram?.WebApp;
+  let telegramId = null;
+  let userName = null;
+
+  // Проверяем наличие пользователя
+  if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    telegramId = tg.initDataUnsafe.user.id.toString();
+    userName = tg.initDataUnsafe.user.first_name || 'User';
+    document.getElementById('user-info').innerHTML = `👤 ${userName}`;
+    document.getElementById('checkin-btn').disabled = false;
+    document.getElementById('referral-btn').disabled = false;
+  } else {
+    // Если нет данных Telegram — тестовый режим
+    telegramId = 'test_user_' + Math.floor(Math.random() * 1000);
+    userName = 'Test User';
+    document.getElementById('user-info').innerHTML = `🧪 Test Mode`;
+    document.getElementById('checkin-btn').disabled = false;
+    document.getElementById('referral-btn').disabled = false;
+  }
+});
   </script>
 </body>
 </html>
