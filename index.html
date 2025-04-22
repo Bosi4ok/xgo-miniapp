@@ -7,260 +7,111 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
-    @font-face {
-      font-family: 'Brinnan';
-      src: url('Brinnan-Bold.otf') format('opentype');
-      font-weight: bold;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Brinnan', monospace;
-      background-color: #000;
-    }
-
-    .background-video {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      z-index: 0;
-    }
-
-    .screen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: none;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      z-index: 1;
-    }
-
-    .active {
-      display: flex !important;
+    body {
+      background: black;
+      color: white;
+      font-family: monospace;
+      text-align: center;
+      padding: 40px;
     }
 
     .btn {
-      padding: 12px 28px;
-      font-size: 20px;
-      font-weight: bold;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      font-family: 'Brinnan', monospace;
-      background: #000;
-      border: 2px solid #ff3c3c;
-      box-shadow: 0 0 4px #ff3c3c, 0 0 8px #ff3c3c;
-      transition: all 0.2s ease-in-out;
-      color: white;
-    }
-
-    .btn-referral {
-      color: #ff3c3c;
-    }
-
-    .btn:hover {
-      transform: scale(1.05);
-    }
-
-    .button-group {
-      display: flex;
-      gap: 40px;
+      padding: 14px 28px;
+      font-size: 18px;
       margin-top: 20px;
-    }
-
-    .button-container {
-      position: absolute;
-      bottom: 9%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-    }
-
-    .label {
-      font-size: 36px;
-      font-weight: bold;
+      background-color: #ff3c3c;
       color: white;
-      text-shadow: 1px 1px 0 #ff3c3c, -1px -1px 0 #ff3c3c, 2px 2px 10px #ff3c3c;
-      margin-top: 54vh;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
     }
 
-    .days {
-      font-size: 60px;
-      font-weight: bold;
-      color: #ff3c3c;
-      text-shadow: 0 0 2px #ffffff, 0 0 4px #ffffff, 0 0 6px #ffffff;
-      margin-top: 10px;
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
-    #user-info {
-      font-size: 16px;
-      color: white;
-      margin-bottom: 10px;
+    .info {
+      margin-bottom: 30px;
     }
   </style>
 </head>
 <body>
-  <!-- Видеофоны -->
-  <video muted loop playsinline autoplay class="background-video" id="start-bg">
-    <source src="стиль1.mp4" type="video/mp4" />
-  </video>
-  <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;">
-    <source src="chek-in.mp4" type="video/mp4" />
-  </video>
-  <video muted loop playsinline class="background-video" id="referral-bg" style="display: none;">
-    <source src="referral.mp4" type="video/mp4" />
-  </video>
-
-  <!-- Стартовый экран -->
-  <div class="screen active" id="start-screen">
-    <div id="user-info">Загрузка...</div>
-    <div class="button-container">
-      <button class="btn" id="checkin-btn" disabled>CHECK IN</button>
-      <button class="btn btn-referral" id="referral-btn">REFERRAL</button>
-    </div>
-  </div>
-
-  <!-- Чекин экран -->
-  <div class="screen" id="checkin-screen">
-    <div class="label">ACTIVE DAYS</div>
-    <div class="days" id="streak">0</div>
-    <div class="button-group">
-      <button class="btn" id="claim-xp">+10 XP</button>
-      <button class="btn" id="claim-xgo">+5 XGO</button>
-    </div>
-    <button class="btn btn-referral" style="margin-top: 40px;" onclick="goBack()">⬅ Назад</button>
-  </div>
-
-  <!-- Реферал экран -->
-  <div class="screen" id="referral-screen">
-    <div style="color: white; font-size: 24px; margin-top: 50vh;">Referral Page Coming Soon</div>
-    <button class="btn btn-referral" style="margin-top: 20px;" onclick="goBack()">⬅ Назад</button>
-  </div>
+  <h1>XGO CHECK-IN</h1>
+  <div class="info" id="user-info">Загрузка...</div>
+  <button class="btn" id="checkin-btn" disabled>Check In</button>
 
   <script>
-    const tg = window.Telegram?.WebApp;
-    const user = tg?.initDataUnsafe?.user;
-
-    const userInfo = document.getElementById('user-info');
-    const checkinBtn = document.getElementById('checkin-btn');
-    const referralBtn = document.getElementById('referral-btn');
-
-    const startScreen = document.getElementById('start-screen');
-    const checkinScreen = document.getElementById('checkin-screen');
-    const referralScreen = document.getElementById('referral-screen');
-
-    const startBg = document.getElementById('start-bg');
-    const checkinBg = document.getElementById('checkin-bg');
-    const referralBg = document.getElementById('referral-bg');
-
-    const streakEl = document.getElementById('streak');
-
-    // Supabase
     const supabaseUrl = 'https://wtwjgyvaeggutjahhysp.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0d2pneXZhZWdndXRqYWhoeXNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDIxODksImV4cCI6MjA2MDM3ODE4OX0.m58eY3O4wcK9qdSTKXf83kuImpGnQ6ro8Gw2KTCdA9Q'; // замени
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0d2pneXZhZWdndXRqYWhoeXNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDIxODksImV4cCI6MjA2MDM3ODE4OX0.m58eY3O4wcK9qdSTKXf83kuImpGnQ6ro8Gw2KTCdA9Q';
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    if (!user) {
-      userInfo.innerHTML = '❌ Не определён Telegram user<br><small>Открой через Telegram Mini App</small>';
-    } else {
-      userInfo.innerHTML = `✅ Пользователь: <b>${user.first_name}</b>`;
-      checkinBtn.disabled = false;
-    }
+    window.addEventListener('load', async () => {
+      const tg = window.Telegram?.WebApp;
+      const user = tg?.initDataUnsafe?.user;
+      const infoDiv = document.getElementById('user-info');
+      const btn = document.getElementById('checkin-btn');
 
-    function goBack() {
-      checkinScreen.classList.remove('active');
-      referralScreen.classList.remove('active');
-      startScreen.classList.add('active');
-      checkinBg.style.display = 'none';
-      referralBg.style.display = 'none';
-      startBg.style.display = 'block';
-    }
+      console.log('TG user:', user);
 
-    async function handleCheckIn() {
-      const today = new Date().toISOString().slice(0, 10);
+      if (!user) {
+        infoDiv.innerHTML = '❌ Не определён Telegram user.<br>Запусти через Telegram Mini App';
+        return;
+      }
 
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      infoDiv.innerHTML = `✅ Привет, <b>${user.first_name}</b>!<br>ID: ${user.id}`;
+      btn.disabled = false;
 
-      if (!existingUser) {
-        await supabase.from('users').insert([{
-          id: user.id,
-          username: user.username,
-          first_name: user.first_name,
+      btn.addEventListener('click', async () => {
+        const today = new Date().toISOString().split('T')[0];
+
+        const { data: existingUser, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (!existingUser) {
+          await supabase.from('users').insert([{
+            id: user.id,
+            username: user.username,
+            first_name: user.first_name,
+            last_checkin: today,
+            checkin_streak: 1,
+            xp: 10,
+            xgo: 0
+          }]);
+          alert('✅ Первый чек-ин! +10 XP');
+          return;
+        }
+
+        if (existingUser.last_checkin === today) {
+          alert('⚠️ Уже чекался сегодня!');
+          return;
+        }
+
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const ystr = yesterday.toISOString().slice(0, 10);
+        const newStreak = existingUser.last_checkin === ystr ? existingUser.checkin_streak + 1 : 1;
+
+        let xgoReward = 0;
+        const { data: pool } = await supabase.from('bonus_pool').select('*').eq('id', 1).single();
+        if (pool?.amount >= 5) {
+          xgoReward = 5;
+          await supabase.from('bonus_pool').update({ amount: pool.amount - 5 }).eq('id', 1);
+        }
+
+        await supabase.from('users').update({
           last_checkin: today,
-          checkin_streak: 1,
-          xp: 10,
-          xgo: 0
-        }]);
-        streakEl.innerText = 1;
-        alert('✅ Первый чек-ин! +10 XP');
-        return;
-      }
+          checkin_streak: newStreak,
+          xp: existingUser.xp + 10,
+          xgo: existingUser.xgo + xgoReward
+        }).eq('id', user.id);
 
-      if (existingUser.last_checkin === today) {
-        alert('⚠️ Уже чекался сегодня!');
-        streakEl.innerText = existingUser.checkin_streak;
-        return;
-      }
-
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const ystr = yesterday.toISOString().slice(0, 10);
-      const newStreak = existingUser.last_checkin === ystr ? existingUser.checkin_streak + 1 : 1;
-
-      let xgoReward = 0;
-      const { data: pool } = await supabase.from('bonus_pool').select('*').eq('id', 1).single();
-      if (pool && pool.amount >= 5) {
-        xgoReward = 5;
-        await supabase.from('bonus_pool').update({ amount: pool.amount - 5 }).eq('id', 1);
-      }
-
-      await supabase.from('users').update({
-        last_checkin: today,
-        checkin_streak: newStreak,
-        xp: existingUser.xp + 10,
-        xgo: existingUser.xgo + xgoReward
-      }).eq('id', user.id);
-
-      streakEl.innerText = newStreak;
-      alert(`✅ +10 XP${xgoReward ? ' и +5 XGO' : ''}`);
-    }
-
-    checkinBtn.addEventListener('click', () => {
-      startScreen.classList.remove('active');
-      checkinScreen.classList.add('active');
-      startBg.style.display = 'none';
-      checkinBg.style.display = 'block';
-      referralBg.style.display = 'none';
-      checkinBg.play().catch(() => {});
-      handleCheckIn();
+        alert(`✅ +10 XP${xgoReward ? ' и +5 XGO' : ''}`);
+      });
     });
-
-    referralBtn.addEventListener('click', () => {
-      startScreen.classList.remove('active');
-      referralScreen.classList.add('active');
-      startBg.style.display = 'none';
-      checkinBg.style.display = 'none';
-      referralBg.style.display = 'block';
-      referralBg.play().catch(() => {});
-    });
-
-    document.getElementById('claim-xp').addEventListener('click', handleCheckIn);
-    document.getElementById('claim-xgo').addEventListener('click', handleCheckIn);
   </script>
 </body>
 </html>
