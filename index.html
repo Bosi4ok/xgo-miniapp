@@ -1,21 +1,43 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Telegram Mini App Debug</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     body {
-      background-color: black;
-      color: white;
       font-family: monospace;
+      background: #000;
+      color: #fff;
+      margin: 0;
       padding: 20px;
     }
+
     .box {
-      background: #111;
-      border: 2px solid #ff3c3c;
-      padding: 20px;
+      border: 3px solid #ff3c3c;
       border-radius: 12px;
+      background: #111;
+      padding: 20px;
+      margin-top: 40px;
+    }
+
+    .error {
+      color: #ff3c3c;
+      font-size: 18px;
+    }
+
+    .success {
+      color: #00ff99;
+      font-size: 18px;
+    }
+
+    .key {
+      color: #ccc;
+    }
+
+    .value {
+      color: #fff;
     }
   </style>
 </head>
@@ -24,17 +46,36 @@
   <div class="box" id="output">Загрузка...</div>
 
   <script>
-    const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    window.addEventListener("load", () => {
+      const output = document.getElementById("output");
+      const tg = window.Telegram?.WebApp;
 
-    const output = document.getElementById('output');
+      if (!tg || !tg.initDataUnsafe) {
+        output.innerHTML = `
+          <div class="error">❌ Пользователь не определён.</div>
+          <p>Mini App должен быть открыт через <b>Telegram WebApp</b>.</p>
+          <pre>Telegram.WebApp.initDataUnsafe.user = undefined</pre>
+        `;
+        return;
+      }
 
-    if (!user) {
-      output.innerHTML = `<b>❌ Пользователь не определён.</b><br>Mini App должен быть открыт через Telegram WebApp.<br><br><code>Telegram.WebApp.initDataUnsafe.user = undefined</code>`;
-    } else {
-      output.innerHTML = `<b>✅ Пользователь определён:</b><br><pre>${JSON.stringify(user, null, 2)}</pre>`;
-    }
+      const user = tg.initDataUnsafe.user;
 
-    console.log("Telegram User:", user);
+      if (!user) {
+        output.innerHTML = `
+          <div class="error">❌ Нет данных о пользователе</div>
+          <pre>${JSON.stringify(tg.initDataUnsafe, null, 2)}</pre>
+        `;
+        return;
+      }
+
+      output.innerHTML = `
+        <div class="success">✅ Пользователь определён!</div>
+        <p><span class="key">ID:</span> <span class="value">${user.id}</span></p>
+        <p><span class="key">Username:</span> <span class="value">@${user.username}</span></p>
+        <p><span class="key">First name:</span> <span class="value">${user.first_name}</span></p>
+      `;
+    });
   </script>
 </body>
 </html>
