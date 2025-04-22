@@ -1,99 +1,475 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  ...ваши текущие стили...
-  <script type="module">
-    import { supabase } from './supabase.js'
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XGO Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @font-face {
+      font-family: 'Brinnan';
+      src: url('Brinnan-Bold.otf') format('opentype');
+      font-weight: bold;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Brinnan', monospace;
+      background-color: #000;
+    }
+
+    .background-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 1;
+    }
+
+    .active {
+      display: flex !important;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      font-size: 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: 'Brinnan', monospace;
+      background: #000;
+      border: 2px solid #ff3c3c;
+      box-shadow: 0 0 4px #ff3c3c, 0 0 8px #ff3c3c;
+      transition: all 0.2s ease-in-out;
+      color: white;
+    }
+
+    .btn-referral {
+      color: #ff3c3c;
+    }
+
+    .btn:hover {
+      transform: scale(1.05);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 40px;
+      margin-top: 20px;
+    }
+
+    .button-container {
+      position: absolute;
+      bottom: 9%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      gap: 20px;
+    }
+
+    .label {
+      font-size: 36px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 1px 1px 0 #ff3c3c, -1px -1px 0 #ff3c3c, 2px 2px 10px #ff3c3c;
+      margin-top: 54vh;
+    }
+
+    .days {
+      font-size: 60px;
+      font-weight: bold;
+      color: #ff3c3c;
+      text-shadow: 0 0 2px #ffffff, 0 0 4px #ffffff, 0 0 6px #ffffff;
+      margin-top: 10px;
+    }
     
-    const tg = window.Telegram.WebApp
-    let userData = null
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Инициализация Telegram Web App
-      tg.expand()
-      tg.ready()
-      
-      // Получение данных пользователя
-      userData = tg.initDataUnsafe?.user
-      if (!userData) {
-        alert('Откройте приложение через Telegram!')
-        return
-      }
-      
-      // Инициализация пользователя в БД
-      await initUser()
-      
-      // Обновление интерфейса
-      updateUI()
-    })
-
-    async function initUser() {
-      const { error } = await supabase
-        .from('user_checkins')
-        .upsert(
-          { telegram_id: userData.id.toString() },
-          { onConflict: 'telegram_id' }
-        )
-      
-      if (error) console.error('Ошибка инициализации:', error)
+    #user-info {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 14px;
+      color: white;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 10px;
+      border-radius: 10px;
+      z-index: 10;
     }
-
-    async function handleCheckin() {
-      // Проверка времени последнего чекина
-      const { data } = await supabase
-        .from('user_checkins')
-        .select('last_checkin')
-        .eq('telegram_id', userData.id.toString())
-      
-      const lastCheckin = new Date(data[0].last_checkin)
-      const now = new Date()
-      
-      if ((now - lastCheckin) < 86400000) {
-        tg.showAlert('Вы уже выполняли чекин сегодня!')
-        return
-      }
-      
-      // Обновление данных
-      const { data: updated, error } = await supabase
-        .rpc('update_checkin', {
-          user_id: userData.id.toString(),
-          xp_increment: 10
-        })
-      
-      if (error) {
-        tg.showAlert('Ошибка: ' + error.message)
-        return
-      }
-      
-      // Показ экрана успеха
-      showSuccessScreen(updated)
+    
+    .reward-badge {
+      background: #ff3c3c;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      margin: 5px;
+      box-shadow: 0 0 10px rgba(255, 60, 60, 0.7);
     }
-
-    function updateUI() {
-      document.getElementById('user-name').textContent = userData.first_name
-      document.getElementById('user-id').textContent = userData.id
+    
+    .reward-badge img {
+      height: 20px;
+      margin-right: 5px;
     }
-
-    function showSuccessScreen(data) {
-      // Ваша логика перехода на экран успеха
-      document.getElementById('streak-days').textContent = data.streak_days
-      document.getElementById('total-xp').textContent = data.total_xp
-      document.getElementById('main-screen').classList.add('hidden')
-      document.getElementById('success-screen').classList.remove('hidden')
+    
+    .streak-animation {
+      animation: pulse 1.5s infinite;
     }
-  </script>
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s forwards;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
 </head>
 <body>
-  <div id="main-screen">
-    <!-- Ваш текущий интерфейс -->
-    <button onclick="handleCheckin()">CHECK IN</button>
+  <!-- Видео фоны -->
+  <video muted loop playsinline autoplay class="background-video" id="start-bg">
+    <source src="стиль1.mp4" type="video/mp4" />
+  </video>
+
+  <video muted loop playsinline class="background-video hidden" id="checkin-bg">
+    <source src="chek-in.mp4" type="video/mp4" />
+  </video>
+
+  <video muted loop playsinline class="background-video hidden" id="referral-bg">
+    <source src="referral.mp4" type="video/mp4" />
+  </video>
+
+  <!-- Информация о пользователе -->
+  <div id="user-info">Загрузка...</div>
+
+  <!-- Основной экран -->
+  <div class="screen active" id="start-screen">
+    <div class="button-container">
+      <button class="btn" id="checkin-btn" disabled>CHECK IN</button>
+      <button class="btn btn-referral" id="referral-btn">REFERRAL</button>
+    </div>
   </div>
 
-  <div id="success-screen" class="hidden">
-    <h2>🎉 Чекин выполнен!</h2>
-    <p>Дней подряд: <span id="streak-days">0</span></p>
-    <p>Всего XP: <span id="total-xp">0</span></p>
-    <button onclick="location.reload()">Назад</button>
+  <!-- Экран успешного чекина -->
+  <div class="screen" id="success-screen">
+    <div class="label">🎉 Чекин выполнен!</div>
+    <div class="days">
+      <span id="streak-days">0</span> <span class="streak-text">дней подряд</span>
+    </div>
+    <div class="button-group">
+      <div class="reward-badge">
+        <img src="xp-icon.svg" alt="XP"> +10 XP
+      </div>
+      <div class="reward-badge">
+        <img src="xgo-icon.svg" alt="XGO"> +5 XGO
+      </div>
+    </div>
+    <div class="button-container" style="position: relative; bottom: 0;">
+      <button class="btn" id="back-btn">⬅ НАЗАД</button>
+    </div>
   </div>
+
+  <!-- Экран реферальной программы -->
+  <div class="screen" id="referral-screen">
+    <div class="label">REFERRAL PROGRAM</div>
+    <div style="color: white; font-size: 24px; margin-top: 20px;">Приглашай друзей и получай XGO</div>
+    <div class="button-group" style="margin-top: 40px;">
+      <button class="btn" id="copy-ref-btn">СКОПИРОВАТЬ ССЫЛКУ</button>
+    </div>
+    <div style="color: white; margin-top: 20px; text-align: center;">
+      <div>Ты пригласил: <span id="referral-count">0</span> чел.</div>
+      <div>Награда: <span id="referral-reward">0</span> XGO</div>
+    </div>
+    <div class="button-container" style="position: relative; bottom: 0;">
+      <button class="btn btn-referral" id="back-from-ref-btn">⬅ НАЗАД</button>
+    </div>
+  </div>
+
+  <script>
+    // Конфигурация Supabase - замените на свои значения
+    const SUPABASE_URL = 'ВАША_ССЫЛКА_SUPABASE'; // например https://abcdefghijk.supabase.co
+    const SUPABASE_KEY = 'ВАШ_КЛЮЧ_SUPABASE'; // anon/public key
+    
+    // Инициализация Supabase
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // Элементы DOM
+    const startScreen = document.getElementById('start-screen');
+    const successScreen = document.getElementById('success-screen');
+    const referralScreen = document.getElementById('referral-screen');
+    const startBg = document.getElementById('start-bg');
+    const checkinBg = document.getElementById('checkin-bg');
+    const referralBg = document.getElementById('referral-bg');
+    const userInfo = document.getElementById('user-info');
+    const checkinBtn = document.getElementById('checkin-btn');
+    const referralBtn = document.getElementById('referral-btn');
+    const streakDaysElement = document.getElementById('streak-days');
+    const referralCountElement = document.getElementById('referral-count');
+    const referralRewardElement = document.getElementById('referral-reward');
+    
+    // Данные пользователя
+    let userData = null;
+    let telegramId = null;
+    let userCheckinsData = null;
+    
+    // Звуковые эффекты
+    const successSound = new Audio('success.mp3'); // добавьте файл звука
+    
+    // Инициализация Telegram Mini App
+    const tg = window.Telegram.WebApp;
+    
+    // Основная функция инициализации
+    async function initApp() {
+      // Расширяем окно приложения
+      if (tg) {
+        tg.expand();
+        userData = tg.initDataUnsafe?.user;
+        
+        if (userData) {
+          telegramId = userData.id.toString();
+          userInfo.innerHTML = `👤 ${userData.first_name || 'User'}`;
+          checkinBtn.disabled = false;
+          
+          // Получаем данные пользователя из Supabase
+          await getUserData();
+        } else {
+          userInfo.innerHTML = '⚠️ Откройте через Telegram';
+        }
+      } else {
+        userInfo.innerHTML = '⚠️ Telegram не обнаружен';
+        // Тестовый режим для локальной отладки
+        telegramId = 'test_user_123';
+        checkinBtn.disabled = false;
+        await getUserData();
+      }
+    }
+    
+    // Получение данных пользователя из Supabase
+    async function getUserData() {
+      try {
+        let { data, error } = await supabase
+          .from('user_checkins')
+          .select('*')
+          .eq('telegram_id', telegramId)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error('Ошибка получения данных:', error);
+          return;
+        }
+        
+        // Если пользователя нет в базе, создаем запись
+        if (!data) {
+          const { data: newUser, error: insertError } = await supabase
+            .from('user_checkins')
+            .insert([{
+              telegram_id: telegramId,
+              streak_days: 0,
+              total_xp: 0
+            }])
+            .select();
+            
+          if (insertError) {
+            console.error('Ошибка создания пользователя:', insertError);
+            return;
+          }
+          
+          userCheckinsData = newUser[0];
+        } else {
+          userCheckinsData = data;
+        }
+        
+        updateUIWithUserData();
+      } catch (err) {
+        console.error('Непредвиденная ошибка:', err);
+      }
+    }
+    
+    // Обновление интерфейса данными пользователя
+    function updateUIWithUserData() {
+      if (userCheckinsData) {
+        streakDaysElement.textContent = userCheckinsData.streak_days;
+        referralCountElement.textContent = '0'; // В будущем - из базы данных
+        referralRewardElement.textContent = '0'; // В будущем - из базы данных
+      }
+    }
+    
+    // Обработка ежедневного чекина
+    async function handleCheckin() {
+      if (!telegramId) return;
+      
+      try {
+        // Проверка времени последнего чекина
+        if (userCheckinsData.last_checkin) {
+          const lastCheckin = new Date(userCheckinsData.last_checkin);
+          const now = new Date();
+          const diffHours = (now - lastCheckin) / (1000 * 60 * 60);
+          
+          if (diffHours < 24) {
+            tg?.showAlert('Вы уже выполняли чекин сегодня!');
+            return;
+          }
+          
+          // Проверка сброса серии (если прошло более 48 часов)
+          const streakReset = diffHours > 48;
+          
+          // Обновляем данные в базе
+          const { data, error } = await supabase
+            .from('user_checkins')
+            .update({
+              last_checkin: new Date().toISOString(),
+              streak_days: streakReset ? 1 : userCheckinsData.streak_days + 1,
+              total_xp: userCheckinsData.total_xp + 10
+            })
+            .eq('telegram_id', telegramId)
+            .select();
+            
+          if (error) {
+            console.error('Ошибка обновления данных:', error);
+            tg?.showAlert('Произошла ошибка при чекине.');
+            return;
+          }
+          
+          userCheckinsData = data[0];
+        } else {
+          // Первый чекин пользователя
+          const { data, error } = await supabase
+            .from('user_checkins')
+            .update({
+              last_checkin: new Date().toISOString(),
+              streak_days: 1,
+              total_xp: 10
+            })
+            .eq('telegram_id', telegramId)
+            .select();
+            
+          if (error) {
+            console.error('Ошибка первого чекина:', error);
+            tg?.showAlert('Произошла ошибка при чекине.');
+            return;
+          }
+          
+          userCheckinsData = data[0];
+        }
+        
+        // Обновляем интерфейс и показываем экран успеха
+        updateUIWithUserData();
+        showSuccessScreen();
+        try {
+          successSound.play();
+        } catch (e) {
+          console.log('Ошибка воспроизведения звука:', e);
+        }
+      } catch (err) {
+        console.error('Непредвиденная ошибка чекина:', err);
+        tg?.showAlert('Произошла ошибка при чекине.');
+      }
+    }
+    
+    // Показать экран успешного чекина
+    function showSuccessScreen() {
+      startScreen.classList.remove('active');
+      referralScreen.classList.remove('active');
+      successScreen.classList.add('active', 'fade-in');
+      
+      startBg.classList.add('hidden');
+      referralBg.classList.add('hidden');
+      checkinBg.classList.remove('hidden');
+      checkinBg.play().catch(e => console.log('Ошибка проигрывания видео:', e));
+      
+      // Анимация числа дней
+      streakDaysElement.classList.add('streak-animation');
+    }
+    
+    // Показать экран реферальной программы
+    function showReferralScreen() {
+      startScreen.classList.remove('active');
+      successScreen.classList.remove('active');
+      referralScreen.classList.add('active', 'fade-in');
+      
+      startBg.classList.add('hidden');
+      checkinBg.classList.add('hidden');
+      referralBg.classList.remove('hidden');
+      referralBg.play().catch(e => console.log('Ошибка проигрывания видео:', e));
+    }
+    
+    // Вернуться на главный экран
+    function goToMainScreen() {
+      successScreen.classList.remove('active');
+      referralScreen.classList.remove('active');
+      startScreen.classList.add('active', 'fade-in');
+      
+      checkinBg.classList.add('hidden');
+      referralBg.classList.add('hidden');
+      startBg.classList.remove('hidden');
+      streakDaysElement.classList.remove('streak-animation');
+    }
+    
+    // Генерация и копирование реферальной ссылки
+    function copyReferralLink() {
+      const refLink = `https://t.me/xgo_mini_app?start=${telegramId}`;
+      navigator.clipboard.writeText(refLink).then(() => {
+        tg?.showAlert('Ссылка скопирована!');
+      }).catch(err => {
+        console.error('Ошибка копирования:', err);
+        tg?.showAlert('Ошибка копирования ссылки.');
+      });
+    }
+    
+    // Обработчики событий
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initApp();
+      
+      // Кнопка чекина
+      checkinBtn.addEventListener('click', handleCheckin);
+      
+      // Кнопка реферальной программы
+      referralBtn.addEventListener('click', showReferralScreen);
+      
+      // Кнопки "Назад"
+      document.getElementById('back-btn').addEventListener('click', goToMainScreen);
+      document.getElementById('back-from-ref-btn').addEventListener('click', goToMainScreen);
+      
+      // Копирование реферальной ссылки
+      document.getElementById('copy-ref-btn').addEventListener('click', copyReferralLink);
+    });
+  </script>
 </body>
 </html>
