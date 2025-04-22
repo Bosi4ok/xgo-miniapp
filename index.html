@@ -7,194 +7,560 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body {
-      background: #111;
-      min-height: 100vh;
+    @font-face {
+      font-family: 'Brinnan';
+      src: url('Brinnan-Bold.otf') format('opentype');
+      font-weight: bold;
+    }
+
+    html, body {
       margin: 0;
-      font-family: 'Arial', monospace;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: center;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Brinnan', monospace;
+      background-color: #000;
     }
-    .container {
-      margin-top: 60px;
+
+    .background-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
-      max-width: 400px;
-      background: rgba(16,16,16,0.96);
-      border-radius: 18px;
-      box-shadow: 0 0 32px #ff3c3c33;
-      padding: 32px 18px 24px 18px;
-      display: flex;
-      flex-direction: column;
+      height: 100%;
+      display: none;
+      justify-content: center;
       align-items: center;
+      flex-direction: column;
+      z-index: 1;
     }
-    .neon-btn {
-      display: inline-block;
-      padding: 16px 36px;
-      margin: 16px 0 0 0;
-      font-size: 22px;
-      font-family: inherit;
-      color: #fff;
+
+    .active {
+      display: flex !important;
+    }
+
+    .btn {
+      padding: 16px 40px;
+      font-size: 24px;
+      font-weight: bold;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-family: 'Brinnan', monospace;
       background: transparent;
       border: 2px solid #ff3c3c;
-      border-radius: 12px;
+      color: white;
+      box-shadow:
+        0 0 10px #ff3c3c,
+        0 0 20px rgba(255, 60, 60, 0.4);
+      transition: all 0.3s ease;
+      margin: 15px 0;
       letter-spacing: 1px;
-      cursor: pointer;
-      text-transform: uppercase;
-      box-shadow:
-        0 0 8px #ff3c3c,
-        0 0 16px #ff3c3c44;
-      transition: box-shadow 0.2s, color 0.2s;
     }
-    .neon-btn:hover, .neon-btn:focus {
+
+    .btn:hover, .btn:focus {
+      transform: scale(1.05);
+      box-shadow:
+        0 0 15px #ff3c3c,
+        0 0 30px rgba(255, 60, 60, 0.6);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .button-container {
+      position: absolute;
+      bottom: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      z-index: 5;
+    }
+
+    .title {
+      font-size: 52px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 0 10px #ff3c3c;
+      margin-bottom: 30px;
+      letter-spacing: 2px;
+    }
+
+    .stats {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .stats-label {
+      font-size: 24px;
+      color: white;
+      margin-bottom: 5px;
+    }
+
+    .stats-value {
+      font-size: 60px;
+      font-weight: bold;
       color: #ff3c3c;
-      box-shadow:
-        0 0 16px #ff3c3c,
-        0 0 32px #ff3c3c88;
-      outline: none;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
     }
-    .hidden { display: none !important; }
-    .big { font-size: 2.2em; font-weight: bold; margin: 24px 0 10px 0; }
-    .stat { font-size: 1.25em; margin: 10px 0; }
-    .success-emoji { font-size: 2em; }
+
+    .reward-badge {
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid #ff3c3c;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 20px;
+      font-weight: bold;
+      margin: 10px;
+      box-shadow: 0 0 10px rgba(255, 60, 60, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .rewards {
+      display: flex;
+      margin-bottom: 40px;
+    }
+
     #user-info {
       position: absolute;
-      top: 14px;
-      right: 18px;
-      font-size: 15px;
-      color: #fff;
-      background: rgba(0,0,0,0.32);
-      padding: 4px 10px;
-      border-radius: 8px;
+      top: 20px;
+      right: 20px;
+      font-size: 16px;
+      color: white;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 15px;
+      border-radius: 20px;
       z-index: 10;
-      letter-spacing: 0.5px;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 60, 60, 0.3);
+    }
+
+    .referral-link {
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid #ff3c3c;
+      padding: 15px 20px;
+      border-radius: 10px;
+      color: white;
+      font-size: 18px;
+      margin: 20px 0 40px 0;
+      width: 80%;
+      max-width: 320px;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    .referral-info {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      max-width: 320px;
+      margin-bottom: 20px;
+    }
+
+    .referral-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .referral-stat-value {
+      font-size: 36px;
+      font-weight: bold;
+      color: #ff3c3c;
+    }
+
+    .referral-stat-label {
+      font-size: 16px;
+      color: white;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
   </style>
 </head>
 <body>
-  <div id="user-info">Загрузка...</div>
-  <div class="container" id="main-screen">
-    <div class="big">XGO Mini App</div>
-    <button class="neon-btn" id="checkin-btn" disabled>CHECK IN</button>
-  </div>
-  <div class="container hidden" id="success-screen">
-    <div class="success-emoji">🎉</div>
-    <div class="big">Чекин выполнен!</div>
-    <div class="stat">Дней подряд: <span id="streak-days">0</span></div>
-    <div class="stat">Всего XP: <span id="total-xp">0</span></div>
-    <button class="neon-btn" id="back-btn">Назад</button>
-  </div>
-  <script type="module">
-    import { SUPABASE_URL, SUPABASE_KEY } from './supabase.js';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <!-- Видео фоны -->
+  <video muted loop playsinline autoplay class="background-video" id="start-bg">
+    <source src="стиль1.mp4" type="video/mp4" />
+  </video>
 
+  <video muted loop playsinline class="background-video hidden" id="checkin-bg">
+    <source src="chek-in.mp4" type="video/mp4" />
+  </video>
+
+  <video muted loop playsinline class="background-video hidden" id="referral-bg">
+    <source src="referral.mp4" type="video/mp4" />
+  </video>
+
+  <!-- Информация о пользователе -->
+  <div id="user-info">Загрузка...</div>
+
+  <!-- Главный экран -->
+  <div class="screen active" id="start-screen">
+    <div class="title">XGO Mini App</div>
+    <div class="button-container">
+      <button class="btn" id="checkin-btn">CHECK IN</button>
+      <button class="btn" id="referral-btn">REFERRAL</button>
+    </div>
+  </div>
+
+  <!-- Экран чекина -->
+  <div class="screen" id="checkin-screen">
+    <div class="title">Daily Check-in</div>
+    <div class="stats">
+      <div class="stats-label">DAYS STREAK</div>
+      <div class="stats-value" id="streak-days">0</div>
+    </div>
+    <div class="rewards">
+      <div class="reward-badge">+10 XP</div>
+      <div class="reward-badge">+5 XGO</div>
+    </div>
+    <div class="button-container">
+      <button class="btn" id="back-from-checkin-btn">BACK</button>
+    </div>
+  </div>
+
+  <!-- Экран реферала -->
+  <div class="screen" id="referral-screen">
+    <div class="title">Referral Program</div>
+    <div class="referral-link" id="referral-link">Loading link...</div>
+    <div class="referral-info">
+      <div class="referral-stat">
+        <div class="referral-stat-value" id="referral-count">0</div>
+        <div class="referral-stat-label">Referrals</div>
+      </div>
+      <div class="referral-stat">
+        <div class="referral-stat-value" id="referral-reward">0</div>
+        <div class="referral-stat-label">XGO Earned</div>
+      </div>
+    </div>
+    <button class="btn" id="copy-btn">COPY LINK</button>
+    <div class="button-container">
+      <button class="btn" id="back-from-referral-btn">BACK</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // Импорт ключей из supabase.js (создайте этот файл)
+    import { SUPABASE_URL, SUPABASE_KEY } from './supabase.js';
+    
+    // Инициализация Supabase
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // Элементы DOM
+    const startScreen = document.getElementById('start-screen');
+    const checkinScreen = document.getElementById('checkin-screen');
+    const referralScreen = document.getElementById('referral-screen');
+    const startBg = document.getElementById('start-bg');
+    const checkinBg = document.getElementById('checkin-bg');
+    const referralBg = document.getElementById('referral-bg');
+    const userInfo = document.getElementById('user-info');
+    const checkinBtn = document.getElementById('checkin-btn');
+    const referralBtn = document.getElementById('referral-btn');
+    const streakDaysEl = document.getElementById('streak-days');
+    const referralLinkEl = document.getElementById('referral-link');
+    const referralCountEl = document.getElementById('referral-count');
+    const referralRewardEl = document.getElementById('referral-reward');
+    const copyBtn = document.getElementById('copy-btn');
+    
+    // Telegram и идентификация пользователя
     const tg = window.Telegram?.WebApp;
     let telegramId = null;
-
-    const userInfo = document.getElementById('user-info');
-    const mainScreen = document.getElementById('main-screen');
-    const successScreen = document.getElementById('success-screen');
-    const checkinBtn = document.getElementById('checkin-btn');
-    const backBtn = document.getElementById('back-btn');
-    const streakDaysEl = document.getElementById('streak-days');
-    const totalXpEl = document.getElementById('total-xp');
-
-    async function getTelegramId() {
-      if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        telegramId = tg.initDataUnsafe.user.id.toString();
-        userInfo.textContent = `👤 ${tg.initDataUnsafe.user.first_name || ''} (${telegramId})`;
+    let userName = null;
+    let isTestMode = false;
+    
+    // Инициализация приложения
+    async function initApp() {
+      console.log("Initializing app...");
+      
+      // Расширяем окно приложения
+      if (tg) {
+        tg.expand();
+        
+        // Пытаемся получить пользователя
+        try {
+          if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            telegramId = tg.initDataUnsafe.user.id.toString();
+            userName = tg.initDataUnsafe.user.first_name || 'User';
+            userInfo.innerHTML = `👤 ${userName}`;
+            console.log("User detected:", telegramId, userName);
+          } else {
+            console.log("No user data in initDataUnsafe");
+            activateTestMode();
+          }
+        } catch (e) {
+          console.error("Error getting Telegram user:", e);
+          activateTestMode();
+        }
       } else {
-        // Для локального теста
-        telegramId = 'test_user_123';
-        userInfo.textContent = `Тестовый режим (${telegramId})`;
+        console.log("Telegram WebApp not found");
+        activateTestMode();
+      }
+      
+      // Получение данных пользователя из БД
+      await loadUserData();
+      
+      // Генерация реферальной ссылки
+      generateReferralLink();
+      
+      // Настройка обработчиков событий
+      setupEventListeners();
+    }
+    
+    // Активация тестового режима
+    function activateTestMode() {
+      telegramId = 'test_user_' + Math.floor(Math.random() * 1000);
+      userName = 'Test User';
+      userInfo.innerHTML = `🧪 Test Mode`;
+      isTestMode = true;
+      console.log("Test mode activated with ID:", telegramId);
+    }
+    
+    // Загрузка данных пользователя из Supabase
+    async function loadUserData() {
+      try {
+        console.log("Loading user data for:", telegramId);
+        
+        let { data, error } = await supabase
+          .from('user_checkins')
+          .select('*')
+          .eq('telegram_id', telegramId)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error("Database error:", error);
+          return;
+        }
+        
+        // Если пользователя нет, создаем его
+        if (!data) {
+          console.log("Creating new user");
+          const { data: newUser, error: createError } = await supabase
+            .from('user_checkins')
+            .insert([{
+              telegram_id: telegramId,
+              streak_days: 0,
+              total_xp: 0,
+              last_checkin: null
+            }])
+            .select();
+          
+          if (createError) {
+            console.error("Error creating user:", createError);
+            return;
+          }
+          
+          data = newUser[0];
+        }
+        
+        // Обновляем интерфейс
+        updateUI(data);
+        
+      } catch (e) {
+        console.error("Error in loadUserData:", e);
       }
     }
-
-    async function getUserRow() {
-      const { data, error } = await supabase
-        .from('user_checkins')
-        .select('*')
-        .eq('telegram_id', telegramId)
-        .single();
-      if (error && error.code !== 'PGRST116') {
-        alert('Ошибка загрузки данных: ' + error.message);
-        return null;
-      }
-      return data || null;
+    
+    // Обновление UI данными пользователя
+    function updateUI(userData) {
+      if (!userData) return;
+      
+      console.log("Updating UI with user data:", userData);
+      
+      // Обновляем серию дней
+      streakDaysEl.textContent = userData.streak_days || 0;
+      
+      // Обновляем данные рефералов (в будущей реализации)
+      referralCountEl.textContent = 0;
+      referralRewardEl.textContent = 0;
     }
-
-    async function createUserRow() {
-      const { data, error } = await supabase
-        .from('user_checkins')
-        .insert([{
-          telegram_id: telegramId,
-          streak_days: 0,
-          total_xp: 0
-        }])
-        .select();
-      if (error) {
-        alert('Ошибка создания пользователя: ' + error.message);
-        return null;
-      }
-      return data[0];
-    }
-
+    
+    // Обработка ежедневного чекина
     async function handleCheckin() {
-      let user = await getUserRow();
-      const now = new Date();
-
-      if (!user) {
-        user = await createUserRow();
+      try {
+        console.log("Handling check-in for user:", telegramId);
+        
+        // Получаем текущие данные пользователя
+        const { data: user, error: userError } = await supabase
+          .from('user_checkins')
+          .select('*')
+          .eq('telegram_id', telegramId)
+          .single();
+        
+        if (userError) {
+          console.error("Error getting user for check-in:", userError);
+          alert("Error performing check-in");
+          return;
+        }
+        
+        const now = new Date();
+        const lastCheckin = user.last_checkin ? new Date(user.last_checkin) : null;
+        
+        // Проверяем, прошло ли 24 часа с последнего чекина
+        if (lastCheckin && (now - lastCheckin) < 86400000) {
+          if (isTestMode) {
+            console.log("Test mode: Bypassing 24h check-in limit");
+          } else {
+            alert("You already checked in today. Come back tomorrow!");
+            return;
+          }
+        }
+        
+        // Определяем, сохраняется ли серия (меньше 48 часов)
+        const streakContinues = lastCheckin && (now - lastCheckin) < 172800000;
+        const newStreak = streakContinues ? (user.streak_days || 0) + 1 : 1;
+        const newXP = (user.total_xp || 0) + 10;
+        
+        // Обновляем данные в базе
+        const { error: updateError } = await supabase
+          .from('user_checkins')
+          .update({
+            last_checkin: now.toISOString(),
+            streak_days: newStreak,
+            total_xp: newXP
+          })
+          .eq('telegram_id', telegramId);
+        
+        if (updateError) {
+          console.error("Error updating check-in:", updateError);
+          alert("Error saving check-in");
+          return;
+        }
+        
+        // Обновляем UI и показываем экран чекина
+        streakDaysEl.textContent = newStreak;
+        showScreen('checkin');
+        
+        console.log("Check-in successful. New streak:", newStreak);
+        
+      } catch (e) {
+        console.error("Error during check-in:", e);
+        alert("An unexpected error occurred");
       }
-
-      // Проверка времени последнего чекина
-      const lastCheckin = user.last_checkin ? new Date(user.last_checkin) : null;
-      const diff = lastCheckin ? now - lastCheckin : Infinity;
-
-      if (diff < 86400000) {
-        alert('Чекин уже был сегодня!');
-        return;
-      }
-
-      // streak_days: +1 если чекин <48ч, иначе 1
-      const newStreak = (diff < 2 * 86400000) ? (user.streak_days || 0) + 1 : 1;
-      const newXP = (user.total_xp || 0) + 10;
-
-      const { data, error } = await supabase
-        .from('user_checkins')
-        .update({
-          last_checkin: now.toISOString(),
-          streak_days: newStreak,
-          total_xp: newXP
-        })
-        .eq('telegram_id', telegramId)
-        .select();
-
-      if (error) {
-        alert('Ошибка обновления: ' + error.message);
-        return;
-      }
-
-      // Показываем успех
-      streakDaysEl.textContent = newStreak;
-      totalXpEl.textContent = newXP;
-      mainScreen.classList.add('hidden');
-      successScreen.classList.remove('hidden');
     }
-
-    checkinBtn.onclick = handleCheckin;
-    backBtn.onclick = () => {
-      successScreen.classList.add('hidden');
-      mainScreen.classList.remove('hidden');
-    };
-
-    // Инициализация
-    (async function init() {
-      await getTelegramId();
-      checkinBtn.disabled = false;
-    })();
+    
+    // Генерация реферальной ссылки
+    function generateReferralLink() {
+      const baseUrl = window.location.origin + window.location.pathname;
+      const refLink = `${baseUrl}?ref=${telegramId}`;
+      referralLinkEl.textContent = refLink;
+    }
+    
+    // Копирование реферальной ссылки
+    function copyReferralLink() {
+      const link = referralLinkEl.textContent;
+      navigator.clipboard.writeText(link).then(() => {
+        // Визуальный фидбек
+        copyBtn.textContent = "COPIED!";
+        setTimeout(() => {
+          copyBtn.textContent = "COPY LINK";
+        }, 2000);
+      }).catch(err => {
+        console.error("Error copying link:", err);
+        alert("Could not copy link. Please copy it manually.");
+      });
+    }
+    
+    // Настройка обработчиков событий
+    function setupEventListeners() {
+      // Кнопка чекина
+      checkinBtn.addEventListener('click', handleCheckin);
+      
+      // Кнопка реферальной программы
+      referralBtn.addEventListener('click', () => showScreen('referral'));
+      
+      // Кнопки назад
+      document.getElementById('back-from-checkin-btn').addEventListener('click', () => showScreen('start'));
+      document.getElementById('back-from-referral-btn').addEventListener('click', () => showScreen('start'));
+      
+      // Кнопка копирования ссылки
+      copyBtn.addEventListener('click', copyReferralLink);
+    }
+    
+    // Переключение между экранами
+    function showScreen(screenName) {
+      // Скрываем все экраны
+      startScreen.classList.remove('active');
+      checkinScreen.classList.remove('active');
+      referralScreen.classList.remove('active');
+      
+      // Скрываем все видео
+      startBg.classList.add('hidden');
+      checkinBg.classList.add('hidden');
+      referralBg.classList.add('hidden');
+      
+      // Показываем нужный экран и видео
+      if (screenName === 'start') {
+        startScreen.classList.add('active', 'fade-in');
+        startBg.classList.remove('hidden');
+        startBg.play().catch(e => console.log("Video play error:", e));
+      } else if (screenName === 'checkin') {
+        checkinScreen.classList.add('active', 'fade-in');
+        checkinBg.classList.remove('hidden');
+        checkinBg.play().catch(e => console.log("Video play error:", e));
+        // Анимация числа дней
+        streakDaysEl.classList.add('pulse');
+        setTimeout(() => streakDaysEl.classList.remove('pulse'), 3000);
+      } else if (screenName === 'referral') {
+        referralScreen.classList.add('active', 'fade-in');
+        referralBg.classList.remove('hidden');
+        referralBg.play().catch(e => console.log("Video play error:", e));
+      }
+    }
+    
+    // Проверка на параметр реферала в URL
+    function checkReferralParam() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const ref = urlParams.get('ref');
+      if (ref && ref !== telegramId) {
+        console.log("Referred by:", ref);
+        // Здесь логика учета реферала (на будущее)
+      }
+    }
+    
+    // Запуск приложения
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initApp();
+      checkReferralParam();
+    });
   </script>
 </body>
 </html>
