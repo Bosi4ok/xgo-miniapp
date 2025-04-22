@@ -12,6 +12,7 @@
       src: url('Brinnan-Bold.otf') format('opentype');
       font-weight: bold;
     }
+
     html, body {
       margin: 0;
       padding: 0;
@@ -21,6 +22,7 @@
       background-color: #000;
       color: white;
     }
+
     .background-video {
       position: fixed;
       top: 0;
@@ -30,21 +32,20 @@
       object-fit: cover;
       z-index: 0;
     }
+
     .screen {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      display: none;
+      display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
       z-index: 1;
     }
-    .active {
-      display: flex !important;
-    }
+
     .btn {
       padding: 12px 28px;
       font-size: 20px;
@@ -58,20 +59,14 @@
       box-shadow: 0 0 4px #ff3c3c, 0 0 8px #ff3c3c;
       transition: all 0.2s ease-in-out;
       color: white;
+      margin-top: 20px;
     }
+
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
-    .button-container {
-      position: absolute;
-      bottom: 9%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      gap: 20px;
-    }
+
     .user-info {
       position: absolute;
       top: 20px;
@@ -83,63 +78,72 @@
   </style>
 </head>
 <body>
-  <video muted loop playsinline autoplay class="background-video" id="start-bg">
+  <video muted loop playsinline autoplay class="background-video">
     <source src="стиль1.mp4" type="video/mp4" />
   </video>
 
-  <div class="user-info" id="user-info"></div>
+  <div class="user-info" id="user-info">Загрузка...</div>
 
-  <div class="screen active" id="start-screen">
-    <div class="button-container">
-      <button class="btn" id="checkin-btn" disabled>CHECK IN</button>
-      <button class="btn" id="referral-btn">REFERRAL</button>
-    </div>
+  <div class="screen">
+    <button class="btn" id="checkin-btn" disabled>CHECK IN</button>
+    <button class="btn" id="referral-btn">REFERRAL</button>
   </div>
 
   <script>
-    const tg = window.Telegram?.WebApp;
-    let userData = null;
-
-    // 👇 Вставь свои данные отсюда
     const supabaseUrl = 'https://msstnczyshmnhjcnzjlg.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zc3RuY3p5c2htbmhqY256amxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMjI0MjUsImV4cCI6MjA2MDg5ODQyNX0.9Oa_ghFyX9qVquxokvLMSNRfQq7FzA6mQEvlsM2ZyRc';
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const tg = window.Telegram?.WebApp;
+    const checkinBtn = document.getElementById('checkin-btn');
+    const userInfoDiv = document.getElementById('user-info');
 
-    function initTelegram() {
-      if (tg) {
-        tg.expand();
-        tg.enableClosingConfirmation();
-        userData = tg.initDataUnsafe?.user;
+    let user = null;
 
-        document.getElementById('user-info').innerHTML = userData 
-          ? `👤 ${userData.first_name || 'User'}<br>@${userData.username || 'no_username'}`
-          : '⚠️ Откройте через Telegram';
-        
-        document.getElementById('checkin-btn').disabled = !userData;
+    async function initApp() {
+      tg?.expand();
+      user = tg?.initDataUnsafe?.user;
+
+      if (!user) {
+        userInfoDiv.innerText = '⚠️ Telegram user не определён';
+        return;
       }
-    }
 
-    async function testSupabaseConnection() {
-      const { data, error } = await supabase.from('users').select('*');
-      if (error) {
-        console.error('❌ Ошибка Supabase:', error.message);
+      userInfoDiv.innerHTML = `👤 ${user.first_name || 'User'}<br>@${user.username || 'no_username'}`;
+      checkinBtn.disabled = false;
+
+      // 🔄 Пробуем получить или создать пользователя в Supabase
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!data && !error) {
+        await supabase.from('users').insert([{
+          id: user.id,
+          username: user.username,
+          first_name: user.first_name,
+          xp: 0,
+          checkin_streak: 0,
+          last_checkin: null
+        }]);
+        console.log('🆕 Новый пользователь добавлен');
+      } else if (error) {
+        console.error('❌ Ошибка Supabase:', error);
       } else {
-        console.log('✅ Подключение к Supabase успешно:', data);
+        console.log('✅ Пользователь найден в базе:', data);
       }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      initTelegram();
-      testSupabaseConnection();
-
-      document.getElementById('checkin-btn').addEventListener('click', () => {
-        tg.showAlert('Чек-ин (заглушка)');
-      });
-
-      document.getElementById('referral-btn').addEventListener('click', () => {
-        tg.showAlert('Рефералка в разработке 🛠️');
-      });
+    checkinBtn.addEventListener('click', () => {
+      tg?.showAlert('✅ Чекин выполнен!');
     });
+
+    document.getElementById('referral-btn').addEventListener('click', () => {
+      tg?.showAlert('Рефералы в разработке!');
+    });
+
+    window.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
 </html>
