@@ -12,7 +12,6 @@
       src: url('Brinnan-Bold.otf') format('opentype');
       font-weight: bold;
     }
-
     html, body {
       margin: 0;
       padding: 0;
@@ -22,7 +21,6 @@
       background-color: #000;
       color: white;
     }
-
     .background-video {
       position: fixed;
       top: 0;
@@ -32,7 +30,6 @@
       object-fit: cover;
       z-index: 0;
     }
-
     .screen {
       position: absolute;
       top: 0;
@@ -45,11 +42,9 @@
       flex-direction: column;
       z-index: 1;
     }
-
     .active {
       display: flex !important;
     }
-
     .btn {
       padding: 12px 28px;
       font-size: 20px;
@@ -64,12 +59,10 @@
       transition: all 0.2s ease-in-out;
       color: white;
     }
-
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
-
     .button-container {
       position: absolute;
       bottom: 9%;
@@ -79,7 +72,6 @@
       width: 100%;
       gap: 20px;
     }
-
     .user-info {
       position: absolute;
       top: 20px;
@@ -95,7 +87,7 @@
     <source src="стиль1.mp4" type="video/mp4" />
   </video>
 
-  <div class="user-info" id="user-info">Загрузка...</div>
+  <div class="user-info" id="user-info"></div>
 
   <div class="screen active" id="start-screen">
     <div class="button-container">
@@ -108,10 +100,10 @@
     const tg = window.Telegram?.WebApp;
     let userData = null;
 
-    const supabase = supabase.createClient(
-      'https://wtwjgyvaeggutjahhysp.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' // Убедись, что здесь безопасный anon ключ
-    );
+    // 👇 Вставь свои данные отсюда
+    const supabaseUrl = 'https://your-project.supabase.co';
+    const supabaseKey = 'your-anon-key';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     function initTelegram() {
       if (tg) {
@@ -119,63 +111,33 @@
         tg.enableClosingConfirmation();
         userData = tg.initDataUnsafe?.user;
 
-        document.getElementById('user-info').innerHTML = userData
-          ? `👤 ${userData.first_name}<br>@${userData.username || 'нет'}`
-          : '⚠️ Открой через Telegram';
-
+        document.getElementById('user-info').innerHTML = userData 
+          ? `👤 ${userData.first_name || 'User'}<br>@${userData.username || 'no_username'}`
+          : '⚠️ Откройте через Telegram';
+        
         document.getElementById('checkin-btn').disabled = !userData;
       }
     }
 
-    async function handleCheckin() {
-      if (!userData) return;
-
-      const today = new Date().toISOString().slice(0, 10);
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userData.id)
-        .single();
-
-      if (!existingUser) {
-        await supabase.from('users').insert([{
-          id: userData.id,
-          username: userData.username,
-          first_name: userData.first_name,
-          last_checkin: today,
-          checkin_streak: 1,
-          xp: 10
-        }]);
-        tg.showAlert(`✅ Первый чек-ин для ${userData.first_name}! +10 XP`);
-        return;
+    async function testSupabaseConnection() {
+      const { data, error } = await supabase.from('users').select('*');
+      if (error) {
+        console.error('❌ Ошибка Supabase:', error.message);
+      } else {
+        console.log('✅ Подключение к Supabase успешно:', data);
       }
-
-      if (existingUser.last_checkin === today) {
-        tg.showAlert('⚠️ Уже чекался сегодня!');
-        return;
-      }
-
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const ystr = yesterday.toISOString().slice(0, 10);
-      const newStreak = existingUser.last_checkin === ystr
-        ? existingUser.checkin_streak + 1
-        : 1;
-
-      await supabase.from('users').update({
-        last_checkin: today,
-        checkin_streak: newStreak,
-        xp: existingUser.xp + 10
-      }).eq('id', userData.id);
-
-      tg.showAlert(`✅ Чек-ин выполнен! +10 XP`);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
       initTelegram();
-      document.getElementById('checkin-btn').addEventListener('click', handleCheckin);
+      testSupabaseConnection();
+
+      document.getElementById('checkin-btn').addEventListener('click', () => {
+        tg.showAlert('Чек-ин (заглушка)');
+      });
+
       document.getElementById('referral-btn').addEventListener('click', () => {
-        tg.showAlert('Реферал пока не работает 🛠️');
+        tg.showAlert('Рефералка в разработке 🛠️');
       });
     });
   </script>
