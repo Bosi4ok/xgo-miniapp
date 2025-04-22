@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>XGO Mini App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>XGO MiniApp</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body {
       margin: 0;
       padding: 0;
-      font-family: 'Arial', sans-serif;
-      background-color: #000;
-      color: #fff;
+      background: black;
+      color: white;
+      font-family: sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -20,24 +20,24 @@
     }
 
     h1 {
-      font-size: 32px;
-      margin-bottom: 20px;
+      font-size: 3rem;
+      margin-bottom: 1rem;
     }
 
-    #user-info {
-      margin-bottom: 20px;
-      font-size: 18px;
+    .info {
       text-align: center;
+      margin-bottom: 1rem;
     }
 
     .btn {
-      padding: 12px 24px;
-      font-size: 20px;
-      background-color: #000;
+      padding: 16px 32px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      background: black;
+      border: 3px solid #ff3c3c;
       color: white;
-      border: 2px solid #ff3c3c;
       border-radius: 12px;
-      box-shadow: 0 0 8px #ff3c3c;
+      box-shadow: 0 0 10px #ff3c3c;
       cursor: pointer;
     }
 
@@ -49,35 +49,98 @@
 </head>
 <body>
   <h1>Check-In</h1>
-  <div id="user-info">Загрузка...</div>
-  <button class="btn" id="checkin-btn" disabled>Check In</button>
+  <div class="info" id="user-info"></div>
+  <div class="info">Active days: <span id="streak">-</span></div>
+  <button class="btn" id="checkin-button">Check In</button>
 
   <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      const userInfo = document.getElementById('user-info');
-      const checkinBtn = document.getElementById('checkin-btn');
+    const supabaseUrl = 'https://wtwjgyvaeggutjahhysp.supabase.co';
+    const supabaseKey = 'YOUR_PUBLIC_ANON_KEY'; // замени на свой PUBLIC (anon) ключ
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-      const tg = window.Telegram?.WebApp;
-      const user = tg?.initDataUnsafe?.user;
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const userInfoEl = document.getElementById("user-info");
+    const streakEl = document.getElementById("streak");
+    const checkinButton = document.getElementById("checkin-button");
+
+    if (!tgUser) {
+      userInfoEl.innerHTML = '<div style="color:red;">❌ Пользователь не определён</div>';
+      checkinButton.disabled = true;
+    } else {
+      userInfoEl.innerHTML = `✅ Пользователь: <strong>${tgUser.first_name}</strong><br>ID: <strong>${tgUser.id}</strong><br>Username: <strong>@${tgUser.username}</strong>`;
+      fetchStreak();
+    }
+
+    async function fetchStreak() {
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('checkin_streak')
+        .eq('id', tgUser.id)
+        .single();
+
+      if (user) {
+        streakEl.innerText = user.checkin_streak;
+      } else {
+        streakEl.innerText = '0';
+      }
+    }
+
+    async function handleCheckin() {
+      const today = new Date().toISOString().split('T')[0];
+      const { data: user } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', tgUser.id)
+        .single();
+
+      let newStreak = 1;
+      let xgoReward = 0;
 
       if (!user) {
-        userInfo.innerHTML = '❌ Не определён Telegram user<br><small>Открой через Telegram Mini App</small>';
-        return;
+        await supabase.from('users').insert([{
+          id: tgUser.id,
+          username: tgUser.username,
+          first_name: tgUser.first_name,
+          last_checkin: today,
+          checkin_streak: 1,
+          xp: 10,
+          xgo: 0
+        }]);
+      } else {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const ystr = yesterday.toISOString().split('T')[0];
+
+        newStreak = (user.last_checkin === ystr) ? user.checkin_streak + 1 : 1;
+
+        const { data: pool } = await supabase
+          .from('bonus_pool')
+          .select('amount')
+          .eq('id', 1)
+          .single();
+
+        if (pool && pool.amount >= 5) {
+          xgoReward = 5;
+          await supabase
+            .from('bonus_pool')
+            .update({ amount: pool.amount - 5 })
+            .eq('id', 1);
+        }
+
+        await supabase.from('users').update({
+          last_checkin: today,
+          checkin_streak: newStreak,
+          xp: user.xp + 10,
+          xgo: user.xgo + xgoReward
+        }).eq('id', tgUser.id);
       }
 
-      // ✅ Пользователь определён
-      userInfo.innerHTML = `
-        ✅ Пользователь: <b>${user.first_name}</b><br>
-        ID: <b>${user.id}</b><br>
-        Username: <b>@${user.username || '—'}</b>
-      `;
+      streakEl.innerText = newStreak;
+      checkinButton.disabled = true;
+      Telegram.WebApp.showAlert(`✅ Чек-ин выполнен для ${tgUser.first_name}`);
+    }
 
-      checkinBtn.disabled = false;
-
-      checkinBtn.addEventListener('click', () => {
-        alert(`✅ Чек-ин выполнен для ${user.first_name}!`);
-      });
-    });
+    checkinButton.addEventListener('click', handleCheckin);
   </script>
 </body>
 </html>
