@@ -25,8 +25,8 @@
       margin-bottom: 20px;
     }
 
-    #user-info {
-      margin-bottom: 20px;
+    #user-info, #status {
+      margin-bottom: 16px;
       font-size: 18px;
       text-align: center;
     }
@@ -51,14 +51,16 @@
 <body>
   <h1>Check-In</h1>
   <div id="user-info">Загрузка...</div>
+  <div id="status">Active days: -</div>
   <button class="btn" id="checkin-btn" disabled>Check In</button>
 
   <script>
     const supabaseUrl = 'https://wtwjgyvaeggutjahhysp.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // сократи, если публично
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // <-- вставь свой anon key
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     const userInfo = document.getElementById('user-info');
+    const status = document.getElementById('status');
     const checkinBtn = document.getElementById('checkin-btn');
 
     const tg = window.Telegram?.WebApp;
@@ -73,17 +75,33 @@
         Username: <b>@${user.username || '—'}</b>
       `;
       checkinBtn.disabled = false;
+      loadStreak();
+
+      checkinBtn.addEventListener('click', handleCheckIn);
     }
 
-    checkinBtn.addEventListener('click', async () => {
-      const today = new Date().toISOString().slice(0, 10);
-      const { data: existingUser, error } = await supabase
+    async function loadStreak() {
+      const { data } = await supabase
+        .from('users')
+        .select('checkin_streak')
+        .eq('id', user.id)
+        .single();
+
+      status.innerHTML = 'Active days: ' + (data?.checkin_streak || 0);
+    }
+
+    async function handleCheckIn() {
+      const today = new Date().toISOString().split('T')[0];
+
+      const { data: existing } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      if (!existingUser) {
+      let xgo = 0;
+
+      if (!existing) {
         await supabase.from('users').insert([{
           id: user.id,
           username: user.username,
@@ -93,30 +111,38 @@
           xp: 10,
           xgo: 0
         }]);
-        alert(`✅ Первый чек-ин! Добро пожаловать, ${user.first_name}!`);
+        status.innerHTML = 'Active days: 1';
+        alert(`✅ Первый чек-ин для ${user.first_name}! +10 XP`);
         return;
       }
 
-      if (existingUser.last_checkin === today) {
-        alert('⚠️ Уже чекался сегодня!');
+      if (existing.last_checkin === today) {
+        alert('⚠️ Сегодня уже чекался!');
         return;
       }
 
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const ystr = yesterday.toISOString().slice(0, 10);
-      const newStreak = existingUser.last_checkin === ystr
-        ? existingUser.checkin_streak + 1
-        : 1;
+      const ystr = new Date();
+      ystr.setDate(ystr.getDate() - 1);
+      const yesterday = ystr.toISOString().split('T')[0];
+      const newStreak = existing.last_checkin === yesterday ? existing.checkin_streak + 1 : 1;
+
+      // бонусы из пула
+      const { data: pool } = await supabase.from('bonus_pool').select('*').eq('id', 1).single();
+      if (pool && pool.amount >= 5) {
+        xgo = 5;
+        await supabase.from('bonus_pool').update({ amount: pool.amount - 5 }).eq('id', 1);
+      }
 
       await supabase.from('users').update({
         last_checkin: today,
         checkin_streak: newStreak,
-        xp: existingUser.xp + 10
+        xp: existing.xp + 10,
+        xgo: existing.xgo + xgo
       }).eq('id', user.id);
 
-      alert(`✅ Чек-ин выполнен для ${user.first_name}! streak: ${newStreak}`);
-    });
+      status.innerHTML = `Active days: ${newStreak}`;
+      alert(`✅ Чек-ин выполнен для ${user.first_name}! +10 XP${xgo ? ' и +5 XGO' : ''}`);
+    }
   </script>
 </body>
 </html>
