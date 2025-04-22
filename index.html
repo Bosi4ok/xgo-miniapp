@@ -1,164 +1,99 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>XGO Mini App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    @font-face {
-      font-family: 'Brinnan';
-      src: url('Brinnan-Bold.otf') format('opentype');
-      font-weight: bold;
-    }
+  ...ваши текущие стили...
+  <script type="module">
+    import { supabase } from './supabase.js'
+    
+    const tg = window.Telegram.WebApp
+    let userData = null
 
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Brinnan', monospace;
-      background-color: #000;
-      color: white;
-    }
-
-    .background-video {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      z-index: 0;
-    }
-
-    .screen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: none;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      z-index: 1;
-    }
-
-    .active {
-      display: flex !important;
-    }
-
-    .btn {
-      padding: 12px 28px;
-      font-size: 20px;
-      font-weight: bold;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      font-family: 'Brinnan', monospace;
-      background: #000;
-      border: 2px solid #ff3c3c;
-      box-shadow: 0 0 4px #ff3c3c, 0 0 8px #ff3c3c;
-      transition: all 0.2s ease-in-out;
-      color: white;
-    }
-
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .button-container {
-      position: absolute;
-      bottom: 9%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      gap: 20px;
-    }
-
-    .user-info {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      text-align: right;
-      font-size: 14px;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    }
-  </style>
-</head>
-<body>
-  <video muted loop playsinline autoplay class="background-video" id="start-bg">
-    <source src="стиль1.mp4" type="video/mp4" />
-  </video>
-
-  <div class="user-info" id="user-info"></div>
-
-  <!-- Стартовый экран -->
-  <div class="screen active" id="start-screen">
-    <div class="button-container">
-      <button class="btn" id="checkin-btn" disabled>CHECK IN</button>
-      <button class="btn" id="referral-btn">REFERRAL</button>
-    </div>
-  </div>
-
-  <script>
-    const tg = window.Telegram?.WebApp;
-    let userData = null;
-
-    // Инициализация Web App
-    function initTelegram() {
-      if (tg) {
-        tg.expand();
-        tg.enableClosingConfirmation();
-        userData = tg.initDataUnsafe?.user;
-        
-        document.getElementById('user-info').innerHTML = userData 
-          ? `👤 ${userData.first_name || 'User'}<br>@${userData.username || 'no_username'}` 
-          : '⚠️ Откройте через Telegram';
-        
-        document.getElementById('checkin-btn').disabled = !userData;
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Инициализация Telegram Web App
+      tg.expand()
+      tg.ready()
+      
+      // Получение данных пользователя
+      userData = tg.initDataUnsafe?.user
+      if (!userData) {
+        alert('Откройте приложение через Telegram!')
+        return
       }
+      
+      // Инициализация пользователя в БД
+      await initUser()
+      
+      // Обновление интерфейса
+      updateUI()
+    })
+
+    async function initUser() {
+      const { error } = await supabase
+        .from('user_checkins')
+        .upsert(
+          { telegram_id: userData.id.toString() },
+          { onConflict: 'telegram_id' }
+        )
+      
+      if (error) console.error('Ошибка инициализации:', error)
     }
 
-    // Логика ежедневного чекина
     async function handleCheckin() {
-      if (!userData) return;
+      // Проверка времени последнего чекина
+      const { data } = await supabase
+        .from('user_checkins')
+        .select('last_checkin')
+        .eq('telegram_id', userData.id.toString())
       
-      const lastCheckin = localStorage.getItem('lastCheckin');
-      const now = Date.now();
+      const lastCheckin = new Date(data[0].last_checkin)
+      const now = new Date()
       
-      if (lastCheckin && (now - lastCheckin) < 86400000) {
-        alert('Вы уже выполняли чекин сегодня!');
-        return;
+      if ((now - lastCheckin) < 86400000) {
+        tg.showAlert('Вы уже выполняли чекин сегодня!')
+        return
       }
-
-      try {
-        // Здесь будет интеграция с вашим смарт-контрактом
-        localStorage.setItem('lastCheckin', now);
-        tg.showAlert('✅ Чекин успешно выполнен!');
-      } catch (error) {
-        tg.showAlert('⚠️ Ошибка при выполнении чекина');
+      
+      // Обновление данных
+      const { data: updated, error } = await supabase
+        .rpc('update_checkin', {
+          user_id: userData.id.toString(),
+          xp_increment: 10
+        })
+      
+      if (error) {
+        tg.showAlert('Ошибка: ' + error.message)
+        return
       }
+      
+      // Показ экрана успеха
+      showSuccessScreen(updated)
     }
 
-    // Инициализация при загрузке
-    window.addEventListener('DOMContentLoaded', () => {
-      initTelegram();
-      
-      document.getElementById('checkin-btn').addEventListener('click', handleCheckin);
-      
-      document.getElementById('referral-btn').addEventListener('click', () => {
-        tg.showAlert('Реферальная система в разработке 🛠️');
-      });
-    });
+    function updateUI() {
+      document.getElementById('user-name').textContent = userData.first_name
+      document.getElementById('user-id').textContent = userData.id
+    }
 
-    // Адаптация под мобильные устройства
-    if (tg?.isExpanded) {
-      document.documentElement.style.fontSize = tg.viewportHeight / 50 + 'px';
+    function showSuccessScreen(data) {
+      // Ваша логика перехода на экран успеха
+      document.getElementById('streak-days').textContent = data.streak_days
+      document.getElementById('total-xp').textContent = data.total_xp
+      document.getElementById('main-screen').classList.add('hidden')
+      document.getElementById('success-screen').classList.remove('hidden')
     }
   </script>
+</head>
+<body>
+  <div id="main-screen">
+    <!-- Ваш текущий интерфейс -->
+    <button onclick="handleCheckin()">CHECK IN</button>
+  </div>
+
+  <div id="success-screen" class="hidden">
+    <h2>🎉 Чекин выполнен!</h2>
+    <p>Дней подряд: <span id="streak-days">0</span></p>
+    <p>Всего XP: <span id="total-xp">0</span></p>
+    <button onclick="location.reload()">Назад</button>
+  </div>
 </body>
 </html>
