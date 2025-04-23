@@ -334,7 +334,7 @@
     .modal, .referral-modal, .checkin-modal, .tasks-modal {
       display: none;
       position: fixed;
-      bottom: 120px;
+      top: 0;
       z-index: 99;
       text-align: center;
       width: 90%;
@@ -346,9 +346,10 @@
       box-shadow: 0 0 20px rgba(255, 60, 60, 0.5);
       left: 50%;
       transform: translateX(-50%);
-      max-height: calc(100vh - 180px);
+      max-height: calc(100vh - 80px);
       overflow-y: auto;
       animation: modalAppear 0.3s ease-out;
+      margin-top: 10px;
     }
 
     @media screen and (min-height: 700px) {
@@ -1350,16 +1351,26 @@
     // Инициализация при загрузке
     window.addEventListener('DOMContentLoaded', () => {
       initTelegram();
-      
-      document.getElementById('checkin-btn').addEventListener('click', openCheckinModal);
-      document.getElementById('referral-btn').addEventListener('click', openReferralModal);
-      document.getElementById('profile-btn').addEventListener('click', openProfileModal);
+
+      // Добавляем обработчики для всех пунктов меню
+      document.querySelectorAll('.nav-item').forEach(item => {
+        const originalOnClick = item.getAttribute('onclick');
+        item.onclick = function(e) {
+          e.preventDefault();
+          closeAllModals(); // Сначала закрываем все окна
+          
+          // Если был оригинальный обработчик, выполняем его
+          if (originalOnClick) {
+            const funcName = originalOnClick.split('(')[0];
+            window[funcName]();
+          }
+        };
+      });
 
       // Добавляем обработчик клика на оверлей для закрытия модальных окон
       document.getElementById('modal-overlay').addEventListener('click', (e) => {
         if (e.target.id === 'modal-overlay') {
-          closeCheckinModal();
-          closeReferralModal();
+          closeAllModals();
         }
       });
     });
