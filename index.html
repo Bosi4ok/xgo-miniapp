@@ -272,21 +272,18 @@
       background: rgba(255, 60, 60, 0.1);
       border-radius: 8px;
     }
-    .close {
+    .close, .close-modal {
       position: absolute;
-      top: 15px;
-      right: 15px;
-      background: none;
-      border: none;
-      color: rgba(255, 60, 60, 0.8);
+      right: 10px;
+      top: 10px;
       font-size: 24px;
       cursor: pointer;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
+      color: #ff3c3c;
+      background: none;
+      border: none;
+      padding: 5px;
+      line-height: 1;
+      transition: color 0.3s ease;
       transition: all 0.3s ease;
     }
 
@@ -469,7 +466,7 @@
     </div>
   </div>
   <div class="referral-modal" id="referral-modal">
-    <button class="close-modal" onclick="closeReferralModal()">×</button>
+    <span class="close" onclick="closeReferralModal()">&times;</span>
     <h2>Реферальная система</h2>
     
     <!-- Секция для владельца реферального кода -->
