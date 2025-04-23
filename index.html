@@ -36,7 +36,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      display: none;
+      display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
@@ -80,6 +80,19 @@
       font-size: 14px;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 2;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
     .referral-modal {
       display: none;
       position: fixed;
@@ -91,9 +104,21 @@
       border-radius: 15px;
       border: 2px solid #ff3c3c;
       box-shadow: 0 0 10px #ff3c3c;
-      z-index: 2;
+      z-index: 3;
       text-align: center;
       min-width: 300px;
+      animation: modalAppear 0.3s ease-out;
+    }
+
+    @keyframes modalAppear {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
     }
     .referral-code {
       font-size: 24px;
@@ -163,6 +188,7 @@
   </div>
 
   <!-- Модальное окно реферальной системы -->
+  <div class="modal-overlay" id="modal-overlay"></div>
   <div class="referral-modal" id="referral-modal">
     <button class="close-modal" onclick="closeReferralModal()">×</button>
     <h2>Реферальная система</h2>
@@ -200,21 +226,31 @@
 
     // Инициализация Web App
     async function initTelegram() {
-      if (tg) {
-        tg.expand();
-        tg.enableClosingConfirmation();
-        userData = tg.initDataUnsafe?.user;
-        
-        document.getElementById('user-info').innerHTML = userData 
-          ? `👤 ${userData.first_name || 'User'}<br>@${userData.username || 'no_username'}` 
-          : '⚠️ Откройте через Telegram';
-        
-        document.getElementById('checkin-btn').disabled = !userData;
+      try {
+        if (tg) {
+          tg.expand();
+          tg.enableClosingConfirmation();
+          userData = tg.initDataUnsafe?.user || {
+            id: 'test_user_' + Math.random().toString(36).substring(7),
+            first_name: 'Test User',
+            username: 'test_user'
+          };
+          
+          document.getElementById('user-info').innerHTML = 
+            `👤 ${userData.first_name || 'User'}<br>@${userData.username || 'no_username'}`;
+          
+          document.getElementById('checkin-btn').disabled = false;
 
-        if (userData) {
           await initUser();
           updatePointsDisplay();
+          console.log('Инициализация успешна:', userData);
+        } else {
+          console.error('Telegram WebApp не доступен');
+          document.getElementById('user-info').innerHTML = '⚠️ Ошибка инициализации';
         }
+      } catch (error) {
+        console.error('Ошибка при инициализации:', error);
+        document.getElementById('user-info').innerHTML = '⚠️ Ошибка: ' + error.message;
       }
     }
 
@@ -223,17 +259,24 @@
       if (!userData) return;
 
       try {
+        console.log('Начало инициализации пользователя:', userData.id);
+        
         // Проверяем существование пользователя
-        let { data: user } = await supabase
+        let { data: user, error: selectError } = await supabase
           .from('users')
           .select('*')
           .eq('telegram_id', userData.id)
           .single();
 
+        if (selectError && selectError.code !== 'PGRST116') {
+          throw selectError;
+        }
+
         if (!user) {
+          console.log('Создаем нового пользователя');
           // Создаем нового пользователя
           referralCode = generateReferralCode();
-          const { data, error } = await supabase
+          const { data, error: insertError } = await supabase
             .from('users')
             .insert([
               {
@@ -246,16 +289,23 @@
             .select()
             .single();
 
-          if (error) throw error;
+          if (insertError) throw insertError;
           user = data;
+          console.log('Новый пользователь создан:', user);
+        } else {
+          console.log('Пользователь найден:', user);
         }
 
         referralCode = user.referral_code;
         userPoints = user.points;
         document.getElementById('referral-code').textContent = referralCode;
+        document.getElementById('points-display').textContent = `🎯 Очки: ${userPoints}`;
+        
+        // Обновляем статистику рефералов
+        await updateReferralStats();
       } catch (error) {
-        console.error('Error initializing user:', error);
-        tg.showAlert('Ошибка при инициализации пользователя');
+        console.error('Ошибка при инициализации пользователя:', error);
+        document.getElementById('user-info').innerHTML += '<br>⚠️ Ошибка БД';
       }
     }
 
@@ -388,13 +438,18 @@
 
     // Открытие модального окна реферальной системы
     function openReferralModal() {
+      document.getElementById('modal-overlay').style.display = 'block';
       document.getElementById('referral-modal').style.display = 'block';
     }
 
     // Закрытие модального окна реферальной системы
     window.closeReferralModal = function() {
+      document.getElementById('modal-overlay').style.display = 'none';
       document.getElementById('referral-modal').style.display = 'none';
     }
+
+    // Закрытие при клике вне модального окна
+    document.getElementById('modal-overlay').addEventListener('click', closeReferralModal);
 
     // Копирование реферального кода
     window.copyReferralCode = function() {
