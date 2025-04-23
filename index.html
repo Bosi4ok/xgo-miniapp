@@ -76,20 +76,46 @@
       position: absolute;
       top: 20px;
       right: 20px;
-      text-align: right;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       font-size: 16px;
       color: #ff3c3c;
-      background: rgba(255, 60, 60, 0.1);
-      padding: 8px 12px;
-      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px;
+      border-radius: 50px;
+      cursor: pointer;
+      overflow: hidden;
+      max-width: 44px;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
       transition: all 0.3s ease;
     }
 
     .user-info:hover {
-      background: rgba(255, 60, 60, 0.2);
-      transform: translateY(-2px);
+      max-width: 300px;
+      background: rgba(0, 0, 0, 0.7);
       box-shadow: 0 4px 8px rgba(255, 60, 60, 0.2);
+    }
+
+    .user-icon {
+      font-size: 20px;
+      min-width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-name {
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: all 0.3s ease;
+    }
+
+    .user-info:hover .user-name {
+      opacity: 1;
+      transform: translateX(0);
     }
     .modal-overlay {
       display: none;
@@ -441,7 +467,10 @@
   <video muted loop playsinline autoplay class="background-video" id="checkin-bg" style="display: none;">
     <source src="check-in.mp4" type="video/mp4" />
   </video>
-  <div class="user-info" id="user-info"></div>
+  <div class="user-info" id="user-info">
+    <div class="user-icon">👤</div>
+    <div class="user-name" id="user-name"></div>
+  </div>
   
   <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
@@ -526,8 +555,8 @@
             username: 'test_user'
           };
           
-          document.getElementById('user-info').innerHTML = 
-            `👤 ${userData.first_name || 'User'}<br>@${userData.username || 'no_username'}`;
+          document.getElementById('user-name').textContent = 
+            `${userData.first_name || 'User'} @${userData.username || 'no_username'}`;
           
           document.getElementById('checkin-btn').disabled = false;
 
