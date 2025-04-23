@@ -87,7 +87,7 @@
       padding: 12px 8px;
       display: flex;
       justify-content: flex-start;
-      gap: 16px;
+      gap: 8px;
       align-items: center;
       border-top: 1px solid rgba(255, 60, 60, 0.2);
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
@@ -128,8 +128,8 @@
       text-decoration: none;
       transition: all 0.3s ease;
       position: relative;
-      padding: 4px 12px;
-      min-width: 50px;
+      padding: 8px;
+      min-width: 44px;
     }
 
     .nav-item.active {
@@ -142,38 +142,53 @@
 
     .nav-icon {
       font-size: 24px;
+      position: relative;
+      z-index: 1;
     }
 
     .nav-label {
-      font-size: 12px;
+      font-size: 11px;
       color: inherit;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-top: 4px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      z-index: 1;
+    }
+
+    .nav-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 1px solid transparent;
+      border-radius: 8px;
       transition: all 0.3s ease;
     }
 
-    .nav-item:hover .nav-label,
-    .nav-item.active .nav-label {
-      text-shadow: 0 2px 8px rgba(255, 60, 60, 0.4);
+    .nav-item:hover::before,
+    .nav-item.active::before {
+      border-color: #ff3c3c;
+      box-shadow: 0 0 10px rgba(255, 60, 60, 0.2);
     }
 
     .nav-item::after {
       content: '';
       position: absolute;
-      bottom: -2px;
-      left: 50%;
-      width: 0;
+      bottom: 0;
+      left: 0;
+      width: 100%;
       height: 2px;
       background: #ff3c3c;
-      transition: all 0.3s ease;
-      transform: translateX(-50%);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
     }
 
     .nav-item:hover::after,
     .nav-item.active::after {
-      width: 100%;
+      transform: scaleX(1);
     }
 
 
