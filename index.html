@@ -63,6 +63,24 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+    .points-display-main {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      padding: 12px 24px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 60, 60, 0.3);
+      color: #ff3c3c;
+      font-size: 24px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 0 20px rgba(255, 60, 60, 0.1);
+    }
+
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -77,6 +95,12 @@
       align-items: center;
       border-top: 1px solid rgba(255, 60, 60, 0.2);
       z-index: 100;
+    }
+
+    .nav-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
     }
 
     .nav-item {
@@ -533,27 +557,46 @@
   
   <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
-    <nav class="bottom-nav">
-      <a href="#" class="nav-item active" id="home-nav">
-        <div class="nav-icon">🏠</div>
-        <span class="nav-label">Главная</span>
-      </a>
-      <a href="#" class="nav-item" id="checkin-btn">
-        <div class="nav-icon">✨</div>
-        <span class="nav-label">Чекин</span>
-      </a>
-      <a href="#" class="nav-item" id="referral-btn">
-        <div class="nav-icon">👥</div>
-        <span class="nav-label">Рефералы</span>
-      </a>
-      <div class="user-section">
-        <div class="user-avatar">A</div>
-        <div class="user-details">
-          <div class="user-name" id="user-name">Имя</div>
-          <div class="user-points" id="points-display">🎯 0</div>
-        </div>
+    <div class="points-display-main" id="points-display-main">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+    </svg>
+    <span>0 XP</span>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="#" class="nav-item active" id="home-nav">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       </div>
-    </nav>
+      <span class="nav-label">Home</span>
+    </a>
+    <a href="#" class="nav-item" id="checkin-btn">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </div>
+      <span class="nav-label">Check-in</span>
+    </a>
+    <a href="#" class="nav-item" id="tasks-btn">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+      </div>
+      <span class="nav-label">Tasks</span>
+    </a>
+    <a href="#" class="nav-item" id="referral-btn">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      </div>
+      <span class="nav-label">Referral</span>
+    </a>
+    <div class="user-section">
+      <div class="user-avatar">A</div>
+      <div class="user-details">
+        <div class="user-name" id="user-name">Name</div>
+        <div class="user-points">Level 1</div>
+      </div>
+    </div>
+  </nav>
     <div class="points-display" id="points-display"></div>
   </div>
 
@@ -563,44 +606,44 @@
   <!-- Модальное окно чекина -->
   <div id="checkin-modal" class="modal">
     <span class="close" onclick="closeCheckinModal()">&times;</span>
-    <h2>Ежедневный чекин</h2>
+    <h2>Daily Check-in</h2>
     
-    <!-- Стрик -->
-    <div id="current-streak" class="streak-counter">🔥 Текущий стрик: 0 дней</div>
+    <!-- Streak -->
+    <div id="current-streak" class="streak-counter">🔥 Current streak: 0 days</div>
     
-    <!-- Следующая награда -->
+    <!-- Next reward -->
     <div class="next-reward-container">
-      <div class="next-reward-label">Следующая награда:</div>
+      <div class="next-reward-label">Next reward in:</div>
       <div id="next-reward" class="next-reward-value">+10 XP</div>
     </div>
     
     <!-- Кнопка и статус -->
     <div class="checkin-controls">
-      <button id="checkin-btn" onclick="performCheckin()" class="btn checkin-button">Получить награду</button>
+      <button id="checkin-btn" onclick="performCheckin()" class="btn checkin-button">Get Reward</button>
       <div id="checkin-status" class="checkin-status"></div>
       <div id="xp-earned" class="xp-earned"></div>
     </div>
   </div>
   <div class="referral-modal" id="referral-modal">
     <span class="close" onclick="closeReferralModal()">&times;</span>
-    <h2>Реферальная система</h2>
+    <h2>Referral System</h2>
     
     <!-- Секция для владельца реферального кода -->
     <div id="referral-owner-section">
-      <p>Ваш реферальный код:</p>
+      <p>Your referral code:</p>
       <div class="referral-code" id="referral-code"></div>
-      <button class="btn" onclick="copyReferralCode()">Скопировать код</button>
+      <button class="btn" onclick="copyReferralCode()">Copy Code</button>
       <div id="referral-status"></div>
       <div class="referral-stats" id="referral-stats">
-        <p>Количество рефералов: <span id="referral-count">0</span></p>
+        <p>Number of referrals: <span id="referral-count">0</span></p>
       </div>
     </div>
 
     <!-- Секция для ввода реферального кода -->
     <div id="referral-input-section">
-      <p>Ввести реферальный код:</p>
-      <input type="text" id="referral-input" class="referral-input" placeholder="Введите код" maxlength="9">
-      <button class="btn" onclick="applyReferralCode()">Применить код</button>
+      <p>Enter referral code:</p>
+      <input type="text" id="referral-input" class="referral-input" placeholder="Enter code" maxlength="9">
+      <button class="btn" onclick="applyReferralCode()">Apply Code</button>
       <div id="referral-input-status"></div>
     </div>
   </div>
