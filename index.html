@@ -108,6 +108,7 @@
       left: 50%;
       transform: translateX(-50%);
       animation: modalAppear 0.3s ease-out;
+      height: auto;
     }
 
     @media screen and (min-height: 700px) {
@@ -120,10 +121,17 @@
 
     @media screen and (max-height: 700px) {
       .modal, .referral-modal {
-        top: 20px;
-        max-height: calc(100vh - 40px);
+        top: 5%;
+        bottom: auto;
+        max-height: 90vh;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+      }
+    }
+
+    @supports (-webkit-touch-callout: none) {
+      .modal, .referral-modal {
+        padding-bottom: 100px;
       }
     }
 
@@ -808,99 +816,65 @@
         console.error('Нет данных пользователя');
         return;
       }
+
+      // Блокируем кнопку на время выполнения
+      const checkinBtn = document.getElementById('checkin-btn');
+      const checkinStatus = document.getElementById('checkin-status');
+      checkinBtn.disabled = true;
       
       try {
         console.log('Начинаем чекин для пользователя:', userData.id);
         
-        // Проверяем последний чекин в базе данных
-        const { data: lastCheckinData, error: lastCheckinError } = await supabaseClient
-          .from('users')
-          .select('last_checkin')
-          .eq('telegram_id', String(userData.id))
-          .single();
-
-        if (lastCheckinError) throw lastCheckinError;
-
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const lastCheckinDate = lastCheckinData?.last_checkin ? new Date(lastCheckinData.last_checkin).getTime() : 0;
-        
-        if (lastCheckinDate >= today) {
-          document.getElementById('checkin-btn').disabled = true;
-          document.getElementById('checkin-status').textContent = '✅ Чекин уже выполнен';
-          return;
-        }
-
-        // Получаем ID пользователя из базы
+        // Получаем текущие данные пользователя
         const { data: userDb, error: userError } = await supabaseClient
           .from('users')
-          .select('id, current_streak, points, max_streak')
+          .select('*')
           .eq('telegram_id', String(userData.id))
           .single();
 
-        if (userError) {
-          console.error('Ошибка при получении пользователя:', userError);
-          throw userError;
+        if (userError) throw userError;
+
+        // Рассчитываем стрик и очки
+        let streak = userDb.current_streak || 0;
+        const lastCheckin = userDb.last_checkin;
+        const now = new Date();
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        if (lastCheckin) {
+          const lastCheckinDate = new Date(lastCheckin);
+          if (lastCheckinDate.toDateString() === yesterday.toDateString()) {
+            streak++;
+          } else if (lastCheckinDate.toDateString() !== now.toDateString()) {
+            streak = 1;
+          }
+        } else {
+          streak = 1;
         }
 
-        if (!userDb || !userDb.id) {
-          throw new Error('Пользователь не найден в базе');
-        }
-
-        console.log('Найден пользователь:', userDb);
-
-        const streak = (userDb.current_streak || 0) + 1;
         const xpToEarn = calculateXP(streak);
         const maxStreak = Math.max(streak, userDb.max_streak || 0);
 
-        console.log('Создаем запись о чекине:', {
-          user_id: userDb.id,
-          xp_earned: xpToEarn,
-          streak: streak
+        // Выполняем чекин через хранимую процедуру
+        const { data: result, error: txError } = await supabaseClient.rpc('perform_checkin', {
+          user_telegram_id: String(userData.id),
+          xp_to_earn: xpToEarn,
+          new_streak: streak,
+          new_max_streak: maxStreak,
+          checkin_time: now.toISOString()
         });
 
-        // Обновляем очки и стрик пользователя
-        const { error: updateError } = await supabaseClient
-          .from('users')
-          .update({
-            points: userDb.points + xpToEarn,
-            current_streak: streak,
-            max_streak: maxStreak,
-            last_checkin: now.toISOString()
-          })
-          .eq('id', userDb.id);
+        if (txError) throw txError;
 
-        if (updateError) {
-          console.error('Ошибка при обновлении пользователя:', updateError);
-          throw updateError;
+        if (!result.success) {
+          checkinStatus.textContent = '✅ Чекин уже выполнен';
+          return;
         }
 
-        // Создаем запись о чекине
-        const { error: checkinError } = await supabaseClient
-          .from('daily_checkins')
-          .insert({
-            user_id: userDb.id,
-            xp_earned: xpToEarn,
-            streak: streak
-          });
-
-        if (checkinError) {
-          console.error('Ошибка при создании чекина:', checkinError);
-          throw checkinError;
-        }
-
-        userPoints = userDb.points + xpToEarn;
-        
         // Обновляем интерфейс
-        document.getElementById('points-display').textContent = `🎯 Очки: ${userPoints}`;
+        document.getElementById('points-display').textContent = `🎯 Очки: ${userDb.points + xpToEarn}`;
+        checkinStatus.textContent = '✅ Награда получена!';
         document.getElementById('xp-earned').textContent = `+${xpToEarn} XP`;
-        document.getElementById('checkin-status').textContent = '✅ Награда получена!';
-        document.getElementById('checkin-btn').disabled = true;
-
-        // Обновляем прогресс-бар
-        const progressBar = document.getElementById('streak-progress');
-        const progress = ((streak % 30) / 30) * 100;
-        progressBar.style.width = `${progress}%`;
 
         // Перезагружаем данные
         await loadCheckinData();
@@ -908,7 +882,8 @@
         console.log('Чекин успешно завершен');
       } catch (error) {
         console.error('Ошибка при чекине:', error);
-        document.getElementById('checkin-status').textContent = '❌ Ошибка при получении награды';
+        checkinStatus.textContent = '❗ Ошибка при получении награды';
+        checkinBtn.disabled = false;
       }
     }
 
