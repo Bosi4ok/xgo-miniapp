@@ -172,6 +172,22 @@
     }
 
 
+    .referral-code {
+      font-size: 32px;
+      word-break: break-all;
+      background: rgba(255, 60, 60, 0.1);
+      padding: 20px;
+      border-radius: 15px;
+      margin: 20px 0;
+      border: 2px solid rgba(255, 60, 60, 0.3);
+      font-family: monospace;
+      color: #ff3c3c;
+      text-shadow: 0 0 15px rgba(255, 60, 60, 0.4);
+      letter-spacing: 2px;
+      font-weight: bold;
+      text-align: center;
+    }
+
     .modal-overlay {
       display: none;
       position: fixed;
@@ -409,11 +425,6 @@
         margin: 5px auto;
       }
 
-      .referral-code {
-        font-size: 20px;
-        word-break: break-all;
-      }
-
       h2 {
         font-size: 20px;
         margin: 10px 0;
@@ -567,48 +578,35 @@
   <div class="modal-overlay" id="modal-overlay"></div>
 
   <!-- Модальное окно чекина -->
-  <div id="checkin-modal" class="modal">
-    <span class="close" onclick="closeCheckinModal()">&times;</span>
-    <h2>Daily Check-in</h2>
-    
-    <!-- Streak -->
-    <div id="current-streak" class="streak-counter">🔥 Current streak: 0 days</div>
-    
-    <!-- Next reward -->
-    <div class="next-reward-container">
-      <div class="next-reward-label">Next reward in:</div>
-      <div id="next-reward" class="next-reward-value">+10 XP</div>
-    </div>
-    
-    <!-- Кнопка и статус -->
-    <div class="checkin-controls">
-      <button id="checkin-btn" onclick="performCheckin()" class="btn checkin-button">Get Reward</button>
-      <div id="checkin-status" class="checkin-status"></div>
-      <div id="xp-earned" class="xp-earned"></div>
+  <div class="checkin-modal" id="checkin-modal">
+    <div class="modal-content">
+      <button class="close" onclick="closeCheckinModal()">&times;</button>
+      <h2>Ежедневный чекин</h2>
+      <div class="streak-counter" id="streak-text">Текущий стрик: 1 дней</div>
+      <div class="next-reward-container">
+        <div class="next-reward-label">Следующая награда:</div>
+        <div class="next-reward-value" id="xp-earned">+10 XP</div>
+      </div>
+      <button class="checkin-button" onclick="performCheckin()">ПОЛУЧИТЬ НАГРАДУ</button>
+      <div class="checkin-status" id="checkin-status"></div>
     </div>
   </div>
   <div class="referral-modal" id="referral-modal">
     <span class="close" onclick="closeReferralModal()">&times;</span>
-    <h2>Referral System</h2>
-    
-    <!-- Секция для владельца реферального кода -->
-    <div id="referral-owner-section">
-      <p>Your referral code:</p>
-      <div class="referral-code" id="referral-code"></div>
-      <button class="btn" onclick="copyReferralCode()">Copy Code</button>
+    <div class="modal-content">
+      <button class="close" onclick="closeReferralModal()">&times;</button>
+      <h2>Реферальная система</h2>
+      <p>Ваш реферальный код:</p>
+      <div class="referral-code" id="referral-code">XXXX-XXXX</div>
+      <button class="btn" onclick="copyReferralCode()">Скопировать код</button>
       <div id="referral-status"></div>
-      <div class="referral-stats" id="referral-stats">
-        <p>Number of referrals: <span id="referral-count">0</span></p>
-      </div>
-    </div>
 
-    <!-- Секция для ввода реферального кода -->
-    <div id="referral-input-section">
-      <p>Enter referral code:</p>
-      <input type="text" id="referral-input" class="referral-input" placeholder="Enter code" maxlength="9">
-      <button class="btn" onclick="applyReferralCode()">Apply Code</button>
-      <div id="referral-input-status"></div>
-    </div>
+      <div class="referral-stats">
+        <p>Количество рефералов: 0</p>
+        <input type="text" class="referral-input" id="referral-input" placeholder="Введите код">
+        <button class="btn" onclick="applyReferralCode()">Применить</button>
+        <div id="referral-input-status"></div>
+      </div>
   </div>
 
   <script>
@@ -936,38 +934,36 @@
         return;
       }
 
-      // Блокируем кнопку на время выполнения
-      const checkinBtn = document.getElementById('checkin-btn');
+      // Блокируем кнопку
+      const checkinBtn = document.querySelector('.checkin-button');
       const checkinStatus = document.getElementById('checkin-status');
       checkinBtn.disabled = true;
-      
+
       try {
-        console.log('Начинаем чекин для пользователя:', userData.id);
-        
-        // Проверяем последний чекин
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
-        const { data: userDb, error: userError } = await supabaseClient
+
+        // Проверяем, не делал ли пользователь чекин сегодня
+        const { data: userDb, error: fetchError } = await supabaseClient
           .from('users')
           .select('*')
           .eq('telegram_id', String(userData.id))
           .single();
 
-        if (userError) throw userError;
+        if (fetchError) throw fetchError;
 
         if (userDb.last_checkin) {
           const lastCheckin = new Date(userDb.last_checkin);
           if (lastCheckin.getFullYear() === today.getFullYear() &&
               lastCheckin.getMonth() === today.getMonth() &&
               lastCheckin.getDate() === today.getDate()) {
-            checkinStatus.textContent = '✅ Чекин уже выполнен';
+            checkinStatus.textContent = '❌ Вы уже получили награду сегодня';
             checkinBtn.disabled = true;
             return;
           }
         }
 
-        // Рассчитываем стрик
+        // Вычисляем стрик
         let streak = userDb.current_streak || 0;
         const lastCheckin = userDb.last_checkin ? new Date(userDb.last_checkin) : null;
         const yesterday = new Date(today);
@@ -1002,6 +998,7 @@
         document.getElementById('points-display-main').textContent = `${userDb.points + xpToEarn} XP`;
         checkinStatus.textContent = '✅ Награда получена!';
         document.getElementById('xp-earned').textContent = `+${xpToEarn} XP`;
+        document.getElementById('streak-text').textContent = `Текущий стрик: ${streak} дней`;
 
         // Перезагружаем данные
         await loadCheckinData();
@@ -1029,8 +1026,20 @@
       return 20;                  // Максимальная базовая награда
     }
 
+    function openCheckinModal() {
+      document.getElementById('checkin-modal').style.display = 'block';
+      document.getElementById('modal-overlay').style.display = 'block';
+      document.getElementById('streak-text').textContent = `Текущий стрик: 1 дней`;
+      document.querySelector('.next-reward-label').textContent = 'Следующая награда:';
+    }
+
     // Закрытие при клике вне модального окна
-    document.getElementById('modal-overlay').addEventListener('click', closeReferralModal);
+    document.getElementById('modal-overlay').addEventListener('click', (e) => {
+      if (e.target.id === 'modal-overlay') {
+        closeCheckinModal();
+        closeReferralModal();
+      }
+    });
 
     // Копирование реферального кода
     window.copyReferralCode = function() {
@@ -1050,7 +1059,25 @@
       document.getElementById('checkin-btn').addEventListener('click', openCheckinModal);
       document.getElementById('referral-btn').addEventListener('click', openReferralModal);
       document.getElementById('profile-btn').addEventListener('click', openProfileModal);
+
+      // Добавляем обработчик клика на оверлей для закрытия модальных окон
+      document.getElementById('modal-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-overlay') {
+          closeCheckinModal();
+          closeReferralModal();
+        }
+      });
     });
+
+    function closeCheckinModal() {
+      document.getElementById('checkin-modal').style.display = 'none';
+      document.getElementById('modal-overlay').style.display = 'none';
+    }
+
+    function closeReferralModal() {
+      document.getElementById('referral-modal').style.display = 'none';
+      document.getElementById('modal-overlay').style.display = 'none';
+    }
 
     function openProfileModal() {
       // Здесь будет логика открытия профиля
