@@ -72,6 +72,12 @@
       width: 100%;
       gap: 20px;
     }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 60, 60, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 60, 60, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 60, 60, 0); }
+    }
+
     .user-info {
       position: absolute;
       top: 20px;
@@ -81,7 +87,7 @@
       gap: 10px;
       font-size: 16px;
       color: #ff3c3c;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.8);
       padding: 8px;
       border-radius: 50px;
       cursor: pointer;
@@ -89,12 +95,14 @@
       max-width: 44px;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
       transition: all 0.3s ease;
+      border: 2px solid #ff3c3c;
+      animation: pulse 2s infinite;
     }
 
     .user-info:hover {
       max-width: 300px;
-      background: rgba(0, 0, 0, 0.7);
-      box-shadow: 0 4px 8px rgba(255, 60, 60, 0.2);
+      background: rgba(0, 0, 0, 0.9);
+      box-shadow: 0 0 15px rgba(255, 60, 60, 0.5);
     }
 
     .user-icon {
@@ -104,13 +112,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      color: #ff3c3c;
     }
 
     .user-name {
       white-space: nowrap;
       opacity: 0;
       transform: translateX(-20px);
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: #ff3c3c;
     }
 
     .user-info:hover .user-name {
