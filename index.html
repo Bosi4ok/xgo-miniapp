@@ -84,9 +84,10 @@
       background: linear-gradient(to top, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.8));
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      padding: 12px 16px;
+      padding: 12px 8px;
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start;
+      gap: 16px;
       align-items: center;
       border-top: 1px solid rgba(255, 60, 60, 0.2);
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
@@ -577,34 +578,33 @@
   <!-- Модальное окно реферальной системы -->
   <div class="modal-overlay" id="modal-overlay"></div>
 
-  <!-- Модальное окно чекина -->
+  <!-- Daily Check-in Modal -->
   <div class="checkin-modal" id="checkin-modal">
     <div class="modal-content">
       <button class="close" onclick="closeCheckinModal()">&times;</button>
-      <h2>Ежедневный чекин</h2>
-      <div class="streak-counter" id="streak-text">Текущий стрик: 1 дней</div>
+      <h2>Daily Check-in</h2>
+      <div class="streak-counter" id="streak-text">Current streak: 1 day</div>
       <div class="next-reward-container">
-        <div class="next-reward-label">Следующая награда:</div>
+        <div class="next-reward-label">Next reward:</div>
         <div class="next-reward-value" id="xp-earned">+10 XP</div>
       </div>
-      <button class="checkin-button" onclick="performCheckin()">ПОЛУЧИТЬ НАГРАДУ</button>
+      <button class="checkin-button" onclick="performCheckin()">GET REWARD</button>
       <div class="checkin-status" id="checkin-status"></div>
     </div>
   </div>
   <div class="referral-modal" id="referral-modal">
-    <span class="close" onclick="closeReferralModal()">&times;</span>
     <div class="modal-content">
       <button class="close" onclick="closeReferralModal()">&times;</button>
-      <h2>Реферальная система</h2>
-      <p>Ваш реферальный код:</p>
+      <h2>Referral System</h2>
+      <p>Your referral code:</p>
       <div class="referral-code" id="referral-code">XXXX-XXXX</div>
-      <button class="btn" onclick="copyReferralCode()">Скопировать код</button>
+      <button class="btn" onclick="copyReferralCode()">Copy Code</button>
       <div id="referral-status"></div>
 
       <div class="referral-stats">
-        <p>Количество рефералов: 0</p>
-        <input type="text" class="referral-input" id="referral-input" placeholder="Введите код">
-        <button class="btn" onclick="applyReferralCode()">Применить</button>
+        <p>Number of referrals: 0</p>
+        <input type="text" class="referral-input" id="referral-input" placeholder="Enter code">
+        <button class="btn" onclick="applyReferralCode()">Apply</button>
         <div id="referral-input-status"></div>
       </div>
   </div>
@@ -957,7 +957,7 @@
           if (lastCheckin.getFullYear() === today.getFullYear() &&
               lastCheckin.getMonth() === today.getMonth() &&
               lastCheckin.getDate() === today.getDate()) {
-            checkinStatus.textContent = '❌ Вы уже получили награду сегодня';
+            checkinStatus.textContent = '❌ You have already claimed your reward today';
             checkinBtn.disabled = true;
             return;
           }
@@ -996,9 +996,9 @@
 
         // Обновляем интерфейс
         document.getElementById('points-display-main').textContent = `${userDb.points + xpToEarn} XP`;
-        checkinStatus.textContent = '✅ Награда получена!';
+        checkinStatus.textContent = '✅ Reward claimed!';
         document.getElementById('xp-earned').textContent = `+${xpToEarn} XP`;
-        document.getElementById('streak-text').textContent = `Текущий стрик: ${streak} дней`;
+        document.getElementById('streak-text').textContent = `Current streak: ${streak} day${streak !== 1 ? 's' : ''}`;
 
         // Перезагружаем данные
         await loadCheckinData();
@@ -1006,7 +1006,7 @@
         console.log('Чекин успешно завершен');
       } catch (error) {
         console.error('Ошибка при чекине:', error);
-        checkinStatus.textContent = '❗ Ошибка при получении награды';
+        checkinStatus.textContent = '❗ Error claiming reward';
         checkinBtn.disabled = false;
       }
     }
