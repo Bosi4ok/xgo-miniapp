@@ -825,7 +825,10 @@
       try {
         console.log('Начинаем чекин для пользователя:', userData.id);
         
-        // Получаем текущие данные пользователя
+        // Проверяем последний чекин
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
         const { data: userDb, error: userError } = await supabaseClient
           .from('users')
           .select('*')
@@ -834,20 +837,28 @@
 
         if (userError) throw userError;
 
-        // Рассчитываем стрик и очки
+        if (userDb.last_checkin) {
+          const lastCheckin = new Date(userDb.last_checkin);
+          if (lastCheckin.getFullYear() === today.getFullYear() &&
+              lastCheckin.getMonth() === today.getMonth() &&
+              lastCheckin.getDate() === today.getDate()) {
+            checkinStatus.textContent = '✅ Чекин уже выполнен';
+            checkinBtn.disabled = true;
+            return;
+          }
+        }
+
+        // Рассчитываем стрик
         let streak = userDb.current_streak || 0;
-        const lastCheckin = userDb.last_checkin;
-        const now = new Date();
-        const yesterday = new Date(now);
+        const lastCheckin = userDb.last_checkin ? new Date(userDb.last_checkin) : null;
+        const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
 
-        if (lastCheckin) {
-          const lastCheckinDate = new Date(lastCheckin);
-          if (lastCheckinDate.toDateString() === yesterday.toDateString()) {
-            streak++;
-          } else if (lastCheckinDate.toDateString() !== now.toDateString()) {
-            streak = 1;
-          }
+        if (lastCheckin && 
+            lastCheckin.getFullYear() === yesterday.getFullYear() &&
+            lastCheckin.getMonth() === yesterday.getMonth() &&
+            lastCheckin.getDate() === yesterday.getDate()) {
+          streak++;
         } else {
           streak = 1;
         }
@@ -855,21 +866,18 @@
         const xpToEarn = calculateXP(streak);
         const maxStreak = Math.max(streak, userDb.max_streak || 0);
 
-        // Выполняем чекин через хранимую процедуру
-        const { data: result, error: txError } = await supabaseClient.rpc('perform_checkin', {
-          user_telegram_id: String(userData.id),
-          xp_to_earn: xpToEarn,
-          new_streak: streak,
-          new_max_streak: maxStreak,
-          checkin_time: now.toISOString()
-        });
+        // Обновляем данные пользователя
+        const { error: updateError } = await supabaseClient
+          .from('users')
+          .update({
+            points: userDb.points + xpToEarn,
+            current_streak: streak,
+            max_streak: maxStreak,
+            last_checkin: now.toISOString()
+          })
+          .eq('telegram_id', String(userData.id));
 
-        if (txError) throw txError;
-
-        if (!result.success) {
-          checkinStatus.textContent = '✅ Чекин уже выполнен';
-          return;
-        }
+        if (updateError) throw updateError;
 
         // Обновляем интерфейс
         document.getElementById('points-display').textContent = `🎯 Очки: ${userDb.points + xpToEarn}`;
