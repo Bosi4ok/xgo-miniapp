@@ -214,10 +214,13 @@
   </div>
 
   <script>
-    const supabase = supabase.createClient(
+    // Инициализация Supabase
+    const supabaseClient = window.supabase.createClient(
       'https://msstnczyshmnhjcnzjlg.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zc3RuY3p5c2htbmhqY256amxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMjI0MjUsImV4cCI6MjA2MDg5ODQyNX0.9Oa_ghFyX9qVquxokvLMSNRfQq7FzA6mQEvlsM2ZyRc'
     );
+    console.log('Supabase initialized');
+    console.log('Starting app initialization...');
 
     const tg = window.Telegram?.WebApp;
     let userData = null;
@@ -262,7 +265,7 @@
         console.log('Начало инициализации пользователя:', userData.id);
         
         // Проверяем существование пользователя
-        let { data: user, error: selectError } = await supabase
+        let { data: user, error: selectError } = await supabaseClient
           .from('users')
           .select('*')
           .eq('telegram_id', userData.id)
@@ -276,7 +279,7 @@
           console.log('Создаем нового пользователя');
           // Создаем нового пользователя
           referralCode = generateReferralCode();
-          const { data, error: insertError } = await supabase
+          const { data, error: insertError } = await supabaseClient
             .from('users')
             .insert([
               {
@@ -355,7 +358,7 @@
         }
 
         // Обновляем данные пользователя
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseClient
           .from('users')
           .update({
             referred_by: referrer.telegram_id,
@@ -366,7 +369,7 @@
         if (updateError) throw updateError;
 
         // Начисляем бонус рефереру
-        const { error: referrerError } = await supabase
+        const { error: referrerError } = await supabaseClient
           .from('users')
           .update({ points: supabase.sql`points + 100` }) // Бонус за приглашение
           .eq('telegram_id', referrer.telegram_id);
@@ -389,7 +392,7 @@
     // Обновление статистики рефералов
     async function updateReferralStats() {
       try {
-        const { count } = await supabase
+        const { count } = await supabaseClient
           .from('users')
           .select('*', { count: 'exact' })
           .eq('referred_by', userData.id);
@@ -418,7 +421,7 @@
       }
 
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
           .from('users')
           .update({ points: userPoints + 10 })
           .eq('telegram_id', userData.id)
