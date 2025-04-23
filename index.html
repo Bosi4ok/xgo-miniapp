@@ -373,47 +373,55 @@
         console.log('Начало инициализации пользователя:', userData.id);
         
         // Проверяем существование пользователя
-        let { data: user, error: selectError } = await supabaseClient
+        const { data: user, error: selectError } = await supabaseClient
           .from('users')
           .select('*')
-          .eq('telegram_id', userData.id)
+          .eq('telegram_id', String(userData.id))
           .single();
 
         if (selectError && selectError.code !== 'PGRST116') {
           throw selectError;
         }
 
+        let finalUser = user;
+
         if (!user) {
           console.log('Создаем нового пользователя');
-          // Создаем нового пользователя
-          referralCode = generateReferralCode();
-          const { data, error: insertError } = await supabaseClient
+          
+          // Генерируем реферальный код
+          const referralCode = await generateReferralCode();
+          
+          // Создаем пользователя
+          const { data: newUser, error: insertError } = await supabaseClient
             .from('users')
-            .insert([
-              {
-                telegram_id: userData.id,
-                username: userData.username,
-                referral_code: referralCode,
-                points: 0
-              }
-            ])
+            .insert({
+              telegram_id: String(userData.id),
+              username: userData.username || null,
+              first_name: userData.first_name || null,
+              last_name: userData.last_name || null,
+              points: 0,
+              referral_code: referralCode
+            })
             .select()
             .single();
 
           if (insertError) throw insertError;
-          user = data;
-          console.log('Новый пользователь создан:', user);
-        } else {
-          console.log('Пользователь найден:', user);
+          finalUser = newUser;
         }
 
-        referralCode = user.referral_code;
-        userPoints = user.points;
-        document.getElementById('referral-code').textContent = referralCode;
+        // Сохраняем данные пользователя
+        userPoints = finalUser.points;
+        referralCode = finalUser.referral_code;
+
+        // Обновляем интерфейс
         document.getElementById('points-display').textContent = `🎯 Очки: ${userPoints}`;
-        
+        document.getElementById('referral-code').textContent = referralCode;
+        document.getElementById('user-info').textContent = `👤 ${userData.first_name || 'Player'}`;
+
         // Обновляем статистику рефералов
         await updateReferralStats();
+
+        console.log('Инициализация пользователя завершена');
       } catch (error) {
         console.error('Ошибка при инициализации пользователя:', error);
         document.getElementById('user-info').innerHTML += '<br>⚠️ Ошибка БД';
@@ -667,11 +675,16 @@
         }
 
         // Получаем ID пользователя из базы
-        const { data: userDb } = await supabaseClient
+        const { data: userDb, error: userError } = await supabaseClient
           .from('users')
           .select('id, current_streak, points')
-          .eq('telegram_id', userData.id)
+          .eq('telegram_id', String(userData.id))
           .single();
+
+        if (userError) {
+          console.error('Ошибка при получении пользователя:', userError);
+          throw userError;
+        }
 
         if (!userDb || !userDb.id) {
           throw new Error('Пользователь не найден в базе');
@@ -687,6 +700,21 @@
           xp_earned: xpToEarn
         });
 
+        // Обновляем очки и стрик пользователя
+        const { error: updateError } = await supabaseClient
+          .from('users')
+          .update({
+            points: userDb.points + xpToEarn,
+            current_streak: streak,
+            max_streak: Math.max(streak, userDb.max_streak || 0)
+          })
+          .eq('id', userDb.id);
+
+        if (updateError) {
+          console.error('Ошибка при обновлении пользователя:', updateError);
+          throw updateError;
+        }
+
         // Создаем запись о чекине
         const { error: checkinError } = await supabaseClient
           .from('daily_checkins')
@@ -701,7 +729,7 @@
         }
 
         localStorage.setItem('lastCheckin', now.toString());
-        userPoints = (userDb.points || 0) + xpToEarn;
+        userPoints = userDb.points + xpToEarn;
         
         // Обновляем интерфейс
         document.getElementById('points-display').textContent = `🎯 Очки: ${userPoints}`;
