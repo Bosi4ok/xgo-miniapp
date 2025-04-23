@@ -94,60 +94,36 @@
       z-index: 100;
     }
 
+    :root {
+      --clr-main: #ff2a2a;
+      --glow-blur: 12px;
+    }
+
     .nav-icon {
       position: relative;
-      width: 40px;
-      height: 40px;
+      width: 72px;
+      height: 72px;
       display: flex;
       align-items: center;
       justify-content: center;
+      filter: drop-shadow(0 0 var(--glow-blur) var(--clr-main));
+      transition: transform .15s, filter .15s;
     }
 
-    .nav-icon::before,
-    .nav-icon::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border: 2px solid #ff3c3c;
-      border-radius: 12px;
-      animation: borderAnimation 2s linear infinite;
-      filter: drop-shadow(0 0 5px rgba(255, 60, 60, 0.5));
-    }
-
-    .nav-icon::after {
-      animation-delay: -1s;
-    }
-
-    @keyframes borderAnimation {
-      0% {
-        transform: scale(0.8);
-        opacity: 1;
-      }
-      100% {
-        transform: scale(1.1);
-        opacity: 0;
-      }
+    .nav-item:hover .nav-icon,
+    .nav-item.active .nav-icon {
+      transform: translateY(-2px) scale(1.04);
+      filter: drop-shadow(0 0 calc(var(--glow-blur) * 1.5) var(--clr-main));
     }
 
     .nav-icon svg {
-      width: 24px;
-      height: 24px;
+      width: 100%;
+      height: 100%;
       fill: none;
-      stroke: #ff3c3c;
-      stroke-width: 2;
-      filter: drop-shadow(0 0 5px #ff3c3c);
-      z-index: 1;
-    }
-
-    .nav-item:hover .nav-icon svg,
-    .nav-item.active .nav-icon svg {
-      filter: drop-shadow(0 0 8px #ff3c3c);
-    }
-
-    .nav-item.active .nav-icon::before,
-    .nav-item.active .nav-icon::after {
-      border-color: #ff3c3c;
-      filter: drop-shadow(0 0 8px rgba(255, 60, 60, 0.8));
+      stroke: var(--clr-main);
+      stroke-width: 24;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .nav-item {
@@ -716,37 +692,56 @@
   <nav class="bottom-nav">
     <a href="#" class="nav-item active" id="home-nav">
       <div class="nav-icon">
-        <svg viewBox="0 0 24 24">
-          <rect x="2" y="2" width="20" height="20" rx="6"/>
-          <path d="M12 7v10M7 12h10"/>
+        <svg viewBox="0 0 512 512">
+          <defs>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="12" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <rect x="64" y="64" width="384" height="384" rx="64"/>
+          <rect x="128" y="128" width="256" height="256" rx="48"/>
+          <polyline points="160,256 256,160 352,256"/>
+          <rect x="192" y="256" width="128" height="128"/>
+          <rect x="224" y="304" width="64" height="80"/>
         </svg>
       </div>
       <span class="nav-label">Home</span>
     </a>
     <a href="#" class="nav-item" onclick="openCheckinModal()">
       <div class="nav-icon">
-        <svg viewBox="0 0 24 24">
-          <rect x="2" y="2" width="20" height="20" rx="6"/>
-          <path d="M8 12h8M12 8v8"/>
+        <svg viewBox="0 0 512 512">
+          <use href="#glow"/>
+          <rect x="64" y="64" width="384" height="384" rx="64"/>
+          <rect x="128" y="128" width="256" height="256" rx="48"/>
+          <line x1="256" y1="160" x2="256" y2="352"/>
+          <line x1="160" y1="256" x2="352" y2="256"/>
         </svg>
       </div>
       <span class="nav-label">Check-in</span>
     </a>
     <a href="#" class="nav-item" onclick="openTasksModal()">
       <div class="nav-icon">
-        <svg viewBox="0 0 24 24">
-          <rect x="2" y="2" width="20" height="20" rx="6"/>
-          <path d="M8 12h8M12 8v8"/>
+        <svg viewBox="0 0 512 512">
+          <use href="#glow"/>
+          <rect x="64" y="64" width="384" height="384" rx="64"/>
+          <rect x="128" y="128" width="256" height="256" rx="48"/>
+          <polyline points="160,256 224,320 352,192"/>
         </svg>
       </div>
       <span class="nav-label">Tasks</span>
     </a>
     <a href="#" class="nav-item" onclick="openReferralModal()">
       <div class="nav-icon">
-        <svg viewBox="0 0 24 24">
-          <rect x="2" y="2" width="20" height="20" rx="6"/>
-          <circle cx="12" cy="10" r="3"/>
-          <path d="M12 13c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4"/>
+        <svg viewBox="0 0 512 512">
+          <use href="#glow"/>
+          <rect x="64" y="64" width="384" height="384" rx="64"/>
+          <rect x="128" y="128" width="256" height="256" rx="48"/>
+          <circle cx="256" cy="224" r="48"/>
+          <path d="M160,352 C160,320 208,288 256,288 C304,288 352,320 352,352"/>
         </svg>
       </div>
       <span class="nav-label">Referral</span>
