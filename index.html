@@ -5,14 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XGO Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script type="module" src="supabase-config.js"></script>
   <style>
     @font-face {
       font-family: 'Brinnan';
       src: url('Brinnan-Bold.otf') format('opentype');
       font-weight: bold;
     }
-
     html, body {
       margin: 0;
       padding: 0;
@@ -22,7 +21,6 @@
       background-color: #000;
       color: white;
     }
-
     .background-video {
       position: fixed;
       top: 0;
@@ -32,20 +30,21 @@
       object-fit: cover;
       z-index: 0;
     }
-
     .screen {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      display: flex;
+      display: none;
       justify-content: center;
       align-items: center;
       flex-direction: column;
       z-index: 1;
     }
-
+    .active {
+      display: flex !important;
+    }
     .btn {
       padding: 12px 28px;
       font-size: 20px;
@@ -59,14 +58,20 @@
       box-shadow: 0 0 4px #ff3c3c, 0 0 8px #ff3c3c;
       transition: all 0.2s ease-in-out;
       color: white;
-      margin-top: 20px;
     }
-
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
-
+    .button-container {
+      position: absolute;
+      bottom: 9%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      gap: 20px;
+    }
     .user-info {
       position: absolute;
       top: 20px;
@@ -75,75 +80,342 @@
       font-size: 14px;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     }
+    .referral-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      border-radius: 15px;
+      border: 2px solid #ff3c3c;
+      box-shadow: 0 0 10px #ff3c3c;
+      z-index: 2;
+      text-align: center;
+      min-width: 300px;
+    }
+    .referral-code {
+      font-size: 24px;
+      margin: 15px 0;
+      padding: 10px;
+      background: rgba(255, 60, 60, 0.1);
+      border-radius: 8px;
+    }
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .points-display {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    .referral-input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 2px solid #ff3c3c;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      font-family: 'Brinnan', monospace;
+      font-size: 16px;
+      text-align: center;
+      outline: none;
+    }
+    .referral-input:focus {
+      box-shadow: 0 0 4px #ff3c3c;
+    }
+    .referral-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    #referral-input-status, #referral-status {
+      margin-top: 10px;
+      min-height: 20px;
+    }
+    .referral-stats {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 60, 60, 0.3);
+    }
   </style>
 </head>
 <body>
-  <video muted loop playsinline autoplay class="background-video">
+  <video muted loop playsinline autoplay class="background-video" id="start-bg">
     <source src="стиль1.mp4" type="video/mp4" />
   </video>
-
-  <div class="user-info" id="user-info">Загрузка...</div>
-
-  <div class="screen">
-    <button class="btn" id="checkin-btn" disabled>CHECK IN</button>
-    <button class="btn" id="referral-btn">REFERRAL</button>
+  <div class="user-info" id="user-info"></div>
+  
+  <!-- Стартовый экран -->
+  <div class="screen active" id="start-screen">
+    <div class="button-container">
+      <button class="btn" id="checkin-btn" disabled>CHECK IN</button>
+      <button class="btn" id="referral-btn">REFERRAL</button>
+      <div class="points-display" id="points-display"></div>
+    </div>
   </div>
 
-  <script>
-    const supabaseUrl = 'https://msstnczyshmnhjcnzjlg.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zc3RuY3p5c2htbmhqY256amxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMjI0MjUsImV4cCI6MjA2MDg5ODQyNX0.9Oa_ghFyX9qVquxokvLMSNRfQq7FzA6mQEvlsM2ZyRc';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+  <!-- Модальное окно реферальной системы -->
+  <div class="referral-modal" id="referral-modal">
+    <button class="close-modal" onclick="closeReferralModal()">×</button>
+    <h2>Реферальная система</h2>
+    
+    <!-- Секция для владельца реферального кода -->
+    <div id="referral-owner-section">
+      <p>Ваш реферальный код:</p>
+      <div class="referral-code" id="referral-code"></div>
+      <button class="btn" onclick="copyReferralCode()">Скопировать код</button>
+      <div id="referral-status"></div>
+      <div class="referral-stats" id="referral-stats">
+        <p>Количество рефералов: <span id="referral-count">0</span></p>
+      </div>
+    </div>
+
+    <!-- Секция для ввода реферального кода -->
+    <div id="referral-input-section">
+      <p>Ввести реферальный код:</p>
+      <input type="text" id="referral-input" class="referral-input" placeholder="Введите код" maxlength="8">
+      <button class="btn" onclick="applyReferralCode()">Применить код</button>
+      <div id="referral-input-status"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from './supabase-config.js';
+
     const tg = window.Telegram?.WebApp;
-    const checkinBtn = document.getElementById('checkin-btn');
-    const userInfoDiv = document.getElementById('user-info');
+    let userData = null;
+    let userPoints = 0;
+    let referralCode = null;
 
-    let user = null;
+    // Инициализация Web App
+    async function initTelegram() {
+      if (tg) {
+        tg.expand();
+        tg.enableClosingConfirmation();
+        userData = tg.initDataUnsafe?.user;
+        
+        document.getElementById('user-info').innerHTML = userData 
+          ? `👤 ${userData.first_name || 'User'}<br>@${userData.username || 'no_username'}` 
+          : '⚠️ Откройте через Telegram';
+        
+        document.getElementById('checkin-btn').disabled = !userData;
 
-    async function initApp() {
-      tg?.expand();
-      user = tg?.initDataUnsafe?.user;
-
-      if (!user) {
-        userInfoDiv.innerText = '⚠️ Telegram user не определён';
-        return;
-      }
-
-      userInfoDiv.innerHTML = `👤 ${user.first_name || 'User'}<br>@${user.username || 'no_username'}`;
-      checkinBtn.disabled = false;
-
-      // 🔄 Пробуем получить или создать пользователя в Supabase
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (!data && !error) {
-        await supabase.from('users').insert([{
-          id: user.id,
-          username: user.username,
-          first_name: user.first_name,
-          xp: 0,
-          checkin_streak: 0,
-          last_checkin: null
-        }]);
-        console.log('🆕 Новый пользователь добавлен');
-      } else if (error) {
-        console.error('❌ Ошибка Supabase:', error);
-      } else {
-        console.log('✅ Пользователь найден в базе:', data);
+        if (userData) {
+          await initUser();
+          updatePointsDisplay();
+        }
       }
     }
 
-    checkinBtn.addEventListener('click', () => {
-      tg?.showAlert('✅ Чекин выполнен!');
+    // Инициализация пользователя в Supabase
+    async function initUser() {
+      if (!userData) return;
+
+      try {
+        // Проверяем существование пользователя
+        let { data: user } = await supabase
+          .from('users')
+          .select('*')
+          .eq('telegram_id', userData.id)
+          .single();
+
+        if (!user) {
+          // Создаем нового пользователя
+          referralCode = generateReferralCode();
+          const { data, error } = await supabase
+            .from('users')
+            .insert([
+              {
+                telegram_id: userData.id,
+                username: userData.username,
+                referral_code: referralCode,
+                points: 0
+              }
+            ])
+            .select()
+            .single();
+
+          if (error) throw error;
+          user = data;
+        }
+
+        referralCode = user.referral_code;
+        userPoints = user.points;
+        document.getElementById('referral-code').textContent = referralCode;
+      } catch (error) {
+        console.error('Error initializing user:', error);
+        tg.showAlert('Ошибка при инициализации пользователя');
+      }
+    }
+
+    // Генерация реферального кода
+    function generateReferralCode() {
+      return 'XGO' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    // Применение реферального кода
+    async function applyReferralCode() {
+      const inputCode = document.getElementById('referral-input').value.trim().toUpperCase();
+      const statusElement = document.getElementById('referral-input-status');
+
+      if (!inputCode) {
+        statusElement.textContent = '⚠️ Введите код';
+        return;
+      }
+
+      if (inputCode === referralCode) {
+        statusElement.textContent = '⚠️ Нельзя использовать свой код';
+        return;
+      }
+
+      try {
+        // Проверяем существование кода
+        const { data: referrer } = await supabase
+          .from('users')
+          .select('telegram_id')
+          .eq('referral_code', inputCode)
+          .single();
+
+        if (!referrer) {
+          statusElement.textContent = '❌ Код не найден';
+          return;
+        }
+
+        // Проверяем, не использовал ли пользователь уже реферальный код
+        const { data: currentUser } = await supabase
+          .from('users')
+          .select('referred_by')
+          .eq('telegram_id', userData.id)
+          .single();
+
+        if (currentUser.referred_by) {
+          statusElement.textContent = '⚠️ Вы уже использовали реферальный код';
+          return;
+        }
+
+        // Обновляем данные пользователя
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({
+            referred_by: referrer.telegram_id,
+            points: userPoints + 50 // Бонус за использование кода
+          })
+          .eq('telegram_id', userData.id);
+
+        if (updateError) throw updateError;
+
+        // Начисляем бонус рефереру
+        const { error: referrerError } = await supabase
+          .from('users')
+          .update({ points: supabase.sql`points + 100` }) // Бонус за приглашение
+          .eq('telegram_id', referrer.telegram_id);
+
+        if (referrerError) throw referrerError;
+
+        userPoints += 50;
+        updatePointsDisplay();
+        statusElement.textContent = '✅ Код успешно применён! +50 очков';
+        document.getElementById('referral-input').disabled = true;
+
+        // Обновляем статистику рефералов
+        await updateReferralStats();
+      } catch (error) {
+        console.error('Error applying referral code:', error);
+        statusElement.textContent = '❌ Ошибка при применении кода';
+      }
+    }
+
+    // Обновление статистики рефералов
+    async function updateReferralStats() {
+      try {
+        const { count } = await supabase
+          .from('users')
+          .select('*', { count: 'exact' })
+          .eq('referred_by', userData.id);
+
+        document.getElementById('referral-count').textContent = count || 0;
+      } catch (error) {
+        console.error('Error updating referral stats:', error);
+      }
+    }
+
+    // Обновление отображения очков
+    function updatePointsDisplay() {
+      document.getElementById('points-display').textContent = `🎯 Очки: ${userPoints}`;
+    }
+
+    // Логика ежедневного чекина
+    async function handleCheckin() {
+      if (!userData) return;
+      
+      const lastCheckin = localStorage.getItem('lastCheckin');
+      const now = Date.now();
+      
+      if (lastCheckin && (now - lastCheckin) < 86400000) {
+        tg.showAlert('Вы уже выполняли чекин сегодня!');
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .update({ points: userPoints + 10 })
+          .eq('telegram_id', userData.id)
+          .select();
+
+        if (error) throw error;
+
+        localStorage.setItem('lastCheckin', now);
+        userPoints += 10;
+        updatePointsDisplay();
+        tg.showAlert('✅ Чекин успешно выполнен! +10 очков');
+      } catch (error) {
+        console.error('Error during checkin:', error);
+        tg.showAlert('⚠️ Ошибка при выполнении чекина');
+      }
+    }
+
+    // Открытие модального окна реферальной системы
+    function openReferralModal() {
+      document.getElementById('referral-modal').style.display = 'block';
+    }
+
+    // Закрытие модального окна реферальной системы
+    window.closeReferralModal = function() {
+      document.getElementById('referral-modal').style.display = 'none';
+    }
+
+    // Копирование реферального кода
+    window.copyReferralCode = function() {
+      const code = document.getElementById('referral-code').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        document.getElementById('referral-status').textContent = '✅ Код скопирован!';
+        setTimeout(() => {
+          document.getElementById('referral-status').textContent = '';
+        }, 2000);
+      });
+    }
+
+    // Инициализация при загрузке
+    window.addEventListener('DOMContentLoaded', () => {
+      initTelegram();
+      
+      document.getElementById('checkin-btn').addEventListener('click', handleCheckin);
+      document.getElementById('referral-btn').addEventListener('click', openReferralModal);
     });
 
-    document.getElementById('referral-btn').addEventListener('click', () => {
-      tg?.showAlert('Рефералы в разработке!');
-    });
-
-    window.addEventListener('DOMContentLoaded', initApp);
+    // Адаптация под мобильные устройства
+    if (tg?.isExpanded) {
+      document.documentElement.style.fontSize = tg.viewportHeight / 50 + 'px';
+    }
   </script>
 </body>
 </html>
