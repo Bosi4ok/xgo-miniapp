@@ -279,15 +279,28 @@
       background: rgba(255, 60, 60, 0.1);
       border-radius: 8px;
     }
-    .close-modal {
+    .close {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 15px;
+      right: 15px;
       background: none;
       border: none;
-      color: white;
-      font-size: 20px;
+      color: rgba(255, 60, 60, 0.8);
+      font-size: 24px;
       cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+
+    .close:hover {
+      color: #ff3c3c;
+      transform: scale(1.1);
+      background: rgba(255, 60, 60, 0.1);
     }
     .points-display {
       font-size: 18px;
@@ -422,8 +435,8 @@
   <!-- Модальное окно чекина -->
   <div id="checkin-modal" class="modal">
     <div class="modal-content">
-      <span class="close" onclick="closeCheckinModal()">&times;</span>
       <h2>Ежедневный чекин</h2>
+      <span class="close" onclick="closeCheckinModal()">&times;</span>
       
       <!-- Стрик и прогресс -->
       <div id="current-streak" class="streak-counter">🔥 Текущий стрик: 0 дней</div>
@@ -435,17 +448,6 @@
       <div class="next-reward-container">
         <div class="next-reward-label">Следующая награда:</div>
         <div id="next-reward" class="next-reward-value">+10 XP</div>
-      </div>
-
-      <!-- Таблица наград -->
-      <div class="rewards-table-container">
-        <table id="rewards-table" class="rewards-table">
-          <tr>
-            <th>День</th>
-            <th>XP</th>
-            <th>Комментарий</th>
-          </tr>
-        </table>
       </div>
       
       <!-- Кнопка и статус -->
@@ -782,30 +784,18 @@
         const progress = ((streak % 30) / 30) * 100;
         progressBar.style.width = `${progress}%`;
 
-        // Создаем таблицу с наградами
-        const table = document.getElementById('rewards-table');
-        table.innerHTML = `
-          <tr>
-            <th>День</th>
-            <th>XP</th>
-            <th>Комментарий</th>
-          </tr>
-        `;
+        // Показываем следующую награду
+        document.getElementById('next-reward').textContent = `+${nextXP} XP`;
 
-        // Добавляем строки с наградами за следующие 7 дней
-        for (let i = 1; i <= 7; i++) {
-          const futureStreak = streak + i;
-          const xp = calculateXP(futureStreak);
-          const row = document.createElement('tr');
-          if (i === 0) row.classList.add('active');
-          
-          row.innerHTML = `
-            <td>${reward.day}</td>
-            <td>+${reward.xp}</td>
-            <td>${reward.comment}</td>
-          `;
-          
-          xpTable.appendChild(row);
+        // Разблокируем кнопку, если не было чекина сегодня
+        const lastCheckin = localStorage.getItem('lastCheckin');
+        const now = Date.now();
+        if (!lastCheckin || (now - parseInt(lastCheckin)) >= 86400000) {
+          document.getElementById('checkin-btn').disabled = false;
+          document.getElementById('checkin-status').textContent = '';
+        } else {
+          document.getElementById('checkin-btn').disabled = true;
+          document.getElementById('checkin-status').textContent = '✅ Чекин уже выполнен';
         }
       } catch (error) {
         console.error('Error loading checkin data:', error);
