@@ -93,6 +93,158 @@
       -webkit-backdrop-filter: blur(5px);
     }
 
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      text-align: center;
+      min-width: 300px;
+      max-width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      background: rgba(0, 0, 0, 0.95);
+      padding: 20px;
+      border-radius: 15px;
+      border: 2px solid #ff3c3c;
+      box-shadow: 0 0 20px rgba(255, 60, 60, 0.5);
+      animation: modalAppear 0.3s ease-out;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .streak-counter {
+      font-size: 24px;
+      text-align: center;
+      margin: 10px 0;
+      padding: 15px;
+      background: rgba(255, 60, 60, 0.1);
+      border-radius: 12px;
+      font-weight: bold;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .progress {
+      height: 100%;
+      background: linear-gradient(90deg, #ff3c3c, #ff6b6b);
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    .next-reward-container {
+      text-align: center;
+      margin: 15px 0;
+      padding: 15px;
+      background: rgba(255, 60, 60, 0.05);
+      border-radius: 12px;
+    }
+
+    .next-reward-label {
+      font-size: 16px;
+      color: #ff6b6b;
+      margin-bottom: 10px;
+    }
+
+    .next-reward-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #ff3c3c;
+      text-shadow: 0 0 10px rgba(255, 60, 60, 0.5);
+    }
+
+    .rewards-table-container {
+      max-height: 200px;
+      overflow-y: auto;
+      margin: 15px 0;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 5px;
+    }
+
+    .rewards-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .rewards-table th,
+    .rewards-table td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 60, 60, 0.2);
+    }
+
+    .rewards-table th {
+      background: rgba(255, 60, 60, 0.2);
+      color: #ff6b6b;
+      font-weight: bold;
+    }
+
+    .checkin-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .checkin-button {
+      background: linear-gradient(45deg, #ff3c3c, #ff6b6b);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 25px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 300px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .checkin-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(255, 60, 60, 0.5);
+    }
+
+    .checkin-button:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .checkin-status {
+      font-size: 16px;
+      text-align: center;
+      min-height: 24px;
+      padding: 10px;
+    }
+
+    .xp-earned {
+      font-size: 28px;
+      font-weight: bold;
+      color: #ff3c3c;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(255, 60, 60, 0.5);
+      padding: 10px;
+    }
+
     .referral-modal {
       display: none;
       position: fixed;
@@ -268,34 +420,41 @@
   <div class="modal-overlay" id="modal-overlay"></div>
 
   <!-- Модальное окно чекина -->
-  <div class="checkin-modal" id="checkin-modal">
-    <button class="close-modal" onclick="closeCheckinModal()">×</button>
-    <h2>Ежедневный чекин</h2>
-    
-    <div class="streak-info">
-      🔥 Текущий стрик: <span id="current-streak">0</span> дней
+  <div id="checkin-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeCheckinModal()">&times;</span>
+      <h2>Ежедневный чекин</h2>
+      
+      <!-- Стрик и прогресс -->
+      <div id="current-streak" class="streak-counter">🔥 Текущий стрик: 0 дней</div>
+      <div class="progress-bar">
+        <div id="streak-progress" class="progress"></div>
+      </div>
+      
+      <!-- Следующая награда -->
+      <div class="next-reward-container">
+        <div class="next-reward-label">Следующая награда:</div>
+        <div id="next-reward" class="next-reward-value">+10 XP</div>
+      </div>
+
+      <!-- Таблица наград -->
+      <div class="rewards-table-container">
+        <table id="rewards-table" class="rewards-table">
+          <tr>
+            <th>День</th>
+            <th>XP</th>
+            <th>Комментарий</th>
+          </tr>
+        </table>
+      </div>
+      
+      <!-- Кнопка и статус -->
+      <div class="checkin-controls">
+        <button id="checkin-btn" onclick="performCheckin()" class="btn checkin-button">Получить награду</button>
+        <div id="checkin-status" class="checkin-status"></div>
+        <div id="xp-earned" class="xp-earned"></div>
+      </div>
     </div>
-
-    <div class="streak-progress">
-      <div class="streak-progress-bar" id="streak-progress"></div>
-    </div>
-
-    <div id="xp-earned" class="xp-earned"></div>
-
-    <table class="xp-table">
-      <thead>
-        <tr>
-          <th>День</th>
-          <th>XP</th>
-          <th>Комментарий</th>
-        </tr>
-      </thead>
-      <tbody id="xp-table-body">
-      </tbody>
-    </table>
-
-    <button class="btn" onclick="performCheckin()" id="checkin-btn">Получить награду</button>
-    <div id="checkin-status"></div>
   </div>
   <div class="referral-modal" id="referral-modal">
     <button class="close-modal" onclick="closeReferralModal()">×</button>
@@ -595,50 +754,48 @@
 
     // Загрузка данных для чекина
     async function loadCheckinData() {
+      if (!userData) {
+        console.error('Error loading checkin data: ReferenceError: Cannot access \'userData\' before initialization');
+        return;
+      }
+
       try {
-        const { data: userData } = await supabaseClient
+        // Получаем данные пользователя
+        const { data: userDb, error: userError } = await supabaseClient
           .from('users')
-          .select('current_streak, max_streak')
-          .eq('telegram_id', userData.id)
+          .select('current_streak, points, max_streak')
+          .eq('telegram_id', String(userData.id))
           .single();
 
-        if (userData) {
-          document.getElementById('current-streak').textContent = userData.current_streak;
-          
-          // Обновляем прогресс-бар
-          const progress = (userData.current_streak % 30) * (100 / 30);
-          document.getElementById('streak-progress').style.width = `${progress}%`;
-        }
+        if (userError) throw userError;
 
-        // Загружаем таблицу XP
-        const xpTable = document.getElementById('xp-table-body');
-        xpTable.innerHTML = '';
+        const streak = userDb.current_streak || 0;
+        const nextXP = calculateXP(streak + 1);
 
-        const nextDay = (userData?.current_streak || 0) + 1;
-        const rewards = [
-          { day: 1, xp: 10, comment: 'Базовая награда' },
-          { day: 2, xp: 10, comment: 'Базовая награда' },
-          { day: 3, xp: 12, comment: 'Немного больше' },
-          { day: 4, xp: 12, comment: '' },
-          { day: 5, xp: 14, comment: '' },
-          { day: 6, xp: 15, comment: '' },
-          { day: 7, xp: 20, comment: '🎉 Маленький буст (неделя)' },
-          { day: 8, xp: 10, comment: 'Сброс до базового' },
-          { day: 14, xp: 25, comment: '🔥 Бонус 2-й недели' },
-          { day: 21, xp: 30, comment: '🚀 Почти месяц!' },
-          { day: 30, xp: 50, comment: '🏆 ФИНАЛ ЦИКЛА' }
-        ];
+        // Обновляем интерфейс
+        document.getElementById('current-streak').textContent = `🔥 Текущий стрик: ${streak} дней`;
+        document.getElementById('points-display').textContent = `🎯 Очки: ${userDb.points || 0}`;
 
-        // Показываем следующие 7 дней
-        for (let i = 0; i < 7; i++) {
-          const day = nextDay + i;
-          const reward = rewards.find(r => r.day === day) || {
-            day,
-            xp: day <= 2 ? 10 : day <= 4 ? 12 : day <= 6 ? 15 : 
-                day <= 13 ? 15 : day <= 20 ? 18 : 20,
-            comment: ''
-          };
+        // Обновляем прогресс-бар
+        const progressBar = document.getElementById('streak-progress');
+        const currentLevel = Math.floor(streak / 30);
+        const progress = ((streak % 30) / 30) * 100;
+        progressBar.style.width = `${progress}%`;
 
+        // Создаем таблицу с наградами
+        const table = document.getElementById('rewards-table');
+        table.innerHTML = `
+          <tr>
+            <th>День</th>
+            <th>XP</th>
+            <th>Комментарий</th>
+          </tr>
+        `;
+
+        // Добавляем строки с наградами за следующие 7 дней
+        for (let i = 1; i <= 7; i++) {
+          const futureStreak = streak + i;
+          const xp = calculateXP(futureStreak);
           const row = document.createElement('tr');
           if (i === 0) row.classList.add('active');
           
@@ -677,7 +834,7 @@
         // Получаем ID пользователя из базы
         const { data: userDb, error: userError } = await supabaseClient
           .from('users')
-          .select('id, current_streak, points')
+          .select('id, current_streak, points, max_streak')
           .eq('telegram_id', String(userData.id))
           .single();
 
@@ -694,10 +851,12 @@
 
         const streak = (userDb.current_streak || 0) + 1;
         const xpToEarn = calculateXP(streak);
+        const maxStreak = Math.max(streak, userDb.max_streak || 0);
 
         console.log('Создаем запись о чекине:', {
           user_id: userDb.id,
-          xp_earned: xpToEarn
+          xp_earned: xpToEarn,
+          streak: streak
         });
 
         // Обновляем очки и стрик пользователя
@@ -706,7 +865,7 @@
           .update({
             points: userDb.points + xpToEarn,
             current_streak: streak,
-            max_streak: Math.max(streak, userDb.max_streak || 0)
+            max_streak: maxStreak
           })
           .eq('id', userDb.id);
 
@@ -720,7 +879,8 @@
           .from('daily_checkins')
           .insert({
             user_id: userDb.id,
-            xp_earned: xpToEarn
+            xp_earned: xpToEarn,
+            streak: streak
           });
 
         if (checkinError) {
@@ -736,6 +896,11 @@
         document.getElementById('xp-earned').textContent = `+${xpToEarn} XP`;
         document.getElementById('checkin-status').textContent = '✅ Награда получена!';
         document.getElementById('checkin-btn').disabled = true;
+
+        // Обновляем прогресс-бар
+        const progressBar = document.getElementById('streak-progress');
+        const progress = ((streak % 30) / 30) * 100;
+        progressBar.style.width = `${progress}%`;
 
         // Перезагружаем данные
         await loadCheckinData();
