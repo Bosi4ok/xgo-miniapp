@@ -84,9 +84,9 @@
       background: linear-gradient(to top, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.8));
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      padding: 12px 20px;
+      padding: 8px 10px;
       display: flex;
-      justify-content: space-around;
+      justify-content: space-between;
       align-items: center;
       border-top: 1px solid rgba(255, 60, 60, 0.2);
       z-index: 100;
@@ -102,12 +102,13 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 2px;
       color: #666;
       text-decoration: none;
       transition: all 0.3s ease;
       position: relative;
-      padding: 8px 16px;
+      padding: 4px 12px;
+      min-width: 50px;
     }
 
     .nav-item.active {
@@ -123,7 +124,7 @@
     }
 
     .nav-label {
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 500;
     }
 
@@ -147,17 +148,19 @@
     .user-section {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 6px 16px;
+      gap: 6px;
+      padding: 4px 8px;
+      text-decoration: none;
+      min-width: 70px;
     }
 
     .user-avatar {
-      width: 32px;
-      height: 32px;
+      width: 24px;
+      height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: 16px;
       color: #ff3c3c;
       font-weight: bold;
     }
@@ -169,7 +172,7 @@
     }
 
     .user-name {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 600;
       color: #ff3c3c;
     }
@@ -543,9 +546,7 @@
   
   <!-- Стартовый экран -->
   <div class="screen active" id="start-screen">
-    <div class="points-display-main" id="points-display-main">
-      <span>0 XP</span>
-    </div>
+    <div class="points-display-main" id="points-display-main">0 XP</div>
 
   <nav class="bottom-nav">
     <a href="#" class="nav-item active" id="home-nav">
@@ -572,13 +573,13 @@
       </div>
       <span class="nav-label">Referral</span>
     </a>
-    <div class="user-section">
+    <a href="#" class="user-section" id="profile-btn">
       <div class="user-avatar">A</div>
       <div class="user-details">
         <div class="user-name" id="user-name">Name</div>
         <div class="user-points">Level</div>
       </div>
-    </div>
+    </a>
   </nav>
     <div class="points-display" id="points-display"></div>
   </div>
@@ -1019,7 +1020,7 @@
         if (updateError) throw updateError;
 
         // Обновляем интерфейс
-        document.getElementById('points-display').textContent = `🎯 Очки: ${userDb.points + xpToEarn}`;
+        document.getElementById('points-display-main').textContent = `${userDb.points + xpToEarn} XP`;
         checkinStatus.textContent = '✅ Награда получена!';
         document.getElementById('xp-earned').textContent = `+${xpToEarn} XP`;
 
@@ -1069,7 +1070,13 @@
       
       document.getElementById('checkin-btn').addEventListener('click', openCheckinModal);
       document.getElementById('referral-btn').addEventListener('click', openReferralModal);
+      document.getElementById('profile-btn').addEventListener('click', openProfileModal);
     });
+
+    function openProfileModal() {
+      // Здесь будет логика открытия профиля
+      console.log('Profile clicked');
+    }
 
     // Адаптация под мобильные устройства
     if (tg?.isExpanded) {
