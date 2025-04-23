@@ -649,39 +649,59 @@
 
     // Выполнение чекина
     async function performCheckin() {
-      if (!userData) return;
-      
-      const lastCheckin = localStorage.getItem('lastCheckin');
-      const now = Date.now();
-      
-      if (lastCheckin && (now - parseInt(lastCheckin)) < 86400000) {
-        document.getElementById('checkin-status').textContent = '⚠️ Вы уже выполняли чекин сегодня!';
+      if (!userData) {
+        console.error('Нет данных пользователя');
         return;
       }
-
+      
       try {
-        // Получаем текущие данные пользователя
-        const { data: currentUser } = await supabaseClient
+        console.log('Начинаем чекин для пользователя:', userData.id);
+        
+        // Проверяем последний чекин
+        const lastCheckin = localStorage.getItem('lastCheckin');
+        const now = Date.now();
+        
+        if (lastCheckin && (now - parseInt(lastCheckin)) < 86400000) {
+          document.getElementById('checkin-status').textContent = '⚠️ Вы уже выполняли чекин сегодня!';
+          return;
+        }
+
+        // Получаем ID пользователя из базы
+        const { data: userDb } = await supabaseClient
           .from('users')
-          .select('current_streak, points')
+          .select('id, current_streak, points')
           .eq('telegram_id', userData.id)
           .single();
 
-        const streak = (currentUser?.current_streak || 0) + 1;
+        if (!userDb || !userDb.id) {
+          throw new Error('Пользователь не найден в базе');
+        }
+
+        console.log('Найден пользователь:', userDb);
+
+        const streak = (userDb.current_streak || 0) + 1;
         const xpToEarn = calculateXP(streak);
+
+        console.log('Создаем запись о чекине:', {
+          user_id: userDb.id,
+          xp_earned: xpToEarn
+        });
 
         // Создаем запись о чекине
         const { error: checkinError } = await supabaseClient
           .from('daily_checkins')
           .insert({
-            user_id: userData.id,
+            user_id: userDb.id,
             xp_earned: xpToEarn
           });
 
-        if (checkinError) throw checkinError;
+        if (checkinError) {
+          console.error('Ошибка при создании чекина:', checkinError);
+          throw checkinError;
+        }
 
         localStorage.setItem('lastCheckin', now.toString());
-        userPoints = (currentUser?.points || 0) + xpToEarn;
+        userPoints = (userDb.points || 0) + xpToEarn;
         
         // Обновляем интерфейс
         document.getElementById('points-display').textContent = `🎯 Очки: ${userPoints}`;
@@ -691,8 +711,10 @@
 
         // Перезагружаем данные
         await loadCheckinData();
+
+        console.log('Чекин успешно завершен');
       } catch (error) {
-        console.error('Error during checkin:', error);
+        console.error('Ошибка при чекине:', error);
         document.getElementById('checkin-status').textContent = '❌ Ошибка при получении награды';
       }
     }
