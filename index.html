@@ -96,40 +96,34 @@
     .modal, .referral-modal {
       display: none;
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
       z-index: 3;
       text-align: center;
-      min-width: 300px;
-      max-width: 90%;
-      max-height: 90vh;
-      overflow-y: auto;
+      width: 90%;
+      max-width: 400px;
       background: rgba(0, 0, 0, 0.95);
       padding: 20px;
       border-radius: 15px;
       border: 2px solid #ff3c3c;
       box-shadow: 0 0 20px rgba(255, 60, 60, 0.5);
+      left: 50%;
+      transform: translateX(-50%);
       animation: modalAppear 0.3s ease-out;
+    }
+
+    @media screen and (min-height: 700px) {
+      .modal, .referral-modal {
+        top: 50%;
+        transform: translate(-50%, -50%);
+        max-height: 90vh;
+      }
     }
 
     @media screen and (max-height: 700px) {
       .modal, .referral-modal {
         top: 20px;
-        transform: translate(-50%, 0);
         max-height: calc(100vh - 40px);
-        animation: modalAppearMobile 0.3s ease-out;
-      }
-
-      @keyframes modalAppearMobile {
-        from {
-          opacity: 0;
-          transform: translate(-50%, -20px);
-        }
-        to {
-          opacity: 1;
-          transform: translate(-50%, 0);
-        }
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
     }
 
@@ -792,14 +786,16 @@
         document.getElementById('next-reward').textContent = `+${nextXP} XP`;
 
         // Разблокируем кнопку, если не было чекина сегодня
-        const lastCheckin = localStorage.getItem('lastCheckin');
-        const now = Date.now();
-        if (!lastCheckin || (now - parseInt(lastCheckin)) >= 86400000) {
-          document.getElementById('checkin-btn').disabled = false;
-          document.getElementById('checkin-status').textContent = '';
-        } else {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const lastCheckinDate = userDb.last_checkin ? new Date(userDb.last_checkin).getTime() : 0;
+
+        if (lastCheckinDate >= today) {
           document.getElementById('checkin-btn').disabled = true;
           document.getElementById('checkin-status').textContent = '✅ Чекин уже выполнен';
+        } else {
+          document.getElementById('checkin-btn').disabled = false;
+          document.getElementById('checkin-status').textContent = '';
         }
       } catch (error) {
         console.error('Error loading checkin data:', error);
@@ -816,12 +812,22 @@
       try {
         console.log('Начинаем чекин для пользователя:', userData.id);
         
-        // Проверяем последний чекин
-        const lastCheckin = localStorage.getItem('lastCheckin');
-        const now = Date.now();
+        // Проверяем последний чекин в базе данных
+        const { data: lastCheckinData, error: lastCheckinError } = await supabaseClient
+          .from('users')
+          .select('last_checkin')
+          .eq('telegram_id', String(userData.id))
+          .single();
+
+        if (lastCheckinError) throw lastCheckinError;
+
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const lastCheckinDate = lastCheckinData?.last_checkin ? new Date(lastCheckinData.last_checkin).getTime() : 0;
         
-        if (lastCheckin && (now - parseInt(lastCheckin)) < 86400000) {
-          document.getElementById('checkin-status').textContent = '⚠️ Вы уже выполняли чекин сегодня!';
+        if (lastCheckinDate >= today) {
+          document.getElementById('checkin-btn').disabled = true;
+          document.getElementById('checkin-status').textContent = '✅ Чекин уже выполнен';
           return;
         }
 
@@ -859,7 +865,8 @@
           .update({
             points: userDb.points + xpToEarn,
             current_streak: streak,
-            max_streak: maxStreak
+            max_streak: maxStreak,
+            last_checkin: now.toISOString()
           })
           .eq('id', userDb.id);
 
@@ -882,7 +889,6 @@
           throw checkinError;
         }
 
-        localStorage.setItem('lastCheckin', now.toString());
         userPoints = userDb.points + xpToEarn;
         
         // Обновляем интерфейс
