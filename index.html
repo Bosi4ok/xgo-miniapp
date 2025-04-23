@@ -215,6 +215,109 @@
       text-align: center;
     }
 
+    .referral-section {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .referral-section h3 {
+      color: #ff3c3c;
+      margin-bottom: 10px;
+      font-size: 1.2em;
+    }
+
+    .referral-section p {
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 20px;
+      font-size: 0.9em;
+    }
+
+    .referral-code-container {
+      margin: 20px 0;
+    }
+
+    .referral-code {
+      word-break: break-all;
+      background: rgba(255, 60, 60, 0.1);
+      padding: 15px;
+      border-radius: 10px;
+      margin: 10px 0;
+      border: 2px solid rgba(255, 60, 60, 0.3);
+      font-family: monospace;
+      color: #ff3c3c;
+      text-shadow: 0 0 15px rgba(255, 60, 60, 0.4);
+      letter-spacing: 2px;
+      font-weight: bold;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .referral-code:hover {
+      background: rgba(255, 60, 60, 0.2);
+      border-color: rgba(255, 60, 60, 0.5);
+    }
+
+    .referral-code-hint {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 5px;
+    }
+
+    .referral-stats {
+      margin: 15px 0;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9em;
+    }
+
+    .referral-divider {
+      height: 1px;
+      background: rgba(255, 60, 60, 0.3);
+      margin: 20px 0;
+    }
+
+    .referral-input-container {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .referral-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 60, 60, 0.3);
+      border-radius: 8px;
+      padding: 10px 15px;
+      color: white;
+      font-family: monospace;
+      letter-spacing: 1px;
+    }
+
+    .referral-input:focus {
+      outline: none;
+      border-color: rgba(255, 60, 60, 0.6);
+    }
+
+    .referral-submit {
+      background: #ff3c3c;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .referral-submit:hover {
+      background: #ff5252;
+    }
+
+    .referral-status {
+      margin-top: 10px;
+      min-height: 20px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
     .modal-overlay {
       display: none;
       position: fixed;
@@ -765,18 +868,38 @@
   <div class="referral-modal" id="referral-modal">
     <div class="modal-content">
       <button class="close" onclick="closeReferralModal()">&times;</button>
-      <h2>Referral System</h2>
-      <p>Your referral code:</p>
-      <div class="referral-code" id="referral-code" style="font-family: 'Space Mono', monospace; font-size: 24px; letter-spacing: 2px; padding: 15px; background: rgba(255, 60, 60, 0.1); border-radius: 10px; margin: 20px 0;">Error loading code</div>
-      <button class="btn" onclick="copyReferralCode()">Copy Code</button>
-      <div id="referral-status"></div>
+      <h2>Реферальная система</h2>
+      
+      <!-- Раздел для приглашения -->
+      <div class="referral-section">
+        <h3>Пригласите друзей</h3>
+        <p>Получите 50 XP за каждого приглашённого друга!</p>
+        
+        <div class="referral-code-container">
+          <div>Ваш реферальный код:</div>
+          <div id="referral-code" onclick="copyReferralCode()" class="referral-code"></div>
+          <div class="referral-code-hint">Нажмите на код, чтобы скопировать</div>
+        </div>
 
-      <div class="referral-stats">
-        <p>Number of referrals: 0</p>
-        <input type="text" class="referral-input" id="referral-input" placeholder="Enter code">
-        <button class="btn" onclick="applyReferralCode()">Apply</button>
-        <div id="referral-input-status"></div>
+        <div class="referral-stats">
+          Приглашено друзей: <span id="referrals-count">0</span>
+        </div>
       </div>
+
+      <div class="referral-divider"></div>
+
+      <!-- Раздел для ввода кода -->
+      <div class="referral-section">
+        <h3>Введите код друга</h3>
+        <p>Получите 20 XP за регистрацию по коду друга!</p>
+        
+        <div class="referral-input-container">
+          <input type="text" id="referral-input" placeholder="Введите код" class="referral-input">
+          <button onclick="applyReferralCode()" class="referral-submit">Применить</button>
+        </div>
+        <div id="referral-input-status" class="referral-status"></div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -1266,6 +1389,7 @@
       return code;
     }
 
+    // Открытие модального окна реферальной системы
     async function openReferralModal() {
       closeAllModals();
       document.getElementById('referral-modal').style.display = 'block';
@@ -1294,9 +1418,123 @@
         }
 
         document.getElementById('referral-code').textContent = user.referral_code;
+
+        // Загружаем количество успешных рефералов
+        const { count, error: countError } = await supabaseClient
+          .from('referrals')
+          .select('*', { count: 'exact' })
+          .eq('referrer_id', String(userData.id));
+
+        if (!countError) {
+          document.getElementById('referrals-count').textContent = count || 0;
+        }
       } catch (error) {
         console.error('Error with referral code:', error);
-        document.getElementById('referral-code').textContent = 'Error loading code';
+        document.getElementById('referral-code').textContent = 'Ошибка загрузки кода';
+      }
+    }
+
+    // Применение реферального кода
+    async function applyReferralCode() {
+      const codeInput = document.getElementById('referral-input');
+      const statusElement = document.getElementById('referral-input-status');
+      const code = codeInput.value.trim();
+
+      if (!code) {
+        statusElement.textContent = 'Введите код';
+        return;
+      }
+
+      try {
+        // Проверяем, не использовал ли уже пользователь реферальный код
+        const { data: existingReferral, error: checkError } = await supabaseClient
+          .from('referrals')
+          .select('*')
+          .eq('referred_id', String(userData.id))
+          .single();
+
+        if (existingReferral) {
+          statusElement.textContent = 'Вы уже использовали реферальный код';
+          return;
+        }
+
+        // Находим владельца кода
+        const { data: referrer, error: referrerError } = await supabaseClient
+          .from('users')
+          .select('telegram_id')
+          .eq('referral_code', code)
+          .single();
+
+        if (referrerError || !referrer) {
+          statusElement.textContent = 'Неверный код';
+          return;
+        }
+
+        if (referrer.telegram_id === String(userData.id)) {
+          statusElement.textContent = 'Нельзя использовать свой код';
+          return;
+        }
+
+        // Создаем запись о реферале
+        const { error: referralError } = await supabaseClient
+          .from('referrals')
+          .insert({
+            referrer_id: referrer.telegram_id,
+            referred_id: String(userData.id),
+            created_at: new Date().toISOString()
+          });
+
+        if (referralError) throw referralError;
+
+        // Начисляем XP рефереру
+        await supabaseClient.rpc('increment_xp', {
+          user_id: referrer.telegram_id,
+          xp_amount: 50
+        });
+
+        // Начисляем XP реферату
+        await supabaseClient.rpc('increment_xp', {
+          user_id: String(userData.id),
+          xp_amount: 20
+        });
+
+        statusElement.textContent = 'Код успешно применен! +20 XP';
+        codeInput.value = '';
+        
+        // Обновляем XP на странице
+        await updateUserXP();
+      } catch (error) {
+        console.error('Error applying referral code:', error);
+        statusElement.textContent = 'Ошибка при применении кода';
+      }
+    }
+
+    // Функция копирования реферального кода
+    function copyReferralCode() {
+      const codeElement = document.getElementById('referral-code');
+      const code = codeElement.textContent;
+      
+      if (code && code !== 'Loading...' && code !== 'Код не найден' && code !== 'Ошибка загрузки кода') {
+        navigator.clipboard.writeText(code).then(() => {
+          // Показываем уведомление о копировании
+          const notification = document.createElement('div');
+          notification.textContent = 'Код скопирован!';
+          notification.style.position = 'fixed';
+          notification.style.bottom = '180px';
+          notification.style.left = '50%';
+          notification.style.transform = 'translateX(-50%)';
+          notification.style.background = 'rgba(255, 60, 60, 0.9)';
+          notification.style.color = 'white';
+          notification.style.padding = '10px 20px';
+          notification.style.borderRadius = '5px';
+          notification.style.zIndex = '100';
+          
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 2000);
+        });
       }
     }
 
