@@ -170,11 +170,88 @@
       padding-top: 20px;
       border-top: 1px solid rgba(255, 60, 60, 0.3);
     }
+
+    .checkin-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      border-radius: 15px;
+      border: 2px solid #ff3c3c;
+      box-shadow: 0 0 10px #ff3c3c;
+      z-index: 3;
+      text-align: center;
+      min-width: 300px;
+      max-width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modalAppear 0.3s ease-out;
+    }
+
+    .streak-info {
+      font-size: 24px;
+      margin: 15px 0;
+      padding: 10px;
+      background: rgba(255, 60, 60, 0.1);
+      border-radius: 8px;
+    }
+
+    .xp-table {
+      width: 100%;
+      margin: 20px 0;
+      border-collapse: collapse;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .xp-table th, .xp-table td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid rgba(255, 60, 60, 0.3);
+    }
+
+    .xp-table th {
+      background: rgba(255, 60, 60, 0.2);
+    }
+
+    .xp-table tr.active {
+      background: rgba(255, 60, 60, 0.1);
+    }
+
+    .xp-earned {
+      font-size: 28px;
+      margin: 20px 0;
+      color: #ff3c3c;
+      text-shadow: 0 0 10px rgba(255, 60, 60, 0.5);
+    }
+
+    .streak-progress {
+      width: 100%;
+      height: 20px;
+      background: rgba(255, 60, 60, 0.1);
+      border-radius: 10px;
+      margin: 15px 0;
+      overflow: hidden;
+    }
+
+    .streak-progress-bar {
+      height: 100%;
+      background: #ff3c3c;
+      width: 0%;
+      transition: width 1s ease-in-out;
+    }
   </style>
 </head>
 <body>
   <video muted loop playsinline autoplay class="background-video" id="start-bg">
     <source src="стиль1.mp4" type="video/mp4" />
+  </video>
+  <video muted loop playsinline autoplay class="background-video" id="checkin-bg" style="display: none;">
+    <source src="check-in.mp4" type="video/mp4" />
   </video>
   <div class="user-info" id="user-info"></div>
   
@@ -189,6 +266,37 @@
 
   <!-- Модальное окно реферальной системы -->
   <div class="modal-overlay" id="modal-overlay"></div>
+
+  <!-- Модальное окно чекина -->
+  <div class="checkin-modal" id="checkin-modal">
+    <button class="close-modal" onclick="closeCheckinModal()">×</button>
+    <h2>Ежедневный чекин</h2>
+    
+    <div class="streak-info">
+      🔥 Текущий стрик: <span id="current-streak">0</span> дней
+    </div>
+
+    <div class="streak-progress">
+      <div class="streak-progress-bar" id="streak-progress"></div>
+    </div>
+
+    <div id="xp-earned" class="xp-earned"></div>
+
+    <table class="xp-table">
+      <thead>
+        <tr>
+          <th>День</th>
+          <th>XP</th>
+          <th>Комментарий</th>
+        </tr>
+      </thead>
+      <tbody id="xp-table-body">
+      </tbody>
+    </table>
+
+    <button class="btn" onclick="performCheckin()" id="checkin-btn">Получить награду</button>
+    <div id="checkin-status"></div>
+  </div>
   <div class="referral-modal" id="referral-modal">
     <button class="close-modal" onclick="closeReferralModal()">×</button>
     <h2>Реферальная система</h2>
@@ -460,6 +568,150 @@
       document.getElementById('referral-modal').style.display = 'none';
     }
 
+    // Открытие модального окна чекина
+    function openCheckinModal() {
+      document.getElementById('modal-overlay').style.display = 'block';
+      document.getElementById('checkin-modal').style.display = 'block';
+      document.getElementById('start-bg').style.display = 'none';
+      document.getElementById('checkin-bg').style.display = 'block';
+      loadCheckinData();
+    }
+
+    // Закрытие модального окна чекина
+    window.closeCheckinModal = function() {
+      document.getElementById('modal-overlay').style.display = 'none';
+      document.getElementById('checkin-modal').style.display = 'none';
+      document.getElementById('start-bg').style.display = 'block';
+      document.getElementById('checkin-bg').style.display = 'none';
+    }
+
+    // Загрузка данных для чекина
+    async function loadCheckinData() {
+      try {
+        const { data: userData } = await supabaseClient
+          .from('users')
+          .select('current_streak, max_streak')
+          .eq('telegram_id', userData.id)
+          .single();
+
+        if (userData) {
+          document.getElementById('current-streak').textContent = userData.current_streak;
+          
+          // Обновляем прогресс-бар
+          const progress = (userData.current_streak % 30) * (100 / 30);
+          document.getElementById('streak-progress').style.width = `${progress}%`;
+        }
+
+        // Загружаем таблицу XP
+        const xpTable = document.getElementById('xp-table-body');
+        xpTable.innerHTML = '';
+
+        const nextDay = (userData?.current_streak || 0) + 1;
+        const rewards = [
+          { day: 1, xp: 10, comment: 'Базовая награда' },
+          { day: 2, xp: 10, comment: 'Базовая награда' },
+          { day: 3, xp: 12, comment: 'Немного больше' },
+          { day: 4, xp: 12, comment: '' },
+          { day: 5, xp: 14, comment: '' },
+          { day: 6, xp: 15, comment: '' },
+          { day: 7, xp: 20, comment: '🎉 Маленький буст (неделя)' },
+          { day: 8, xp: 10, comment: 'Сброс до базового' },
+          { day: 14, xp: 25, comment: '🔥 Бонус 2-й недели' },
+          { day: 21, xp: 30, comment: '🚀 Почти месяц!' },
+          { day: 30, xp: 50, comment: '🏆 ФИНАЛ ЦИКЛА' }
+        ];
+
+        // Показываем следующие 7 дней
+        for (let i = 0; i < 7; i++) {
+          const day = nextDay + i;
+          const reward = rewards.find(r => r.day === day) || {
+            day,
+            xp: day <= 2 ? 10 : day <= 4 ? 12 : day <= 6 ? 15 : 
+                day <= 13 ? 15 : day <= 20 ? 18 : 20,
+            comment: ''
+          };
+
+          const row = document.createElement('tr');
+          if (i === 0) row.classList.add('active');
+          
+          row.innerHTML = `
+            <td>${reward.day}</td>
+            <td>+${reward.xp}</td>
+            <td>${reward.comment}</td>
+          `;
+          
+          xpTable.appendChild(row);
+        }
+      } catch (error) {
+        console.error('Error loading checkin data:', error);
+      }
+    }
+
+    // Выполнение чекина
+    async function performCheckin() {
+      if (!userData) return;
+      
+      const lastCheckin = localStorage.getItem('lastCheckin');
+      const now = Date.now();
+      
+      if (lastCheckin && (now - parseInt(lastCheckin)) < 86400000) {
+        document.getElementById('checkin-status').textContent = '⚠️ Вы уже выполняли чекин сегодня!';
+        return;
+      }
+
+      try {
+        // Получаем текущие данные пользователя
+        const { data: currentUser } = await supabaseClient
+          .from('users')
+          .select('current_streak, points')
+          .eq('telegram_id', userData.id)
+          .single();
+
+        const streak = (currentUser?.current_streak || 0) + 1;
+        const xpToEarn = calculateXP(streak);
+
+        // Создаем запись о чекине
+        const { error: checkinError } = await supabaseClient
+          .from('daily_checkins')
+          .insert({
+            user_id: userData.id,
+            xp_earned: xpToEarn
+          });
+
+        if (checkinError) throw checkinError;
+
+        localStorage.setItem('lastCheckin', now.toString());
+        userPoints = (currentUser?.points || 0) + xpToEarn;
+        
+        // Обновляем интерфейс
+        document.getElementById('points-display').textContent = `🎯 Очки: ${userPoints}`;
+        document.getElementById('xp-earned').textContent = `+${xpToEarn} XP`;
+        document.getElementById('checkin-status').textContent = '✅ Награда получена!';
+        document.getElementById('checkin-btn').disabled = true;
+
+        // Перезагружаем данные
+        await loadCheckinData();
+      } catch (error) {
+        console.error('Error during checkin:', error);
+        document.getElementById('checkin-status').textContent = '❌ Ошибка при получении награды';
+      }
+    }
+
+    // Расчет XP на основе дня стрика
+    function calculateXP(day) {
+      if (day === 7) return 20;   // Маленький буст (неделя)
+      if (day === 14) return 25;  // Бонус 2-й недели
+      if (day === 21) return 30;  // Почти месяц!
+      if (day === 30) return 50;  // ФИНАЛ ЦИКЛА
+      if (day % 7 === 0) return 20; // Каждая неделя
+      if (day <= 2) return 10;    // Базовая награда
+      if (day <= 4) return 12;    // Немного больше
+      if (day <= 6) return 15;    // Еще больше
+      if (day <= 13) return 15;   // Стабильная награда
+      if (day <= 20) return 18;   // Увеличенная награда
+      return 20;                  // Максимальная базовая награда
+    }
+
     // Закрытие при клике вне модального окна
     document.getElementById('modal-overlay').addEventListener('click', closeReferralModal);
 
@@ -478,7 +730,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       initTelegram();
       
-      document.getElementById('checkin-btn').addEventListener('click', handleCheckin);
+      document.getElementById('checkin-btn').addEventListener('click', openCheckinModal);
       document.getElementById('referral-btn').addEventListener('click', openReferralModal);
     });
 
