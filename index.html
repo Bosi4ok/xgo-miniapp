@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XGO Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script type="module" src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
   <style>
     @font-face {
       font-family: 'Brinnan';
@@ -187,8 +187,11 @@
     </div>
   </div>
 
-  <script type="module">
-    import { supabase } from './supabase-config.js';
+  <script>
+    const supabase = supabase.createClient(
+      'https://msstnczyshmnhjcnzjlg.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zc3RuY3p5c2htbmhqY256amxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMjI0MjUsImV4cCI6MjA2MDg5ODQyNX0.9Oa_ghFyX9qVquxokvLMSNRfQq7FzA6mQEvlsM2ZyRc'
+    );
 
     const tg = window.Telegram?.WebApp;
     let userData = null;
