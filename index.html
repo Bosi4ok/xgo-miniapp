@@ -145,43 +145,7 @@
       width: 100%;
     }
 
-    .user-section {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 8px;
-      text-decoration: none;
-      min-width: 70px;
-    }
 
-    .user-avatar {
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      color: #ff3c3c;
-      font-weight: bold;
-    }
-
-    .user-details {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .user-name {
-      font-size: 12px;
-      font-weight: 600;
-      color: #ff3c3c;
-    }
-
-    .user-points {
-      font-size: 12px;
-      color: #ff3c3c;
-      opacity: 0.8;
-    }
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(255, 60, 60, 0.7); }
       70% { box-shadow: 0 0 0 10px rgba(255, 60, 60, 0); }
@@ -573,12 +537,11 @@
       </div>
       <span class="nav-label">Referral</span>
     </a>
-    <a href="#" class="user-section" id="profile-btn">
-      <div class="user-avatar">A</div>
-      <div class="user-details">
-        <div class="user-name" id="user-name">Name</div>
-        <div class="user-points">Level</div>
+    <a href="#" class="nav-item" id="profile-btn">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
       </div>
+      <span class="nav-label">Profile</span>
     </a>
   </nav>
     <div class="points-display" id="points-display"></div>
