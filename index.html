@@ -129,21 +129,7 @@
       font-weight: bold;
     }
 
-    .progress-bar {
-      width: 100%;
-      height: 10px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 5px;
-      overflow: hidden;
-      margin: 10px 0;
-    }
 
-    .progress {
-      height: 100%;
-      background: linear-gradient(90deg, #ff3c3c, #ff6b6b);
-      width: 0%;
-      transition: width 0.5s ease;
-    }
 
     .next-reward-container {
       text-align: center;
@@ -438,11 +424,8 @@
       <h2>Ежедневный чекин</h2>
       <span class="close" onclick="closeCheckinModal()">&times;</span>
       
-      <!-- Стрик и прогресс -->
+      <!-- Стрик -->
       <div id="current-streak" class="streak-counter">🔥 Текущий стрик: 0 дней</div>
-      <div class="progress-bar">
-        <div id="streak-progress" class="progress"></div>
-      </div>
       
       <!-- Следующая награда -->
       <div class="next-reward-container">
@@ -778,11 +761,7 @@
         document.getElementById('current-streak').textContent = `🔥 Текущий стрик: ${streak} дней`;
         document.getElementById('points-display').textContent = `🎯 Очки: ${userDb.points || 0}`;
 
-        // Обновляем прогресс-бар
-        const progressBar = document.getElementById('streak-progress');
-        const currentLevel = Math.floor(streak / 30);
-        const progress = ((streak % 30) / 30) * 100;
-        progressBar.style.width = `${progress}%`;
+
 
         // Показываем следующую награду
         document.getElementById('next-reward').textContent = `+${nextXP} XP`;
