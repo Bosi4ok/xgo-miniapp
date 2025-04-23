@@ -93,7 +93,7 @@
       -webkit-backdrop-filter: blur(5px);
     }
 
-    .modal {
+    .modal, .referral-modal {
       display: none;
       position: fixed;
       top: 50%;
@@ -105,15 +105,15 @@
       max-width: 90%;
       max-height: 90vh;
       overflow-y: auto;
-    }
-
-    .modal-content {
       background: rgba(0, 0, 0, 0.95);
       padding: 20px;
       border-radius: 15px;
       border: 2px solid #ff3c3c;
       box-shadow: 0 0 20px rgba(255, 60, 60, 0.5);
       animation: modalAppear 0.3s ease-out;
+    }
+
+    .modal-content {
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -231,22 +231,7 @@
       padding: 10px;
     }
 
-    .referral-modal {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.9);
-      padding: 20px;
-      border-radius: 15px;
-      border: 2px solid #ff3c3c;
-      box-shadow: 0 0 10px #ff3c3c;
-      z-index: 3;
-      text-align: center;
-      min-width: 300px;
-      animation: modalAppear 0.3s ease-out;
-    }
+
 
     @keyframes modalAppear {
       from {
@@ -420,25 +405,23 @@
 
   <!-- Модальное окно чекина -->
   <div id="checkin-modal" class="modal">
-    <div class="modal-content">
-      <h2>Ежедневный чекин</h2>
-      <span class="close" onclick="closeCheckinModal()">&times;</span>
-      
-      <!-- Стрик -->
-      <div id="current-streak" class="streak-counter">🔥 Текущий стрик: 0 дней</div>
-      
-      <!-- Следующая награда -->
-      <div class="next-reward-container">
-        <div class="next-reward-label">Следующая награда:</div>
-        <div id="next-reward" class="next-reward-value">+10 XP</div>
-      </div>
-      
-      <!-- Кнопка и статус -->
-      <div class="checkin-controls">
-        <button id="checkin-btn" onclick="performCheckin()" class="btn checkin-button">Получить награду</button>
-        <div id="checkin-status" class="checkin-status"></div>
-        <div id="xp-earned" class="xp-earned"></div>
-      </div>
+    <span class="close" onclick="closeCheckinModal()">&times;</span>
+    <h2>Ежедневный чекин</h2>
+    
+    <!-- Стрик -->
+    <div id="current-streak" class="streak-counter">🔥 Текущий стрик: 0 дней</div>
+    
+    <!-- Следующая награда -->
+    <div class="next-reward-container">
+      <div class="next-reward-label">Следующая награда:</div>
+      <div id="next-reward" class="next-reward-value">+10 XP</div>
+    </div>
+    
+    <!-- Кнопка и статус -->
+    <div class="checkin-controls">
+      <button id="checkin-btn" onclick="performCheckin()" class="btn checkin-button">Получить награду</button>
+      <div id="checkin-status" class="checkin-status"></div>
+      <div id="xp-earned" class="xp-earned"></div>
     </div>
   </div>
   <div class="referral-modal" id="referral-modal">
