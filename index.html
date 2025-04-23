@@ -228,10 +228,11 @@
       z-index: 98;
     }
 
-    .modal, .referral-modal {
+    .modal, .referral-modal, .checkin-modal, .tasks-modal {
       display: none;
       position: fixed;
-      z-index: 3;
+      bottom: 120px;
+      z-index: 99;
       text-align: center;
       width: 90%;
       max-width: 400px;
@@ -242,7 +243,7 @@
       box-shadow: 0 0 20px rgba(255, 60, 60, 0.5);
       left: 50%;
       transform: translateX(-50%);
-      max-height: calc(100vh - 140px);
+      max-height: calc(100vh - 180px);
       overflow-y: auto;
       animation: modalAppear 0.3s ease-out;
     }
@@ -1245,12 +1246,34 @@
       document.getElementById('modal-overlay').style.display = 'none';
     }
 
+    // Функция закрытия всех модальных окон
+    function closeAllModals() {
+      const modals = ['referral-modal', 'checkin-modal', 'tasks-modal'];
+      modals.forEach(modal => {
+        document.getElementById(modal).style.display = 'none';
+      });
+      document.getElementById('modal-overlay').style.display = 'none';
+    }
+
+    // Генерация реферального кода
+    function generateReferralCode() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = '';
+      for (let i = 0; i < 8; i++) {
+        if (i === 4) code += '-';
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
     async function openReferralModal() {
+      closeAllModals();
       document.getElementById('referral-modal').style.display = 'block';
       document.getElementById('modal-overlay').style.display = 'block';
+      document.getElementById('referral-code').textContent = 'Loading...';
       
       try {
-        const { data: user, error } = await supabaseClient
+        let { data: user, error } = await supabaseClient
           .from('users')
           .select('referral_code')
           .eq('telegram_id', String(userData.id))
@@ -1258,32 +1281,35 @@
 
         if (error) throw error;
 
-        if (user && user.referral_code) {
-          document.getElementById('referral-code').textContent = user.referral_code;
-        } else {
-          document.getElementById('referral-code').textContent = 'Loading...';
+        if (!user?.referral_code) {
+          // Генерируем новый код, если его нет
+          const newCode = generateReferralCode();
+          const { error: updateError } = await supabaseClient
+            .from('users')
+            .update({ referral_code: newCode })
+            .eq('telegram_id', String(userData.id));
+
+          if (updateError) throw updateError;
+          user = { referral_code: newCode };
         }
+
+        document.getElementById('referral-code').textContent = user.referral_code;
       } catch (error) {
-        console.error('Error loading referral code:', error);
+        console.error('Error with referral code:', error);
         document.getElementById('referral-code').textContent = 'Error loading code';
       }
     }
 
-    function closeReferralModal() {
-      document.getElementById('referral-modal').style.display = 'none';
-      document.getElementById('modal-overlay').style.display = 'none';
-    }
+    window.closeReferralModal = closeAllModals;
 
     function openTasksModal() {
+      closeAllModals();
       document.getElementById('tasks-modal').style.display = 'block';
       document.getElementById('modal-overlay').style.display = 'block';
       loadTasksStatus();
     }
 
-    function closeTasksModal() {
-      document.getElementById('tasks-modal').style.display = 'none';
-      document.getElementById('modal-overlay').style.display = 'none';
-    }
+    window.closeTasksModal = closeAllModals;
 
     async function loadTasksStatus() {
       try {
