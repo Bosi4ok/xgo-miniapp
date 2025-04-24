@@ -55,13 +55,17 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.log('Initializing Telegram Web App...');
     const tg = window.Telegram?.WebApp;
     if (!tg) {
-      throw new Error('Telegram WebApp is not available');
+      throw new Error('Это приложение можно открыть только в Telegram');
     }
 
+    // Ждем инициализации WebApp
+    await new Promise(resolve => setTimeout(resolve, 1000));
     tg.ready();
+
+    // Получаем данные пользователя
     userData = tg.initDataUnsafe?.user;
     if (!userData) {
-      throw new Error('User data is null');
+      throw new Error('Не удалось получить данные пользователя. Пожалуйста, перезагрузите приложение.');
     }
 
     // Настраиваем адаптацию под мобильные устройства
