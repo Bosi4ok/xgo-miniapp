@@ -1,3 +1,4 @@
+import { supabase } from './modules/supabase.js';
 import { ensureReferralCode, applyReferralCode, updateReferralsCount } from './modules/referral.js';
 import { performCheckin } from './modules/checkin.js';
 import { closeAllModals, showNotification, updateReferralUI, updateCheckinUI, animateXP } from './modules/ui.js';
@@ -141,12 +142,21 @@ window.copyReferralCode = () => {
 };
 
 // Алиас для закрытия модального окна чекина
-// Экспортируем все необходимые функции в глобальную область видимости
-window.closeCheckinModal = closeAllModals;
-window.closeReferralModal = closeAllModals;
-window.closeTasksModal = closeAllModals;
-window.openTasksModal = () => {
-  closeAllModals();
-  document.getElementById('tasks-modal').style.display = 'block';
-  document.getElementById('modal-overlay').style.display = 'block';
-};
+// Экспортируем функции в глобальную область видимости
+Object.assign(window, {
+  closeCheckinModal: closeAllModals,
+  closeReferralModal: closeAllModals,
+  closeTasksModal: closeAllModals,
+  openTasksModal: () => {
+    closeAllModals();
+    document.getElementById('tasks-modal').style.display = 'block';
+    document.getElementById('modal-overlay').style.display = 'block';
+  },
+  handleCheckin,
+  openReferralModal,
+  handleReferralCode,
+  copyReferralCode,
+  applyReferralCode,
+  verifyTask,
+  openProfileModal
+});
