@@ -52,27 +52,34 @@ function copyReferralCode() {
 // Инициализация при загрузке
 window.addEventListener('DOMContentLoaded', async () => {
   try {
+    // Показываем индикатор загрузки
+    document.body.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #000;">
+        <div style="color: #ff3c3c; font-size: 18px; margin-bottom: 20px;">Загрузка...</div>
+        <div style="width: 40px; height: 40px; border: 3px solid #ff3c3c; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      </div>
+      <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+      </style>
+    `;
+
     console.log('Initializing Telegram Web App...');
     const tg = window.Telegram?.WebApp;
     if (!tg) {
       throw new Error('Это приложение можно открыть только в Telegram');
     }
 
-    // Ждем инициализации WebApp
-    await new Promise(resolve => setTimeout(resolve, 1000));
     tg.ready();
-
-    // Получаем данные пользователя
     userData = tg.initDataUnsafe?.user;
     if (!userData) {
-      throw new Error('Не удалось получить данные пользователя. Пожалуйста, перезагрузите приложение.');
+      throw new Error('Не удалось получить данные пользователя');
     }
 
-    // Настраиваем адаптацию под мобильные устройства
-    setupMobileAdaptation();
-
-    // Загружаем данные профиля
-    await loadProfile(userData);
+    // Инициализируем все параллельно
+    await Promise.all([
+      setupMobileAdaptation(),
+      loadProfile(userData)
+    ]);
 
     console.log('Инициализация успешна:', { userData });
 
