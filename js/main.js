@@ -114,21 +114,7 @@ async function handleCheckin() {
   }
 }
 
-// Обработчик открытия реферального окна
-async function openReferralModal() {
-  closeAllModals();
-  document.getElementById('referral-modal').style.display = 'block';
-  document.getElementById('modal-overlay').style.display = 'block';
-  
-  try {
-    const referralCode = await ensureReferralCode(userData);
-    await updateReferralsCount(userData);
-    updateReferralUI(referralCode);
-  } catch (error) {
-    console.error('Ошибка при открытии реферального окна:', error);
-    showNotification('Произошла ошибка при загрузке данных', 'error');
-  }
-}
+
 
 // Обработчик применения реферального кода
 async function handleReferralCode() {
