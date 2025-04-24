@@ -1,10 +1,10 @@
 // Конфигурация и инициализация базы данных
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
-const supabaseUrl = 'YOUR_SUPABASE_URL';
-const supabaseKey = 'YOUR_SUPABASE_KEY';
+const SUPABASE_URL = 'https://msstnczyshmnhjcnzjlg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zc3RuY3p5c2htbmhqY256amxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMjI0MjUsImV4cCI6MjA2MDg5ODQyNX0.9Oa_ghFyX9qVquxokvLMSNRfQq7FzA6mQEvlsM2ZyRc';
 
-export const supabaseClient = createClient(supabaseUrl, supabaseKey);
+export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Функции для работы с пользователями
 export async function getUser(telegramId) {
