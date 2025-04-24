@@ -23,15 +23,25 @@ export async function ensureReferralCode(userData) {
     // Если кода нет, генерируем новый
     let newCode;
     let isUnique = false;
+    let attempts = 0;
     
-    while (!isUnique) {
+    while (!isUnique && attempts < 10) {
       newCode = generateReferralCode();
       try {
-        await checkReferralCode(newCode);
-        isUnique = false;
-      } catch {
-        isUnique = true;
+        const existingUser = await checkReferralCode(newCode);
+        if (!existingUser) {
+          isUnique = true;
+        }
+      } catch (error) {
+        if (error.message.includes('not found')) {
+          isUnique = true;
+        }
       }
+      attempts++;
+    }
+    
+    if (!isUnique) {
+      throw new Error('Не удалось создать уникальный код');
     }
 
     await updateUser(userData.id, { referral_code: newCode });
