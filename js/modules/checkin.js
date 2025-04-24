@@ -49,17 +49,22 @@ export async function performCheckin(userData) {
     const streakBonus = Math.min(streak - 1, 7) * 5; // Максимальный бонус за 7 дней подряд
     const totalXP = baseXP + streakBonus;
 
-    // Создаем запись о чекине
-    await createCheckin(userData.id, streak, totalXP);
-    
-    // Обновляем данные пользователя
-    await updateUser(userData.id, {
-      last_checkin: now.toISOString(),
-      streak: streak
-    });
+    try {
+      // Создаем запись о чекине
+      await createCheckin(userData.id, streak, totalXP);
+      
+      // Обновляем данные пользователя
+      await updateUser(userData.id, {
+        last_checkin: now.toISOString(),
+        streak: streak
+      });
 
-    // Начисляем XP
-    await incrementXP(userData.id, totalXP);
+      // Начисляем XP
+      await incrementXP(userData.id, totalXP);
+    } catch (dbError) {
+      console.error('Ошибка при работе с базой данных:', dbError);
+      throw new Error('Не удалось сохранить данные чекина');
+    }
 
     return {
       success: true,
