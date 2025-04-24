@@ -1,177 +1,206 @@
-import { supabase } from './modules/supabase.js';
-import { ensureReferralCode, applyReferralCode, updateReferralsCount } from './modules/referral.js';
-import { performCheckin } from './modules/checkin.js';
-import { closeAllModals, showNotification, updateReferralUI, updateCheckinUI, animateXP } from './modules/ui.js';
-import { loadTasksStatus, verifyTask } from './modules/tasks.js';
-import { loadProfile, openProfileModal, setupMobileAdaptation } from './modules/profile.js';
+// Конфигурация и инициализация базы данных
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
-// Глобальные переменные
-let userData = null;
-let userPoints = 0;
-let referralCode = null;
+const SUPABASE_URL = 'https://msstnczyshmnhjcnzjlg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zc3RuY3p5c2htbmhqY256amxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMjI0MjUsImV4cCI6MjA2MDg5ODQyNX0.9Oa_ghFyX9qVquxokvLMSNRfQq7FzA6mQEvlsM2ZyRc';
 
-// Функции модальных окон
-function openCheckinModal() {
-  closeAllModals();
-  document.getElementById('checkin-modal').style.display = 'block';
-  document.getElementById('modal-overlay').style.display = 'block';
-  document.getElementById('start-bg').style.display = 'none';
-  document.getElementById('checkin-bg').style.display = 'block';
-}
-
-async function openReferralModal() {
-  closeAllModals();
-  document.getElementById('referral-modal').style.display = 'block';
-  document.getElementById('modal-overlay').style.display = 'block';
-  
-  try {
-    const code = await ensureReferralCode(userData);
-    await updateReferralsCount(userData);
-    updateReferralUI(code);
-  } catch (error) {
-    console.error('Ошибка при открытии реферального окна:', error);
-    showNotification('Произошла ошибка при загрузке данных', 'error');
-  }
-}
-
-function openTasksModal() {
-  closeAllModals();
-  document.getElementById('tasks-modal').style.display = 'block';
-  document.getElementById('modal-overlay').style.display = 'block';
-}
-
-function copyReferralCode() {
-  const codeElement = document.getElementById('referral-code');
-  if (codeElement) {
-    navigator.clipboard.writeText(codeElement.textContent)
-      .then(() => showNotification('Код скопирован!', 'success'))
-      .catch(() => showNotification('Не удалось скопировать код', 'error'));
-  }
-}
-
-// Инициализация при загрузке
-window.addEventListener('DOMContentLoaded', async () => {
-  try {
-    // Создаем и показываем индикатор загрузки
-    const loadingDiv = document.createElement('div');
-    loadingDiv.id = 'loading-overlay';
-    loadingDiv.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999;';
-    loadingDiv.innerHTML = `
-      <div style="color: #ff3c3c; font-size: 18px; margin-bottom: 20px;">Загрузка...</div>
-      <div style="width: 40px; height: 40px; border: 3px solid #ff3c3c; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-      <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-    `;
-    document.body.appendChild(loadingDiv);
-
-    console.log('Initializing Telegram Web App...');
-    const tg = window.Telegram?.WebApp;
-    if (!tg) {
-      throw new Error('Это приложение можно открыть только в Telegram');
-    }
-
-    tg.ready();
-    userData = tg.initDataUnsafe?.user;
-    if (!userData) {
-      throw new Error('Не удалось получить данные пользователя');
-    }
-
-    // Устанавливаем таймаут на инициализацию
-    const initPromise = Promise.all([
-      setupMobileAdaptation(),
-      loadProfile(userData)
-    ]);
-
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Время ожидания истекло')), 10000);
-    });
-
-    await Promise.race([initPromise, timeoutPromise]);
-    console.log('Инициализация успешна:', { userData });
-
-    // Удаляем индикатор загрузки
-    const loadingOverlay = document.getElementById('loading-overlay');
-    if (loadingOverlay) {
-      loadingOverlay.remove();
-    }
-
-    // Экспортируем функции в глобальную область видимости
-    Object.assign(window, {
-      // Модальные окна
-      closeCheckinModal: closeAllModals,
-      closeReferralModal: closeAllModals,
-      closeTasksModal: closeAllModals,
-      openCheckinModal,
-      openReferralModal,
-      openTasksModal,
-      // Обработчики событий
-      handleCheckin,
-      handleReferralCode,
-      copyReferralCode,
-      applyReferralCode,
-      verifyTask: (taskType) => verifyTask(taskType, userData),
-      openProfileModal
-    });
-  } catch (error) {
-    console.error('Ошибка при инициализации:', error);
-    document.body.innerHTML = `<div style="padding: 20px; color: red;">
-      ⚠️ Ошибка: ${error.message}
-    </div>`;
+export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: false
   }
 });
 
-// Обработчик чекина
-async function handleCheckin() {
+// Функция для обработки запросов с таймаутом
+async function withTimeout(promise, ms = 5000) {
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Время ожидания запроса истекло')), ms);
+  });
+  return Promise.race([promise, timeout]);
+}
+
+// Функции для работы с пользователями
+export async function getUser(telegramId) {
   try {
-    const result = await performCheckin(userData);
-    if (result.success) {
-      showNotification(result.message, 'success');
-      updateCheckinUI(result.streak);
-      animateXP(result.xp);
-    } else {
-      showNotification(result.message, 'error');
+    const { data, error } = await withTimeout(
+      supabaseClient
+        .from('users')
+        .select('*')
+        .eq('telegram_id', String(telegramId))
+        .single()
+    );
+
+    if (error && error.code === 'PGRST116') {
+      // Пользователь не найден, создаем нового
+      return await createUser(telegramId);
+    } else if (error) {
+      throw error;
     }
+    return data;
   } catch (error) {
-    console.error('Ошибка при выполнении чекина:', error);
-    showNotification('Произошла ошибка при выполнении чекина', 'error');
+    console.error('Ошибка при получении пользователя:', error);
+    throw error;
   }
 }
 
-
-
-// Обработчик применения реферального кода
-async function handleReferralCode() {
-  const codeInput = document.getElementById('referral-input');
-  const code = codeInput.value.trim();
-  
-  if (!code) {
-    showNotification('Введите реферальный код', 'error');
-    return;
-  }
-  
+async function createUser(telegramId) {
   try {
-    const result = await applyReferralCode(userData, code);
-    showNotification(result.message, result.success ? 'success' : 'error');
-    
-    if (result.success) {
-      codeInput.value = '';
-      animateXP(20);
-      await loadProfile(userData); // Обновляем данные профиля
-    }
+    const { data, error } = await withTimeout(
+      supabaseClient
+        .from('users')
+        .insert({
+          telegram_id: String(telegramId),
+          points: 0,
+          streak: 0,
+          last_checkin: null
+        })
+        .select()
+        .single()
+    );
+
+    if (error) throw error;
+    return data;
   } catch (error) {
-    console.error('Ошибка при применении реферального кода:', error);
-    showNotification('Произошла ошибка при применении кода', 'error');
+    console.error('Ошибка при создании пользователя:', error);
+    throw error;
   }
 }
 
-// Обработчик открытия окна задач
-function handleTasksModal() {
-  closeAllModals();
-  openTasksModal();
-  loadTasksStatus(userData);
+export async function updateUser(telegramId, updates) {
+  try {
+    const { error } = await withTimeout(
+      supabaseClient
+        .from('users')
+        .update(updates)
+        .eq('telegram_id', String(telegramId))
+    );
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Ошибка при обновлении пользователя:', error);
+    throw error;
+  }
 }
 
-// Обработчик открытия профиля
-function handleProfileModal() {
-  closeAllModals();
-  openProfileModal(userData);
+export async function incrementXP(userId, amount) {
+  try {
+    await withTimeout(
+      supabaseClient.rpc('increment_xp', {
+        user_id: String(userId),
+        xp_amount: amount
+      })
+    );
+  } catch (error) {
+    console.error('Ошибка при начислении XP:', error);
+    throw error;
+  }
+}
+
+// Функции для работы с рефералами
+export async function getReferralCode(telegramId) {
+  try {
+    const { data, error } = await withTimeout(
+      supabaseClient
+        .from('users')
+        .select('referral_code')
+        .eq('telegram_id', String(telegramId))
+        .single()
+    );
+
+    if (error) throw error;
+    return data?.referral_code;
+  } catch (error) {
+    console.error('Ошибка при получении реферального кода:', error);
+    throw error;
+  }
+}
+
+export async function checkReferralCode(code) {
+  try {
+    const { data, error } = await withTimeout(
+      supabaseClient
+        .from('users')
+        .select('telegram_id, referral_code')
+        .eq('referral_code', code)
+        .single()
+    );
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Ошибка при проверке реферального кода:', error);
+    throw error;
+  }
+}
+
+export async function createReferral(referrerId, referredId) {
+  try {
+    const { error } = await withTimeout(
+      supabaseClient
+        .from('referrals')
+        .insert({
+          referrer_id: String(referrerId),
+          referred_id: String(referredId)
+        })
+    );
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Ошибка при создании реферала:', error);
+    throw error;
+  }
+}
+
+export async function getReferralsCount(telegramId) {
+  try {
+    const { count, error } = await withTimeout(
+      supabaseClient
+        .from('referrals')
+        .select('*', { count: 'exact' })
+        .eq('referrer_id', String(telegramId))
+    );
+
+    if (error) throw error;
+    return count || 0;
+  } catch (error) {
+    console.error('Ошибка при получении количества рефералов:', error);
+    throw error;
+  }
+}
+
+// Функции для работы с чекинами
+export async function createCheckin(userId, streak, xpEarned) {
+  try {
+    const { error } = await withTimeout(
+      supabaseClient
+        .from('checkins')
+        .insert({
+          user_id: String(userId),
+          streak_count: streak,
+          xp_earned: xpEarned
+        })
+    );
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Ошибка при создании чекина:', error);
+    throw error;
+  }
+}
+
+export async function getLastCheckin(userId) {
+  try {
+    const { data, error } = await withTimeout(
+      supabaseClient
+        .from('users')
+        .select('last_checkin')
+        .eq('telegram_id', String(userId))
+        .single()
+    );
+
+    if (error) throw error;
+    return data?.last_checkin;
+  } catch (error) {
+    console.error('Ошибка при получении последнего чекина:', error);
+    throw error;
+  }
 }
