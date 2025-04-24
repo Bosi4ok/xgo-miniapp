@@ -7,26 +7,41 @@ import { loadProfile, openProfileModal, setupMobileAdaptation } from './modules/
 
 // Глобальные переменные
 let userData = null;
+let userPoints = 0;
+let referralCode = null;
+
+// Экспортируем функции в глобальную область видимости
+Object.assign(window, {
+  closeCheckinModal: closeAllModals,
+  closeReferralModal: closeAllModals,
+  closeTasksModal: closeAllModals,
+  openTasksModal: () => {
+    closeAllModals();
+    document.getElementById('tasks-modal').style.display = 'block';
+    document.getElementById('modal-overlay').style.display = 'block';
+  },
+  handleCheckin,
+  openReferralModal,
+  handleReferralCode,
+  copyReferralCode,
+  applyReferralCode,
+  verifyTask,
+  openProfileModal
+});
 
 // Инициализация при загрузке
 window.addEventListener('DOMContentLoaded', async () => {
   try {
-    // Проверяем доступность Telegram WebApp
-    if (!window.Telegram || !window.Telegram.WebApp) {
-      throw new Error('Telegram WebApp не доступен');
+    console.log('Initializing Telegram Web App...');
+    const tg = window.Telegram?.WebApp;
+    if (!tg) {
+      throw new Error('Telegram WebApp is not available');
     }
 
-    // Инициализация Telegram WebApp
-    window.Telegram.WebApp.ready();
-    userData = window.Telegram.WebApp.initDataUnsafe?.user;
-
+    tg.ready();
+    userData = tg.initDataUnsafe?.user;
     if (!userData) {
-      userData = {
-        id: 'test_user_' + Math.random().toString(36).substring(7),
-        first_name: 'Test User',
-        username: 'test_user'
-      };
-      console.warn('Используются тестовые данные пользователя');
+      throw new Error('User data is null');
     }
 
     // Настраиваем адаптацию под мобильные устройства
