@@ -2,9 +2,19 @@
 export function closeAllModals() {
   const modals = ['referral-modal', 'checkin-modal', 'tasks-modal'];
   modals.forEach(modalId => {
-    document.getElementById(modalId).style.display = 'none';
+    const modal = document.getElementById(modalId);
+    if (modal) modal.style.display = 'none';
   });
-  document.getElementById('modal-overlay').style.display = 'none';
+
+  const overlay = document.getElementById('modal-overlay');
+  if (overlay) overlay.style.display = 'none';
+
+  // Управляем видимостью фоновых видео
+  const startBg = document.getElementById('start-bg');
+  const checkinBg = document.getElementById('checkin-bg');
+  
+  if (startBg) startBg.style.display = 'block';
+  if (checkinBg) checkinBg.style.display = 'none';
 }
 
 // Функции для работы с уведомлениями
