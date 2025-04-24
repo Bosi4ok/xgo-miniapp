@@ -52,16 +52,16 @@ function copyReferralCode() {
 // Инициализация при загрузке
 window.addEventListener('DOMContentLoaded', async () => {
   try {
-    // Показываем индикатор загрузки
-    document.body.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #000;">
-        <div style="color: #ff3c3c; font-size: 18px; margin-bottom: 20px;">Загрузка...</div>
-        <div style="width: 40px; height: 40px; border: 3px solid #ff3c3c; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-      </div>
-      <style>
-        @keyframes spin { to { transform: rotate(360deg); } }
-      </style>
+    // Создаем и показываем индикатор загрузки
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'loading-overlay';
+    loadingDiv.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999;';
+    loadingDiv.innerHTML = `
+      <div style="color: #ff3c3c; font-size: 18px; margin-bottom: 20px;">Загрузка...</div>
+      <div style="width: 40px; height: 40px; border: 3px solid #ff3c3c; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
     `;
+    document.body.appendChild(loadingDiv);
 
     console.log('Initializing Telegram Web App...');
     const tg = window.Telegram?.WebApp;
@@ -75,13 +75,24 @@ window.addEventListener('DOMContentLoaded', async () => {
       throw new Error('Не удалось получить данные пользователя');
     }
 
-    // Инициализируем все параллельно
-    await Promise.all([
+    // Устанавливаем таймаут на инициализацию
+    const initPromise = Promise.all([
       setupMobileAdaptation(),
       loadProfile(userData)
     ]);
 
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Время ожидания истекло')), 10000);
+    });
+
+    await Promise.race([initPromise, timeoutPromise]);
     console.log('Инициализация успешна:', { userData });
+
+    // Удаляем индикатор загрузки
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) {
+      loadingOverlay.remove();
+    }
 
     // Экспортируем функции в глобальную область видимости
     Object.assign(window, {
