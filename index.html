@@ -1168,26 +1168,9 @@
       }
     }
 
-    // Открытие модального окна реферальной системы
-    function openReferralModal() {
-      document.getElementById('modal-overlay').style.display = 'block';
-      document.getElementById('referral-modal').style.display = 'block';
-    }
-
-    // Закрытие модального окна реферальной системы
-    window.closeReferralModal = function() {
-      document.getElementById('modal-overlay').style.display = 'none';
-      document.getElementById('referral-modal').style.display = 'none';
-    }
-
-    // Открытие модального окна чекина
-    function openCheckinModal() {
-      document.getElementById('modal-overlay').style.display = 'block';
-      document.getElementById('checkin-modal').style.display = 'block';
-      document.getElementById('start-bg').style.display = 'none';
+    document.getElementById('start-bg').style.display = 'none';
       document.getElementById('checkin-bg').style.display = 'block';
       loadCheckinData();
-    }
 
     // Функция закрытия модального окна чекина определена в main.js
 
@@ -1337,97 +1320,6 @@
         checkinBtn.disabled = false;
       }
     }
-
-    // Расчет XP на основе дня стрика
-    function calculateXP(day) {
-      if (day === 7) return 20;   // Маленький буст (неделя)
-      if (day === 14) return 25;  // Бонус 2-й недели
-      if (day === 21) return 30;  // Почти месяц!
-      if (day === 30) return 50;  // ФИНАЛ ЦИКЛА
-      if (day % 7 === 0) return 20; // Каждая неделя
-      if (day <= 2) return 10;    // Базовая награда
-      if (day <= 4) return 12;    // Немного больше
-      if (day <= 6) return 15;    // Еще больше
-      if (day <= 13) return 15;   // Стабильная награда
-      if (day <= 20) return 18;   // Увеличенная награда
-      return 20;                  // Максимальная базовая награда
-    }
-
-    function openCheckinModal() {
-      document.getElementById('checkin-modal').style.display = 'block';
-      document.getElementById('modal-overlay').style.display = 'block';
-      document.getElementById('streak-text').textContent = `Current streak: 1 day`;
-      document.querySelector('.next-reward-label').textContent = 'Next reward:';
-    }
-
-    // Закрытие при клике вне модального окна
-    document.getElementById('modal-overlay').addEventListener('click', (e) => {
-      if (e.target.id === 'modal-overlay') {
-        closeCheckinModal();
-        closeReferralModal();
-      }
-    });
-
-    // Копирование реферального кода
-    async function copyReferralCode() {
-      const code = document.getElementById('referral-code').textContent;
-      if (code === 'Loading...' || code === 'Ошибка загрузки кода') {
-        document.getElementById('copy-status').textContent = '❌ Код недоступен';
-        return;
-      }
-
-      try {
-        await navigator.clipboard.writeText(code);
-        document.getElementById('copy-status').textContent = '✅ Код скопирован';
-        
-        // Анимация копирования
-        const codeElement = document.getElementById('referral-code');
-        codeElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-        setTimeout(() => {
-          codeElement.style.backgroundColor = 'transparent';
-        }, 200);
-
-        // Скрываем статус через 2 секунды
-        setTimeout(() => {
-          document.getElementById('copy-status').textContent = '';
-        }, 2000);
-      } catch (err) {
-        console.error('Ошибка при копировании:', err);
-        document.getElementById('copy-status').textContent = '❌ Ошибка при копировании';
-      }
-    }
-
-    window.copyReferralCode = copyReferralCode;
-
-    // Инициализация при загрузке
-    window.addEventListener('DOMContentLoaded', () => {
-      initTelegram();
-
-      // Добавляем обработчики для всех пунктов меню
-      document.querySelectorAll('.nav-item').forEach(item => {
-        const originalOnClick = item.getAttribute('onclick');
-        item.onclick = function(e) {
-          e.preventDefault();
-          closeAllModals(); // Сначала закрываем все окна
-          
-          // Если был оригинальный обработчик, выполняем его
-          if (originalOnClick) {
-            const funcName = originalOnClick.split('(')[0];
-            window[funcName]();
-          }
-        };
-      });
-
-      // Добавляем обработчик клика на оверлей для закрытия модальных окон
-      document.getElementById('modal-overlay').addEventListener('click', (e) => {
-        if (e.target.id === 'modal-overlay') {
-          closeAllModals();
-        }
-      });
-    });
-
-    window.closeCheckinModal = closeAllModals;
-    window.closeReferralModal = closeAllModals;
 
   </script>
 </body>
