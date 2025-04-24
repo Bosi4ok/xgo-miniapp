@@ -10,7 +10,7 @@
   <style>
     @font-face {
       font-family: 'Brinnan';
-      src: url('Brinnan-Bold.otf') format('opentype');
+      src: url('assets/Brinnan Bold.otf') format('opentype');
       font-weight: bold;
     }
     html, body {
@@ -793,10 +793,10 @@
 </head>
 <body>
   <video muted loop playsinline autoplay class="background-video" id="start-bg">
-    <source src="стиль1.mp4" type="video/mp4" />
+    <source src="assets/стиль1.mp4" type="video/mp4" />
   </video>
   <video muted loop playsinline autoplay class="background-video" id="checkin-bg" style="display: none;">
-    <source src="check-in.mp4" type="video/mp4" />
+    <source src="assets/chek-in.mp4" type="video/mp4" />
   </video>
   <div class="user-info" id="user-info">
     <div class="user-icon">👤</div>
@@ -1201,13 +1201,7 @@
       loadCheckinData();
     }
 
-    // Закрытие модального окна чекина
-    window.closeCheckinModal = function() {
-      document.getElementById('modal-overlay').style.display = 'none';
-      document.getElementById('checkin-modal').style.display = 'none';
-      document.getElementById('start-bg').style.display = 'block';
-      document.getElementById('checkin-bg').style.display = 'none';
-    }
+    // Функция закрытия модального окна чекина определена в main.js
 
     // Загрузка данных для чекина
     async function loadCheckinData() {
