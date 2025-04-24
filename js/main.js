@@ -2,7 +2,7 @@ import { supabase } from './modules/supabase.js';
 import { ensureReferralCode, applyReferralCode, updateReferralsCount } from './modules/referral.js';
 import { performCheckin } from './modules/checkin.js';
 import { closeAllModals, showNotification, updateReferralUI, updateCheckinUI, animateXP } from './modules/ui.js';
-import { loadTasksStatus, verifyTask, openTasksModal } from './modules/tasks.js';
+import { loadTasksStatus, verifyTask } from './modules/tasks.js';
 import { loadProfile, openProfileModal, setupMobileAdaptation } from './modules/profile.js';
 
 // Глобальные переменные
