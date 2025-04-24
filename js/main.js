@@ -49,24 +49,6 @@ function copyReferralCode() {
   }
 }
 
-// Экспортируем функции в глобальную область видимости
-Object.assign(window, {
-  // Модальные окна
-  closeCheckinModal: closeAllModals,
-  closeReferralModal: closeAllModals,
-  closeTasksModal: closeAllModals,
-  openCheckinModal,
-  openReferralModal,
-  openTasksModal,
-  // Обработчики событий
-  handleCheckin,
-  handleReferralCode,
-  copyReferralCode,
-  applyReferralCode,
-  verifyTask: (taskType) => verifyTask(taskType, userData),
-  openProfileModal
-});
-
 // Инициализация при загрузке
 window.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -89,6 +71,24 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadProfile(userData);
 
     console.log('Инициализация успешна:', { userData });
+
+    // Экспортируем функции в глобальную область видимости
+    Object.assign(window, {
+      // Модальные окна
+      closeCheckinModal: closeAllModals,
+      closeReferralModal: closeAllModals,
+      closeTasksModal: closeAllModals,
+      openCheckinModal,
+      openReferralModal,
+      openTasksModal,
+      // Обработчики событий
+      handleCheckin,
+      handleReferralCode,
+      copyReferralCode,
+      applyReferralCode,
+      verifyTask: (taskType) => verifyTask(taskType, userData),
+      openProfileModal
+    });
   } catch (error) {
     console.error('Ошибка при инициализации:', error);
     document.body.innerHTML = `<div style="padding: 20px; color: red;">
