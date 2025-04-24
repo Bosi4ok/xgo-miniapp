@@ -141,6 +141,12 @@ window.copyReferralCode = () => {
 };
 
 // Алиас для закрытия модального окна чекина
+// Экспортируем все необходимые функции в глобальную область видимости
 window.closeCheckinModal = closeAllModals;
-
-
+window.closeReferralModal = closeAllModals;
+window.closeTasksModal = closeAllModals;
+window.openTasksModal = () => {
+  closeAllModals();
+  document.getElementById('tasks-modal').style.display = 'block';
+  document.getElementById('modal-overlay').style.display = 'block';
+};
