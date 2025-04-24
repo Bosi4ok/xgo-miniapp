@@ -14,6 +14,27 @@ export async function getUser(telegramId) {
     .eq('telegram_id', String(telegramId))
     .single();
 
+  if (error && error.code === 'PGRST116') {
+    // Пользователь не найден, создаем нового
+    return await createUser(telegramId);
+  } else if (error) {
+    throw error;
+  }
+  return data;
+}
+
+async function createUser(telegramId) {
+  const { data, error } = await supabaseClient
+    .from('users')
+    .insert({
+      telegram_id: String(telegramId),
+      points: 0,
+      streak: 0,
+      last_checkin: null
+    })
+    .select()
+    .single();
+
   if (error) throw error;
   return data;
 }
