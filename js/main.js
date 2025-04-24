@@ -10,22 +10,43 @@ let userData = null;
 let userPoints = 0;
 let referralCode = null;
 
+// Функции для открытия модальных окон
+function openCheckinModal() {
+  closeAllModals();
+  document.getElementById('checkin-modal').style.display = 'block';
+  document.getElementById('modal-overlay').style.display = 'block';
+  document.getElementById('start-bg').style.display = 'none';
+  document.getElementById('checkin-bg').style.display = 'block';
+}
+
+function copyReferralCode() {
+  const codeElement = document.getElementById('referral-code');
+  if (codeElement) {
+    navigator.clipboard.writeText(codeElement.textContent)
+      .then(() => showNotification('Код скопирован!', 'success'))
+      .catch(() => showNotification('Не удалось скопировать код', 'error'));
+  }
+}
+
 // Экспортируем функции в глобальную область видимости
 Object.assign(window, {
+  // Модальные окна
   closeCheckinModal: closeAllModals,
   closeReferralModal: closeAllModals,
   closeTasksModal: closeAllModals,
+  openCheckinModal,
+  openReferralModal,
   openTasksModal: () => {
     closeAllModals();
     document.getElementById('tasks-modal').style.display = 'block';
     document.getElementById('modal-overlay').style.display = 'block';
   },
+  // Обработчики событий
   handleCheckin,
-  openReferralModal,
   handleReferralCode,
   copyReferralCode,
   applyReferralCode,
-  verifyTask,
+  verifyTask: (taskType) => verifyTask(taskType, userData),
   openProfileModal
 });
 
@@ -129,49 +150,3 @@ function handleProfileModal() {
   closeAllModals();
   openProfileModal(userData);
 }
-
-// Экспортируем функции в глобальную область видимости
-window.handleCheckin = handleCheckin;
-window.openReferralModal = openReferralModal;
-window.handleReferralCode = handleReferralCode;
-window.handleTasksModal = handleTasksModal;
-window.handleProfileModal = handleProfileModal;
-window.closeAllModals = closeAllModals;
-window.verifyTask = (taskType) => verifyTask(taskType, userData);
-
-// Алиасы для обратной совместимости
-window.performCheckin = handleCheckin;
-window.openCheckinModal = () => {
-  closeAllModals();
-  document.getElementById('checkin-modal').style.display = 'block';
-  document.getElementById('modal-overlay').style.display = 'block';
-};
-window.applyReferralCode = handleReferralCode;
-window.copyReferralCode = () => {
-  const codeElement = document.getElementById('referral-code');
-  if (codeElement) {
-    navigator.clipboard.writeText(codeElement.textContent)
-      .then(() => showNotification('Код скопирован!', 'success'))
-      .catch(() => showNotification('Не удалось скопировать код', 'error'));
-  }
-};
-
-// Алиас для закрытия модального окна чекина
-// Экспортируем функции в глобальную область видимости
-Object.assign(window, {
-  closeCheckinModal: closeAllModals,
-  closeReferralModal: closeAllModals,
-  closeTasksModal: closeAllModals,
-  openTasksModal: () => {
-    closeAllModals();
-    document.getElementById('tasks-modal').style.display = 'block';
-    document.getElementById('modal-overlay').style.display = 'block';
-  },
-  handleCheckin,
-  openReferralModal,
-  handleReferralCode,
-  copyReferralCode,
-  applyReferralCode,
-  verifyTask,
-  openProfileModal
-});
