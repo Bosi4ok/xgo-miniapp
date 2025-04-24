@@ -1,16 +1,30 @@
 import { getLastCheckin, createCheckin, incrementXP, updateUser } from './database.js';
 
+// Кэш для чекина
+let checkinCache = {};
+const CHECKIN_CACHE_LIFETIME = 60000; // 1 минута
+
 // Проверка возможности чекина
 export async function canCheckin(userData) {
+  const userId = String(userData.id);
+  const now = Date.now();
+
+  // Проверяем кэш
+  if (checkinCache[userId] && (now - checkinCache[userId].timestamp < CHECKIN_CACHE_LIFETIME)) {
+    return checkinCache[userId].canCheckin;
+  }
+
   try {
-    const lastCheckin = await getLastCheckin(userData.id);
-    if (!lastCheckin) return true;
+    const lastCheckin = await getLastCheckin(userId);
+    const canDoCheckin = !lastCheckin || !isSameDay(new Date(lastCheckin), new Date());
 
-    const lastCheckinDate = new Date(lastCheckin);
-    const now = new Date();
+    // Обновляем кэш
+    checkinCache[userId] = {
+      canCheckin: canDoCheckin,
+      timestamp: now
+    };
 
-    // Проверяем, прошли ли сутки с последнего чекина
-    return !isSameDay(lastCheckinDate, now);
+    return canDoCheckin;
   } catch (error) {
     console.error('Ошибка при проверке возможности чекина:', error);
     return false;
@@ -27,8 +41,10 @@ export async function performCheckin(userData) {
     };
   }
 
+  const userId = String(userData.id);
+
   try {
-    // Проверяем возможность чекина
+    // Проверяем возможность чекина из кэша
     const canDoCheckin = await canCheckin(userData);
     if (!canDoCheckin) {
       return {
@@ -38,13 +54,11 @@ export async function performCheckin(userData) {
     }
 
     const now = new Date();
-    const lastCheckin = await getLastCheckin(userData.id);
-    const lastCheckinDate = lastCheckin ? new Date(lastCheckin) : null;
-
-    // Вычисляем стрик
+    
+    // Используем кэшированные данные для стрика
     let streak = 1;
-    if (lastCheckinDate) {
-      const daysDiff = getDaysDifference(lastCheckinDate, now);
+    if (checkinCache[userId]?.lastCheckin) {
+      const daysDiff = getDaysDifference(new Date(checkinCache[userId].lastCheckin), now);
       if (daysDiff === 1) {
         streak = (userData.streak || 0) + 1;
       }
@@ -55,14 +69,22 @@ export async function performCheckin(userData) {
     const streakBonus = Math.min(streak - 1, 7) * 5;
     const totalXP = baseXP + streakBonus;
 
+    // Обновляем кэш сразу
+    checkinCache[userId] = {
+      ...checkinCache[userId],
+      canCheckin: false,
+      lastCheckin: now.toISOString(),
+      timestamp: Date.now()
+    };
+
     // Выполняем все операции параллельно
     await Promise.all([
-      createCheckin(userData.id, streak, totalXP),
-      updateUser(userData.id, {
+      createCheckin(userId, streak, totalXP),
+      updateUser(userId, {
         last_checkin: now.toISOString(),
         streak: streak
       }),
-      incrementXP(userData.id, totalXP)
+      incrementXP(userId, totalXP)
     ]);
 
     return {
@@ -73,6 +95,12 @@ export async function performCheckin(userData) {
     };
   } catch (error) {
     console.error('Ошибка при выполнении чекина:', error);
+    
+    // Восстанавливаем кэш в случае ошибки
+    if (checkinCache[userId]) {
+      checkinCache[userId].canCheckin = true;
+    }
+
     return {
       success: false,
       message: 'Произошла ошибка при выполнении чекина'
