@@ -117,4 +117,7 @@ window.copyReferralCode = () => {
   }
 };
 
+// Алиас для закрытия модального окна чекина
+window.closeCheckinModal = closeAllModals;
+
 
