@@ -16,39 +16,38 @@ function generateReferralCode() {
 
 // Получение или создание реферального кода
 export async function ensureReferralCode(userData) {
+  if (!userData?.id) {
+    console.error('Нет данных пользователя');
+    throw new Error('Нет данных пользователя');
+  }
+
   try {
+    // Сначала проверяем существующий код
     const existingCode = await getReferralCode(userData.id);
-    if (existingCode) return existingCode;
+    if (existingCode) {
+      return existingCode;
+    }
 
-    // Если кода нет, генерируем новый
-    let newCode;
-    let isUnique = false;
-    let attempts = 0;
-    
-    while (!isUnique && attempts < 10) {
-      newCode = generateReferralCode();
-      try {
-        const existingUser = await checkReferralCode(newCode);
-        if (!existingUser) {
-          isUnique = true;
-        }
-      } catch (error) {
-        if (error.message.includes('not found')) {
-          isUnique = true;
-        }
+    // Генерируем новый код
+    const newCode = generateReferralCode();
+
+    // Проверяем уникальность
+    try {
+      await checkReferralCode(newCode);
+      // Если код существует, генерируем новый
+      return await ensureReferralCode(userData);
+    } catch (error) {
+      if (!error.message?.includes('not found')) {
+        throw error;
       }
-      attempts++;
-    }
-    
-    if (!isUnique) {
-      throw new Error('Не удалось создать уникальный код');
     }
 
+    // Сохраняем новый код
     await updateUser(userData.id, { referral_code: newCode });
     return newCode;
   } catch (error) {
     console.error('Ошибка при создании реферального кода:', error);
-    return null;
+    throw error;
   }
 }
 
