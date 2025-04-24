@@ -8,16 +8,39 @@ import { loadProfile, openProfileModal, setupMobileAdaptation } from './modules/
 let userData = null;
 
 // Инициализация при загрузке
-window.addEventListener('DOMContentLoaded', () => {
-  // Инициализация Telegram WebApp
-  window.Telegram.WebApp.ready();
-  userData = window.Telegram.WebApp.initDataUnsafe.user;
-  
-  // Настраиваем адаптацию под мобильные устройства
-  setupMobileAdaptation();
-  
-  // Загружаем данные профиля
-  loadProfile(userData);
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    // Проверяем доступность Telegram WebApp
+    if (!window.Telegram || !window.Telegram.WebApp) {
+      throw new Error('Telegram WebApp не доступен');
+    }
+
+    // Инициализация Telegram WebApp
+    window.Telegram.WebApp.ready();
+    userData = window.Telegram.WebApp.initDataUnsafe?.user;
+
+    if (!userData) {
+      userData = {
+        id: 'test_user_' + Math.random().toString(36).substring(7),
+        first_name: 'Test User',
+        username: 'test_user'
+      };
+      console.warn('Используются тестовые данные пользователя');
+    }
+
+    // Настраиваем адаптацию под мобильные устройства
+    setupMobileAdaptation();
+
+    // Загружаем данные профиля
+    await loadProfile(userData);
+
+    console.log('Инициализация успешна:', { userData });
+  } catch (error) {
+    console.error('Ошибка при инициализации:', error);
+    document.body.innerHTML = `<div style="padding: 20px; color: red;">
+      ⚠️ Ошибка: ${error.message}
+    </div>`;
+  }
 });
 
 // Обработчик чекина
