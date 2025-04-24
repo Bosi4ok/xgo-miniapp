@@ -19,8 +19,18 @@ export async function canCheckin(userData) {
 
 // Выполнение чекина
 export async function performCheckin(userData) {
+  if (!userData?.id) {
+    console.error('Нет данных пользователя');
+    return {
+      success: false,
+      message: 'Ошибка: нет данных пользователя'
+    };
+  }
+
   try {
-    if (!await canCheckin(userData)) {
+    // Проверяем возможность чекина
+    const canDoCheckin = await canCheckin(userData);
+    if (!canDoCheckin) {
       return {
         success: false,
         message: 'Вы уже выполнили чекин сегодня'
@@ -36,40 +46,30 @@ export async function performCheckin(userData) {
     if (lastCheckinDate) {
       const daysDiff = getDaysDifference(lastCheckinDate, now);
       if (daysDiff === 1) {
-        // Продолжаем стрик
         streak = (userData.streak || 0) + 1;
-      } else {
-        // Сбрасываем стрик
-        streak = 1;
       }
     }
 
-    // Вычисляем XP за чекин
+    // Вычисляем XP
     const baseXP = 10;
-    const streakBonus = Math.min(streak - 1, 7) * 5; // Максимальный бонус за 7 дней подряд
+    const streakBonus = Math.min(streak - 1, 7) * 5;
     const totalXP = baseXP + streakBonus;
 
-    try {
-      // Создаем запись о чекине
-      await createCheckin(userData.id, streak, totalXP);
-      
-      // Обновляем данные пользователя
-      await updateUser(userData.id, {
+    // Выполняем все операции параллельно
+    await Promise.all([
+      createCheckin(userData.id, streak, totalXP),
+      updateUser(userData.id, {
         last_checkin: now.toISOString(),
         streak: streak
-      });
-
-      // Начисляем XP
-      await incrementXP(userData.id, totalXP);
-    } catch (dbError) {
-      console.error('Ошибка при работе с базой данных:', dbError);
-      throw new Error('Не удалось сохранить данные чекина');
-    }
+      }),
+      incrementXP(userData.id, totalXP)
+    ]);
 
     return {
       success: true,
       message: `Чекин выполнен! +${totalXP} XP${streakBonus > 0 ? ` (включая бонус ${streakBonus} XP за серию ${streak} дней)` : ''}`,
-      streak: streak
+      streak: streak,
+      xp: totalXP
     };
   } catch (error) {
     console.error('Ошибка при выполнении чекина:', error);
