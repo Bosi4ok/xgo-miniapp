@@ -11,45 +11,43 @@ let userPoints = 0;
 let referralCode = null;
 
 // Функции модальных окон
-const modalFunctions = {
-  openCheckinModal: () => {
-    closeAllModals();
-    document.getElementById('checkin-modal').style.display = 'block';
-    document.getElementById('modal-overlay').style.display = 'block';
-    document.getElementById('start-bg').style.display = 'none';
-    document.getElementById('checkin-bg').style.display = 'block';
-  },
+function openCheckinModal() {
+  closeAllModals();
+  document.getElementById('checkin-modal').style.display = 'block';
+  document.getElementById('modal-overlay').style.display = 'block';
+  document.getElementById('start-bg').style.display = 'none';
+  document.getElementById('checkin-bg').style.display = 'block';
+}
 
-  openReferralModal: async () => {
-    closeAllModals();
-    document.getElementById('referral-modal').style.display = 'block';
-    document.getElementById('modal-overlay').style.display = 'block';
-    
-    try {
-      const code = await ensureReferralCode(userData);
-      await updateReferralsCount(userData);
-      updateReferralUI(code);
-    } catch (error) {
-      console.error('Ошибка при открытии реферального окна:', error);
-      showNotification('Произошла ошибка при загрузке данных', 'error');
-    }
-  },
-
-  openTasksModal: () => {
-    closeAllModals();
-    document.getElementById('tasks-modal').style.display = 'block';
-    document.getElementById('modal-overlay').style.display = 'block';
-  },
-
-  copyReferralCode: () => {
-    const codeElement = document.getElementById('referral-code');
-    if (codeElement) {
-      navigator.clipboard.writeText(codeElement.textContent)
-        .then(() => showNotification('Код скопирован!', 'success'))
-        .catch(() => showNotification('Не удалось скопировать код', 'error'));
-    }
+async function openReferralModal() {
+  closeAllModals();
+  document.getElementById('referral-modal').style.display = 'block';
+  document.getElementById('modal-overlay').style.display = 'block';
+  
+  try {
+    const code = await ensureReferralCode(userData);
+    await updateReferralsCount(userData);
+    updateReferralUI(code);
+  } catch (error) {
+    console.error('Ошибка при открытии реферального окна:', error);
+    showNotification('Произошла ошибка при загрузке данных', 'error');
   }
-};
+}
+
+function openTasksModal() {
+  closeAllModals();
+  document.getElementById('tasks-modal').style.display = 'block';
+  document.getElementById('modal-overlay').style.display = 'block';
+}
+
+function copyReferralCode() {
+  const codeElement = document.getElementById('referral-code');
+  if (codeElement) {
+    navigator.clipboard.writeText(codeElement.textContent)
+      .then(() => showNotification('Код скопирован!', 'success'))
+      .catch(() => showNotification('Не удалось скопировать код', 'error'));
+  }
+}
 
 // Экспортируем функции в глобальную область видимости
 Object.assign(window, {
@@ -57,10 +55,13 @@ Object.assign(window, {
   closeCheckinModal: closeAllModals,
   closeReferralModal: closeAllModals,
   closeTasksModal: closeAllModals,
-  ...modalFunctions,
+  openCheckinModal,
+  openReferralModal,
+  openTasksModal,
   // Обработчики событий
   handleCheckin,
   handleReferralCode,
+  copyReferralCode,
   applyReferralCode,
   verifyTask: (taskType) => verifyTask(taskType, userData),
   openProfileModal
