@@ -31,13 +31,17 @@ async function initializeApp() {
         userData = { ...userData, ...userInfo };
         
         // Добавляем UI функции в глобальную область
-        window.ui = ui;
-        window.closeAllModals = ui.closeAllModals;
-        window.showNotification = ui.showNotification;
-        window.showModal = ui.showModal;
+        if (ui) {
+            window.ui = ui;
+            window.closeAllModals = ui.closeAllModals;
+            window.showNotification = ui.showNotification;
+            window.showModal = ui.showModal;
 
-        // Закрываем все модальные окна при старте
-        ui.closeAllModals();
+            // Закрываем все модальные окна при старте
+            ui.closeAllModals();
+        } else {
+            throw new Error('Не удалось инициализировать UI модуль');
+        }
 
         // Настраиваем навигацию
         const navItems = document.querySelectorAll('.nav-item');
@@ -189,18 +193,25 @@ async function setupEventListeners() {
 // Функция проверки задания
 window.verifyTask = async function(taskType) {
     try {
+        if (!window.ui) {
+            throw new Error('UI модуль не инициализирован');
+        }
         const tasks = await moduleLoader.loadModule('tasks');
         const result = await tasks.verifyTask(taskType, userData);
         if (result.success) {
-            ui.showNotification(result.message, 'success');
-            ui.updatePointsDisplay(result.points);
+            window.ui.showNotification(result.message, 'success');
+            window.ui.updatePointsDisplay(result.points);
             document.getElementById(`${taskType}-task-status`).innerHTML = '✅';
         } else {
-            ui.showNotification(result.message, 'error');
+            window.ui.showNotification(result.message, 'error');
         }
     } catch (error) {
         console.error('Ошибка при проверке задания:', error);
-        ui.showNotification('Произошла ошибка при проверке задания', 'error');
+        if (window.ui) {
+            window.ui.showNotification('Произошла ошибка при проверке задания', 'error');
+        } else {
+            alert('Произошла ошибка при проверке задания');
+        }
     }
 };
 
