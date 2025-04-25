@@ -1,31 +1,96 @@
-// Импорты и конфигурация
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
-
-const SUPABASE_URL = 'https://msstnczyshmnhjcnzjlg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zc3RuY3p5c2htbmhqY256amxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMjI0MjUsImV4cCI6MjA2MDg5ODQyNX0.9Oa_ghFyX9qVquxokvLMSNRfQq7FzA6mQEvlsM2ZyRc';
+import { loadModules } from './loader.js';
 
 // Глобальные переменные
 let userData = null;
-let dbUser = null;
-const cache = new Map();
-const CACHE_LIFETIME = 30000;
+let moduleLoader = null;
 
-// Инициализация Supabase
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: false }
-});
+// Инициализация приложения
+async function initializeApp() {
+    try {
+        // Инициализация Telegram
+        const tg = window.Telegram?.WebApp;
+        if (!tg) {
+            throw new Error('Это приложение можно открыть только в Telegram');
+        }
 
-// Кэширование
-function getCache(key) {
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_LIFETIME) {
-    return cached.data;
-  }
-  return null;
+        tg.ready();
+        userData = tg.initDataUnsafe?.user;
+        if (!userData) {
+            throw new Error('Не удалось получить данные пользователя');
+        }
+
+        // Загружаем базовые модули
+        moduleLoader = await loadModules();
+
+        // Загружаем и инициализируем основные модули
+        const database = await moduleLoader.loadModule('database');
+        await database.initUser(userData);
+
+        // Инициализируем UI
+        const ui = await moduleLoader.loadModule('ui');
+        ui.init();
+
+        // Настраиваем обработчики событий
+        setupEventListeners();
+
+    } catch (error) {
+        console.error('Initialization error:', error);
+        alert('Не удалось загрузить приложение: ' + error.message);
+    }
 }
 
-function setCache(key, data) {
-  cache.set(key, { data, timestamp: Date.now() });
+// Настройка обработчиков событий
+async function setupEventListeners() {
+    try {
+        // Загружаем необходимые модули
+        const [checkin, referral] = await Promise.all([
+            moduleLoader.loadModule('checkin'),
+            moduleLoader.loadModule('referral')
+        ]);
+
+        // Обработчик чекина
+        document.getElementById('checkinButton')?.addEventListener('click', async () => {
+            try {
+                const result = await checkin.performCheckin(userData);
+                showModal('Успех!', `Вы получили ${result.xpEarned} XP! Ваш текущий стрик: ${result.newStreak}`);
+            } catch (error) {
+                showModal('Ошибка', error.message);
+            }
+        });
+
+        // Обработчики рефералов
+        document.getElementById('referralButton')?.addEventListener('click', async () => {
+            try {
+                const code = await referral.getReferralCode(userData);
+                showModal('Ваш реферальный код', code);
+            } catch (error) {
+                showModal('Ошибка', error.message);
+            }
+        });
+
+        document.getElementById('applyReferralButton')?.addEventListener('click', async () => {
+            const code = prompt('Введите реферальный код:');
+            if (!code) return;
+
+            try {
+                const result = await referral.applyReferralCode(code, userData);
+                showModal('Успех!', `Вы получили ${result.xpEarned} XP за использование реферального кода!`);
+            } catch (error) {
+                showModal('Ошибка', error.message);
+            }
+        });
+
+        // Обработчики модального окна
+        document.querySelector('.close')?.addEventListener('click', hideModal);
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('modal');
+            if (event.target === modal) {
+                hideModal();
+            }
+        });
+    } catch (error) {
+        console.error('Error setting up event listeners:', error);
+    }
 }
 
 // База данных
@@ -265,37 +330,5 @@ document.getElementById('applyReferralButton')?.addEventListener('click', async 
 });
 
 // Инициализация
-window.addEventListener('DOMContentLoaded', () => {
-  try {
-    // Инициализация Telegram
-    const tg = window.Telegram?.WebApp;
-    if (!tg) {
-      throw new Error('Это приложение можно открыть только в Telegram');
-    }
-
-    tg.ready();
-    userData = tg.initDataUnsafe?.user;
-    if (!userData) {
-      throw new Error('Не удалось получить данные пользователя');
-    }
-
-    // Инициализация пользователя
-    initUser().catch(error => {
-      console.error('Initialization error:', error);
-      showModal('Ошибка', 'Не удалось загрузить данные. Попробуйте позже.');
-    });
-
-    // Закрытие модального окна
-    document.querySelector('.close')?.addEventListener('click', hideModal);
-    window.addEventListener('click', (event) => {
-      const modal = document.getElementById('modal');
-      if (event.target === modal) {
-        hideModal();
-      }
-    });
-
-  } catch (error) {
-    console.error('Fatal error:', error);
-    alert(error.message);
-  }
-});
+// Запуск приложения при загрузке DOM
+document.addEventListener('DOMContentLoaded', initializeApp);
