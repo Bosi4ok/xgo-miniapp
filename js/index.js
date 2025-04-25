@@ -79,7 +79,19 @@ async function initializeApp() {
                 throw new Error('Не удалось получить данные пользователя из базы данных');
             }
             userData = { ...userData, ...userInfo };
+            
+            // Обновляем UI
+            console.log('Обновляем UI с данными пользователя:', userData);
+            ui.updatePointsDisplay(userData.points || 0);
+            ui.updateUserInfo(userData.first_name || 'User');
+            
+            // Обновляем элемент XP
+            const xpElement = document.getElementById('xp-amount');
+            if (xpElement) {
+                xpElement.textContent = userData.points || 0;
+            }
         } catch (error) {
+            console.error('Ошибка при работе с базой данных:', error);
             throw new Error('Ошибка при работе с базой данных: ' + error.message);
         }
         
