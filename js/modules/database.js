@@ -1,61 +1,52 @@
-// Конфигурация и инициализация базы данных
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+import { CacheManager } from './cache.js';
 
 const SUPABASE_URL = 'https://msstnczyshmnhjcnzjlg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zc3RuY3p5c2htbmhqY256amxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMjI0MjUsImV4cCI6MjA2MDg5ODQyNX0.9Oa_ghFyX9qVquxokvLMSNRfQq7FzA6mQEvlsM2ZyRc';
 
-// Конфигурация Supabase
+// Конфигурация Supabase с оптимизированными настройками
 export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: false
-  },
-  db: {
-    schema: 'public'
-  },
-  global: {
+  auth: { persistSession: false },
+  db: { schema: 'public' },
+  global: { 
     headers: { 'x-custom-header': 'telegram-mini-app' }
-  }
+  },
+  realtime: { enabled: false }, // Отключаем realtime для оптимизации
+  autoRefreshToken: false, // Отключаем авто-обновление токена
+  persistSession: false // Отключаем сохранение сессии
 });
 
-// Кэш для запросов
-const queryCache = new Map();
-const CACHE_LIFETIME = 30000; // 30 секунд
-
-// Функция для обработки запросов с таймаутом и кэшированием
+// Оптимизированная функция для запросов с кэшированием
 async function withTimeout(promise, cacheKey = null, ms = 5000) {
-  // Проверяем кэш
   if (cacheKey) {
-    const cached = queryCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp < CACHE_LIFETIME)) {
-      return cached.data;
-    }
+    const cached = CacheManager.get(cacheKey);
+    if (cached) return cached;
   }
 
-  const timeout = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error('Время ожидания запроса истекло')), ms);
-  });
-
   try {
-    const result = await Promise.race([promise, timeout]);
-    
-    // Сохраняем в кэш
-    if (cacheKey) {
-      queryCache.set(cacheKey, {
-        data: result,
-        timestamp: Date.now()
-      });
+    const result = await Promise.race([
+      promise,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Время ожидания запроса истекло')), ms)
+      )
+    ]);
+
+    if (cacheKey && result) {
+      CacheManager.set(cacheKey, result);
     }
 
     return result;
   } catch (error) {
-    // Если есть кэшированные данные, возвращаем их
+    console.error(`Database error (${cacheKey}):`, error);
+    
     if (cacheKey) {
-      const cached = queryCache.get(cacheKey);
+      const cached = CacheManager.get(cacheKey);
       if (cached) {
-        console.warn('Используем кэшированные данные из-за ошибки:', error);
-        return cached.data;
+        console.warn(`Using cached data for ${cacheKey}`);
+        return cached;
       }
     }
+    
     throw error;
   }
 }
