@@ -211,7 +211,7 @@ async function getReferralCode(telegramId) {
   }
 }
 
-export async function checkReferralCode(code) {
+async function checkReferralCode(code) {
   const cacheKey = `check:${code}`;
 
   try {
