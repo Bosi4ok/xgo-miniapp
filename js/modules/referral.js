@@ -1,4 +1,4 @@
-import { getReferralCode, checkReferralCode, createReferral, incrementXP, getReferralsCount, updateUser } from './database.js';
+import { checkReferralCode, createReferral, incrementXP, getReferralsCount, updateUser } from './database.js';
 
 // Генерация реферального кода
 function generateReferralCode() {
