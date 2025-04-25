@@ -47,17 +47,21 @@ export function switchScreen(screenId) {
         return;
     }
 
-    // Сначала удаляем класс active у всех экранов
+    // Скрываем все экраны
     screens.forEach(screen => {
-        screen.classList.remove('active');
-        screen.style.transform = 'translateX(100%)';
+        if (screen !== targetScreen) {
+            screen.style.transform = 'translateX(100%)';
+            screen.style.visibility = 'hidden';
+            screen.style.opacity = '0';
+            screen.classList.remove('active');
+        }
     });
 
-    // Затем добавляем класс active целевому экрану
-    requestAnimationFrame(() => {
-        targetScreen.classList.add('active');
-        targetScreen.style.transform = 'translateX(0)';
-    });
+    // Показываем целевой экран
+    targetScreen.style.visibility = 'visible';
+    targetScreen.style.opacity = '1';
+    targetScreen.style.transform = 'translateX(0)';
+    targetScreen.classList.add('active');
     
     // Обновляем активный пункт меню
     const navItems = document.querySelectorAll('.nav-item');
