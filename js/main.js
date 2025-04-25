@@ -4,6 +4,7 @@ import { performCheckin } from './modules/checkin.js';
 import { closeAllModals, showNotification, updateReferralUI, updateCheckinUI, animateXP } from './modules/ui.js';
 import { loadTasksStatus, verifyTask } from './modules/tasks.js';
 import { loadProfile, openProfileModal, setupMobileAdaptation } from './modules/profile.js';
+import { backgroundManager } from './modules/background.js';
 
 // Глобальные переменные
 let userData = null;
@@ -20,8 +21,7 @@ function openCheckinModal() {
   closeAllModals();
   document.getElementById('checkin-modal').style.display = 'block';
   document.getElementById('modal-overlay').style.display = 'block';
-  document.getElementById('start-bg').style.display = 'none';
-  document.getElementById('checkin-bg').style.display = 'block';
+  backgroundManager.switchTo('checkin');
 }
 
 async function openReferralModal() {
@@ -73,7 +73,7 @@ function copyReferralCode() {
 }
 
 // Инициализация при загрузке
-window.addEventListener('DOMContentLoaded', async () => {
+window.addEventListener('DOMContentLoaded', () => {
   try {
     console.log('Initializing Telegram Web App...');
     const tg = window.Telegram?.WebApp;
@@ -106,11 +106,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Начинаем загрузку данных в фоне
-    setupMobileAdaptation();
-    
-    // Загружаем профиль в фоне
-    loadProfile(userData).catch(error => {
-      console.error('Ошибка загрузки профиля:', error);
+    Promise.all([
+      setupMobileAdaptation(),
+      loadProfile(userData),
+      backgroundManager.preloadAll()
+    ]).catch(error => {
+      console.error('Ошибка инициализации:', error);
     });
 
     console.log('Основной интерфейс загружен:', { userData });
