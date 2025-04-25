@@ -60,7 +60,7 @@ export async function performCheckin(userData) {
     if (checkinCache[userId]?.lastCheckin) {
       const daysDiff = getDaysDifference(new Date(checkinCache[userId].lastCheckin), now);
       if (daysDiff === 1) {
-        streak = (userData.streak || 0) + 1;
+        streak = (userData.current_streak || 0) + 1;
       }
     }
 
@@ -82,7 +82,7 @@ export async function performCheckin(userData) {
       createCheckin(userId, streak, totalXP),
       updateUser(userId, {
         last_checkin: now.toISOString(),
-        streak: streak
+        current_streak: streak
       }),
       incrementXP(userId, totalXP)
     ]);
