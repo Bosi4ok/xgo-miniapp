@@ -42,8 +42,9 @@ export async function loadModules() {
 
         // Загружаем и проверяем database модуль
         const database = await loadModule('database');
-        const { data, error } = await database.supabaseClient.from('users').select('count').limit(1);
-        if (error) throw error;
+        if (!database) {
+            throw new Error('Не удалось загрузить database модуль');
+        }
 
         // Возвращаем интерфейс для загрузки модулей
         return { loadModule };
