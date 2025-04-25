@@ -9,6 +9,12 @@
   <script>
     // Функция для отображения отладочной информации
     function showDebugInfo() {
+      // Ждем загрузки DOM
+      if (!document.body) {
+        setTimeout(showDebugInfo, 100);
+        return;
+      }
+
       const debugInfo = document.createElement('div');
       debugInfo.style.position = 'fixed';
       debugInfo.style.top = '10px';
@@ -37,7 +43,9 @@
     // Проверяем загрузку Telegram Web App
     window.TelegramWebAppLoaded = new Promise((resolve, reject) => {
       console.log('Начинаем проверку Telegram Web App...');
-      showDebugInfo(); // Показываем отладочную информацию
+      
+      // Показываем отладочную информацию после загрузки DOM
+      document.addEventListener('DOMContentLoaded', showDebugInfo);
 
       if (window.Telegram?.WebApp) {
         console.log('WebApp найден сразу');
