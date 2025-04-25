@@ -2,13 +2,39 @@ import { backgroundManager } from './background.js';
 
 // Функции для работы с модальными окнами
 export function closeAllModals() {
-  const modals = ['referral-modal', 'checkin-modal', 'tasks-modal'];
-  modals.forEach(modalId => {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.style.display = 'none';
-  });
+    const modals = document.querySelectorAll('.modal');
+    const overlay = document.getElementById('modal-overlay');
+    
+    modals.forEach(modal => {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    });
 
-  const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+        overlay.classList.remove('show');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 300);
+    }
+}
+
+export function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    const overlay = document.getElementById('modal-overlay');
+    
+    if (modal && overlay) {
+        // Сначала показываем элементы
+        modal.style.display = 'block';
+        overlay.style.display = 'block';
+        
+        // Запускаем анимацию
+        requestAnimationFrame(() => {
+            modal.classList.add('show');
+            overlay.classList.add('show');
+        });
+    }
 }
 
 export function animateXP(amount) {
