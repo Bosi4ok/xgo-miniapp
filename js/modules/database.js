@@ -68,7 +68,7 @@ async function withTimeout(promise, cacheKey = null, ms = 5000) {
 // Функции для работы с пользователями
 const userCache = new Map();
 
-export async function getUser(telegramId) {
+async function getUser(telegramId) {
   const userId = String(telegramId);
   const cacheKey = `user:${userId}`;
 
