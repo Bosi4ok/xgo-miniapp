@@ -1,59 +1,102 @@
 import { checkSupabaseConnection } from './modules/supabase-check.js';
 
-// Асинхронная загрузка модулей
+// Кэш загруженных модулей
+const loadedModules = new Map();
+
+// Список модулей и их зависимостей
+const moduleConfig = {
+    database: {
+        path: './modules/database.js',
+        dependencies: [],
+        required: true
+    },
+    ui: {
+        path: './modules/ui.js',
+        dependencies: ['database'],
+        required: true
+    },
+    checkin: {
+        path: './modules/checkin.js',
+        dependencies: ['database', 'ui'],
+        required: false
+    },
+    profile: {
+        path: './modules/profile.js',
+        dependencies: ['database', 'ui'],
+        required: false
+    },
+    referral: {
+        path: './modules/referral.js',
+        dependencies: ['database', 'ui'],
+        required: false
+    },
+    tasks: {
+        path: './modules/tasks.js',
+        dependencies: ['database', 'ui'],
+        required: false
+    }
+};
+
+// Функция для загрузки модуля и его зависимостей
+async function loadModuleWithDependencies(moduleName, loadedDeps = new Set()) {
+    // Проверяем кэш
+    if (loadedModules.has(moduleName)) {
+        console.log(`Модуль ${moduleName} уже загружен`);
+        return loadedModules.get(moduleName);
+    }
+
+    const config = moduleConfig[moduleName];
+    if (!config) {
+        throw new Error(`Модуль ${moduleName} не найден`);
+    }
+
+    // Загружаем зависимости
+    for (const dep of config.dependencies) {
+        if (!loadedDeps.has(dep)) {
+            console.log(`Загрузка зависимости ${dep} для модуля ${moduleName}`);
+            await loadModuleWithDependencies(dep, loadedDeps);
+            loadedDeps.add(dep);
+        }
+    }
+
+    try {
+        console.log(`Загрузка модуля ${moduleName}...`);
+        const module = await import(config.path);
+        loadedModules.set(moduleName, module);
+        console.log(`Модуль ${moduleName} успешно загружен`);
+        return module;
+    } catch (error) {
+        console.error(`Ошибка при загрузке модуля ${moduleName}:`, error);
+        if (config.required) {
+            throw error;
+        }
+        return null;
+    }
+}
+
+// Основная функция загрузки модулей
 export async function loadModules() {
     try {
+        console.log('Начинаем загрузку модулей...');
+        
         // Проверяем подключение к Supabase
+        console.log('Проверка подключения к Supabase...');
         await checkSupabaseConnection();
-        // Определяем все доступные модули
-        const modules = {
-            database: './modules/database.js',
-            ui: './modules/ui.js',
-            checkin: './modules/checkin.js',
-            profile: './modules/profile.js',
-            referral: './modules/referral.js',
-            tasks: './modules/tasks.js'
-        };
+        console.log('Подключение к Supabase успешно');
 
-        // Кэш загруженных модулей
-        const loadedModules = new Map();
-
-        // Функция для загрузки модуля
-        const loadModule = async (moduleName) => {
-            try {
-                // Проверяем кэш
-                if (loadedModules.has(moduleName)) {
-                    return loadedModules.get(moduleName);
-                }
-
-                // Проверяем существование модуля
-                if (!modules[moduleName]) {
-                    throw new Error(`Module ${moduleName} not found`);
-                }
-
-                // Загружаем модуль
-                const module = await import(modules[moduleName]);
-                
-                // Кэшируем модуль
-                loadedModules.set(moduleName, module);
-                
-                return module;
-            } catch (error) {
-                console.error(`Error loading module ${moduleName}:`, error);
-                throw error;
+        // Загружаем все модули
+        const modules = {};
+        for (const [name, config] of Object.entries(moduleConfig)) {
+            const module = await loadModuleWithDependencies(name);
+            if (module) {
+                modules[name] = module;
             }
-        };
-
-        // Загружаем и проверяем database модуль
-        const database = await loadModule('database');
-        if (!database) {
-            throw new Error('Не удалось загрузить database модуль');
         }
 
-        // Возвращаем интерфейс для загрузки модулей
-        return { loadModule };
+        console.log('Все модули успешно загружены');
+        return modules;
     } catch (error) {
-        console.error('Error initializing modules:', error);
+        console.error('Ошибка при инициализации модулей:', error);
         throw error;
     }
 }
