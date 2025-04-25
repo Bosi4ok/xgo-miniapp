@@ -1,8 +1,5 @@
-import { supabase } from '../../supabase-config.js';
+import { supabase as supabaseClient } from '../../supabase-config.js';
 import { CacheManager } from './cache.js';
-
-// Используем supabase клиент из конфига
-const supabaseClient = supabase;
 
 // Экспортируем все необходимые функции и объекты
 export { 
