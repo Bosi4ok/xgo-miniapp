@@ -7,9 +7,15 @@ export async function loadModules() {
             import('./modules/ui.js')
         ]);
 
-        // Инициализируем базовые модули
-        await database.init();
-        ui.init();
+        // Проверяем соединение с базой данных
+        const { supabaseClient } = database;
+        const { data, error } = await supabaseClient.from('users').select('count').limit(1);
+        if (error) throw error;
+        
+        // Инициализируем UI компоненты
+        const { closeAllModals, showNotification } = ui;
+        window.closeAllModals = closeAllModals;
+        window.showNotification = showNotification;
 
         // Остальные модули загружаем по мере необходимости
         const modulePromises = {
