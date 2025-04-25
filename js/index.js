@@ -186,6 +186,24 @@ async function setupEventListeners() {
     }
 }
 
+// Функция проверки задания
+window.verifyTask = async function(taskType) {
+    try {
+        const tasks = await moduleLoader.loadModule('tasks');
+        const result = await tasks.verifyTask(taskType, userData);
+        if (result.success) {
+            ui.showNotification(result.message, 'success');
+            ui.updatePointsDisplay(result.points);
+            document.getElementById(`${taskType}-task-status`).innerHTML = '✅';
+        } else {
+            ui.showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка при проверке задания:', error);
+        ui.showNotification('Произошла ошибка при проверке задания', 'error');
+    }
+};
+
 // Инициализация
 // Запуск приложения при загрузке DOM
 document.addEventListener('DOMContentLoaded', initializeApp);
