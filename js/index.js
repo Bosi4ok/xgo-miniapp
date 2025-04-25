@@ -102,6 +102,10 @@ async function initializeApp() {
             window.showNotification = ui.showNotification;
             window.showModal = ui.showModal;
 
+            // Инициализируем навигацию
+            console.log('Инициализируем навигацию...');
+            ui.initNavigation();
+
             // Закрываем все модальные окна при старте
             ui.closeAllModals();
         } catch (error) {

@@ -15,9 +15,12 @@ export function initNavigation() {
 
 // Переключение экранов
 export function switchScreen(screenId) {
-    const screens = document.querySelectorAll('[id$="-bg"]');
+    console.log('Переключаем на экран:', screenId);
+    const screens = document.querySelectorAll('.screen');
     screens.forEach(screen => {
-        screen.style.display = screen.id === `${screenId}-bg` ? 'block' : 'none';
+        const isTarget = screen.id === `${screenId}-screen`;
+        console.log(`Экран ${screen.id}: ${isTarget ? 'показываем' : 'скрываем'}`);
+        screen.style.display = isTarget ? 'block' : 'none';
     });
 }
 
