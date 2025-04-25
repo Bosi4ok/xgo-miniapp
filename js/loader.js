@@ -1,40 +1,54 @@
 // Асинхронная загрузка модулей
 export async function loadModules() {
     try {
-        // Загружаем базовые модули сразу
-        const modulePromises = {
-            database: () => import('./modules/database.js'),
-            ui: () => import('./modules/ui.js'),
-            checkin: () => import('./modules/checkin.js'),
-            profile: () => import('./modules/profile.js'),
-            referral: () => import('./modules/referral.js'),
-            tasks: () => import('./modules/tasks.js')
+        // Определяем все доступные модули
+        const modules = {
+            database: './modules/database.js',
+            ui: './modules/ui.js',
+            checkin: './modules/checkin.js',
+            profile: './modules/profile.js',
+            referral: './modules/referral.js',
+            tasks: './modules/tasks.js'
         };
 
-        // Проверяем соединение с базой данных
-        const database = await modulePromises.database();
-        const { supabaseClient } = database;
-        const { data, error } = await supabaseClient.from('users').select('count').limit(1);
-        if (error) throw error;
-        
-        // Инициализируем UI компоненты
-        const ui = await modulePromises.ui();
-        const { closeAllModals, showNotification } = ui;
-        window.closeAllModals = closeAllModals;
-        window.showNotification = showNotification;
+        // Кэш загруженных модулей
+        const loadedModules = new Map();
 
-        // Возвращаем функцию для ленивой загрузки модулей
-        return {
-            loadModule: async (moduleName) => {
-                if (modulePromises[moduleName]) {
-                    const module = await modulePromises[moduleName]();
-                    return module;
+        // Функция для загрузки модуля
+        const loadModule = async (moduleName) => {
+            try {
+                // Проверяем кэш
+                if (loadedModules.has(moduleName)) {
+                    return loadedModules.get(moduleName);
                 }
-                throw new Error(`Module ${moduleName} not found`);
+
+                // Проверяем существование модуля
+                if (!modules[moduleName]) {
+                    throw new Error(`Module ${moduleName} not found`);
+                }
+
+                // Загружаем модуль
+                const module = await import(modules[moduleName]);
+                
+                // Кэшируем модуль
+                loadedModules.set(moduleName, module);
+                
+                return module;
+            } catch (error) {
+                console.error(`Error loading module ${moduleName}:`, error);
+                throw error;
             }
         };
+
+        // Загружаем и проверяем database модуль
+        const database = await loadModule('database');
+        const { data, error } = await database.supabaseClient.from('users').select('count').limit(1);
+        if (error) throw error;
+
+        // Возвращаем интерфейс для загрузки модулей
+        return { loadModule };
     } catch (error) {
-        console.error('Error loading modules:', error);
+        console.error('Error initializing modules:', error);
         throw error;
     }
 }
