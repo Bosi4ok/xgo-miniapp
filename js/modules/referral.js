@@ -1,4 +1,4 @@
-import { getReferralCode, checkReferralCode, createReferral, incrementXP, getReferralsCount } from './database.js';
+import { checkReferralCode, createReferral, incrementXP, getReferralsCount, updateUser } from './database.js';
 
 // Генерация реферального кода
 function generateReferralCode() {
@@ -16,29 +16,38 @@ function generateReferralCode() {
 
 // Получение или создание реферального кода
 export async function ensureReferralCode(userData) {
-  try {
-    const existingCode = await getReferralCode(userData.id);
-    if (existingCode) return existingCode;
+  if (!userData?.id) {
+    console.error('Нет данных пользователя');
+    throw new Error('Нет данных пользователя');
+  }
 
-    // Если кода нет, генерируем новый
-    let newCode;
-    let isUnique = false;
-    
-    while (!isUnique) {
-      newCode = generateReferralCode();
-      try {
-        await checkReferralCode(newCode);
-        isUnique = false;
-      } catch {
-        isUnique = true;
+  try {
+    // Сначала проверяем существующий код
+    const existingCode = await getReferralCode(userData.id);
+    if (existingCode) {
+      return existingCode;
+    }
+
+    // Генерируем новый код
+    const newCode = generateReferralCode();
+
+    // Проверяем уникальность
+    try {
+      await checkReferralCode(newCode);
+      // Если код существует, генерируем новый
+      return await ensureReferralCode(userData);
+    } catch (error) {
+      if (!error.message?.includes('not found')) {
+        throw error;
       }
     }
 
+    // Сохраняем новый код
     await updateUser(userData.id, { referral_code: newCode });
     return newCode;
   } catch (error) {
     console.error('Ошибка при создании реферального кода:', error);
-    return null;
+    throw error;
   }
 }
 

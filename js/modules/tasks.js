@@ -101,9 +101,3 @@ export async function verifyTask(taskType, userData) {
     showNotification('Произошла ошибка', 'error');
   }
 }
-
-// Открытие модального окна задач
-export function openTasksModal() {
-  document.getElementById('tasks-modal').style.display = 'block';
-  document.getElementById('modal-overlay').style.display = 'block';
-}

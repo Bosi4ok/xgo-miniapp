@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/+esm'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
 
 // Замените эти значения на ваши из настроек проекта в Supabase
 const SUPABASE_URL = 'https://msstnczyshmnhjcnzjlg.supabase.co'

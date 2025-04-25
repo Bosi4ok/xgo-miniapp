@@ -1,8 +1,21 @@
 import { supabaseClient } from './database.js';
 import { showNotification } from './ui.js';
 
+// Кэш данных профиля
+let profileCache = null;
+let lastUpdateTime = 0;
+const CACHE_LIFETIME = 30000; // 30 секунд
+
 // Загрузка данных профиля
 export async function loadProfile(userData) {
+  const now = Date.now();
+
+  // Используем кэшированные данные, если они есть и не устарели
+  if (profileCache && (now - lastUpdateTime < CACHE_LIFETIME)) {
+    updateUI(profileCache);
+    return profileCache;
+  }
+
   try {
     const { data: user, error } = await supabaseClient
       .from('users')
@@ -12,19 +25,37 @@ export async function loadProfile(userData) {
 
     if (error) throw error;
 
-    // Обновляем отображение XP
-    document.getElementById('points-display-main').textContent = `${user.points || 0} XP`;
+    // Обновляем кэш и время последнего обновления
+    profileCache = user;
+    lastUpdateTime = now;
 
-    // Обновляем отображение стрика
-    if (document.getElementById('streak-count')) {
-      document.getElementById('streak-count').textContent = user.streak || 0;
-    }
+    // Обновляем UI
+    updateUI(user);
 
     return user;
   } catch (error) {
     console.error('Ошибка при загрузке профиля:', error);
-    showNotification('Ошибка при загрузке данных профиля', 'error');
-    return null;
+    if (!profileCache) {
+      showNotification('Ошибка при загрузке данных профиля', 'error');
+    }
+    return profileCache || null;
+  }
+}
+
+// Обновление UI
+function updateUI(user) {
+  if (!user) return;
+
+  // Обновляем отображение XP
+  const pointsDisplay = document.getElementById('points-display-main');
+  if (pointsDisplay) {
+    pointsDisplay.textContent = `${user.points || 0} XP`;
+  }
+
+  // Обновляем отображение стрика
+  const streakDisplay = document.getElementById('streak-count');
+  if (streakDisplay) {
+    streakDisplay.textContent = user.streak || 0;
   }
 }
 
