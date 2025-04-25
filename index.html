@@ -13,6 +13,41 @@
       src: url('assets/Brinnan Bold.otf') format('opentype');
       font-weight: bold;
     }
+    /* Стили для уведомлений */
+    #notification-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+
+    .notification {
+      padding: 12px 24px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      color: white;
+      opacity: 0;
+      transform: translateX(100%);
+      transition: all 0.3s ease;
+    }
+
+    .notification.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background-color: #4CAF50;
+    }
+
+    .notification.error {
+      background-color: #f44336;
+    }
+
+    .notification.info {
+      background-color: #2196F3;
+    }
+
     /* Основные стили */
     body {
       margin: 0;
@@ -980,6 +1015,7 @@
   </style>
 </head>
 <body>
+  <div id="notification-container"></div>
   <!-- Оптимизированные видео -->
   <video muted loop playsinline autoplay class="background-video" id="start-bg" preload="metadata">
     <source src="assets/стиль1.mp4" type="video/mp4" />
@@ -1100,9 +1136,21 @@
     // Инициализация приложения
     document.addEventListener('DOMContentLoaded', async () => {
       try {
+        // Инициализируем навигацию
+        ui.initNavigation();
+
+        // Инициализируем Telegram
         await initTelegram();
+
+        // Показываем начальный экран
         document.getElementById('start-bg').style.display = 'none';
         document.getElementById('checkin-bg').style.display = 'block';
+
+        // Активируем первый пункт меню
+        const firstNavItem = document.querySelector('.nav-item');
+        if (firstNavItem) {
+          ui.updateActiveNavItem(firstNavItem);
+        }
       } catch (error) {
         console.error('Ошибка при инициализации:', error);
         ui.showError('Ошибка при инициализации: ' + error.message);
