@@ -25,30 +25,21 @@ function showError(message) {
 async function initializeApp() {
     try {
         console.log('Начинаем инициализацию...');
-        
-        // Проверяем наличие Telegram
-        if (!window.Telegram) {
-            throw new Error('Объект Telegram не найден');
-        }
-        console.log('Объект Telegram найден');
 
+        // Ждем загрузки DOM
+        await new Promise(resolve => {
+            if (document.readyState === 'complete') {
+                resolve();
+            } else {
+                document.addEventListener('DOMContentLoaded', resolve);
+            }
+        });
+        console.log('DOM загружен');
+        
         // Ждем загрузки Telegram Web App
         console.log('Ожидаем загрузки WebApp...');
         const tg = await window.TelegramWebAppLoaded;
-        console.log('WebApp загружен:', tg);
-        
-        // Проверяем инициализацию
-        console.log('Проверяем initData:', tg.initData);
-        if (!tg.initData) {
-            throw new Error('Приложение должно быть открыто в Telegram');
-        }
-
-        // Проверяем размер окна
-        console.log('Проверяем размер окна:', tg.isExpanded);
-        if (!tg.isExpanded) {
-            console.log('Разворачиваем окно...');
-            tg.expand();
-        }
+        console.log('WebApp загружен');
 
         // Инициализируем WebApp
         console.log('Вызываем ready()...');
@@ -57,11 +48,10 @@ async function initializeApp() {
         // Получаем данные пользователя
         console.log('Получаем данные пользователя...');
         userData = tg.initDataUnsafe?.user;
-        console.log('Данные пользователя:', userData);
-        
         if (!userData) {
-            throw new Error('Не удалось получить данные пользователя. Попробуйте перезапустить приложение');
+            throw new Error('Не удалось получить данные пользователя');
         }
+        console.log('Данные пользователя:', userData);
 
         // Загружаем базовые модули
         try {
