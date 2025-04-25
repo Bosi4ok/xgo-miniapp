@@ -1,5 +1,33 @@
 import { backgroundManager } from './background.js';
 
+// Инициализация навигации
+export function initNavigation() {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const screen = item.dataset.screen;
+            switchScreen(screen);
+            updateActiveNavItem(item);
+        });
+    });
+}
+
+// Переключение экранов
+export function switchScreen(screenId) {
+    const screens = document.querySelectorAll('[id$="-bg"]');
+    screens.forEach(screen => {
+        screen.style.display = screen.id === `${screenId}-bg` ? 'block' : 'none';
+    });
+}
+
+// Обновление активного элемента навигации
+export function updateActiveNavItem(activeItem) {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => item.classList.remove('active'));
+    activeItem.classList.add('active');
+}
+
 // Функции для обновления интерфейса
 export function updatePointsDisplay(points) {
     const pointsElement = document.getElementById('points-display');
@@ -29,6 +57,24 @@ export function showError(message) {
     if (userInfoElement) {
         userInfoElement.innerHTML = `⚠️ ${message}`;
     }
+}
+
+export function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+
+    const container = document.getElementById('notification-container') || document.body;
+    container.appendChild(notification);
+
+    // Добавляем класс для анимации
+    setTimeout(() => notification.classList.add('show'), 10);
+
+    // Удаляем уведомление через 3 секунды
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
 // Функции для работы с модальными окнами
