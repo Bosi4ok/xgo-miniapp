@@ -9,76 +9,183 @@ export function closeAllModals() {
   });
 
   const overlay = document.getElementById('modal-overlay');
-  if (overlay) overlay.style.display = 'none';
-
-  // Используем менеджер фона
-  backgroundManager.switchTo('start');
 }
 
-// Функции для работы с уведомлениями
-export function showNotification(message, type = 'info') {
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
-  notification.textContent = message;
-  
-  document.body.appendChild(notification);
-  
-  // Анимация появления
-  setTimeout(() => {
-    notification.classList.add('show');
-  }, 100);
-  
-  // Автоматическое скрытие
-  setTimeout(() => {
-    notification.classList.remove('show');
-    setTimeout(() => {
-      notification.remove();
-    }, 300);
-  }, 3000);
+export function animateXP(amount) {
+    const xpElement = document.getElementById('xp-amount');
+    if (!xpElement) return;
+
+    const currentXP = parseInt(xpElement.textContent) || 0;
+    const targetXP = currentXP + amount;
+    
+    // Создаем анимацию
+    const duration = 1000; // 1 секунда
+    const start = performance.now();
+    
+    // Добавляем всплывающий индикатор
+    const indicator = document.createElement('div');
+    indicator.className = 'xp-indicator';
+    indicator.textContent = `+${amount} XP`;
+    document.body.appendChild(indicator);
+    
+    setTimeout(() => indicator.classList.add('show'), 10);
+    
+    function update(currentTime) {
+        const elapsed = currentTime - start;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        const currentValue = Math.floor(currentXP + (amount * progress));
+        xpElement.textContent = currentValue;
+        
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            // Удаляем индикатор
+            setTimeout(() => {
+                indicator.classList.remove('show');
+                setTimeout(() => indicator.remove(), 300);
+            }, 1000);
+        }
+    }
+    
+    requestAnimationFrame(update);
 }
 
-// Функции для работы с интерфейсом реферальной системы
-export function updateReferralUI(code, referralsCount) {
-  const codeElement = document.getElementById('referral-code');
-  const countElement = document.getElementById('referrals-count');
-  
-  if (code) {
-    codeElement.textContent = code;
-  } else {
-    codeElement.textContent = 'Ошибка загрузки кода';
-  }
-  
-  if (typeof referralsCount === 'number') {
-    countElement.textContent = referralsCount;
-  }
-}
-
-// Функции для работы с интерфейсом чекина
 export function updateCheckinUI(streak) {
-  const streakElement = document.getElementById('streak-count');
-  if (streakElement && typeof streak === 'number') {
-    streakElement.textContent = streak;
-  }
+    const streakElement = document.getElementById('streak-count');
+    if (streakElement) {
+        streakElement.textContent = streak;
+        streakElement.classList.add('pulse');
+        setTimeout(() => streakElement.classList.remove('pulse'), 1000);
+    }
+}
+
+export function updateReferralUI(code, count) {
+    const codeElement = document.getElementById('referral-code');
+    const countElement = document.getElementById('referrals-count');
+    
+    if (codeElement) {
+        codeElement.textContent = code;
+    }
+    
+    if (countElement) {
+        countElement.textContent = count;
+    }
 }
 
 // Функции для работы с анимациями
-export function animateXP(amount) {
-  const xpAnimation = document.createElement('div');
-  xpAnimation.className = 'xp-animation';
-  xpAnimation.textContent = `+${amount} XP`;
-  
-  document.body.appendChild(xpAnimation);
-  
-  setTimeout(() => {
-    xpAnimation.classList.add('show');
-  }, 100);
-  
-  setTimeout(() => {
-    xpAnimation.classList.remove('show');
+// UI функции
+export function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    // Добавляем класс для анимации
+    setTimeout(() => notification.classList.add('show'), 10);
+
     setTimeout(() => {
-      xpAnimation.remove();
-    }, 300);
-  }, 2000);
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+export function closeAllModals() {
+    const modals = document.querySelectorAll('.modal');
+    const overlay = document.getElementById('modal-overlay');
+    
+    modals.forEach(modal => {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    });
+
+    if (overlay) {
+        overlay.classList.remove('show');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 300);
+    }
+}
+
+export function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    const overlay = document.getElementById('modal-overlay');
+    
+    if (modal && overlay) {
+        modal.style.display = 'block';
+        overlay.style.display = 'block';
+        
+        // Запускаем анимацию
+        setTimeout(() => {
+            modal.classList.add('show');
+            overlay.classList.add('show');
+        }, 10);
+    }
+}
+
+export function animateXP(amount) {
+    const xpElement = document.getElementById('xp-amount');
+    if (!xpElement) return;
+
+    const currentXP = parseInt(xpElement.textContent) || 0;
+    const targetXP = currentXP + amount;
+    
+    // Создаем анимацию
+    const duration = 1000; // 1 секунда
+    const start = performance.now();
+    
+    // Добавляем всплывающий индикатор
+    const indicator = document.createElement('div');
+    indicator.className = 'xp-indicator';
+    indicator.textContent = `+${amount} XP`;
+    document.body.appendChild(indicator);
+    
+    setTimeout(() => indicator.classList.add('show'), 10);
+    
+    function update(currentTime) {
+        const elapsed = currentTime - start;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        const currentValue = Math.floor(currentXP + (amount * progress));
+        xpElement.textContent = currentValue;
+        
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            // Удаляем индикатор
+            setTimeout(() => {
+                indicator.classList.remove('show');
+                setTimeout(() => indicator.remove(), 300);
+            }, 1000);
+        }
+    }
+    
+    requestAnimationFrame(update);
+}
+
+export function updateCheckinUI(streak) {
+    const streakElement = document.getElementById('streak-count');
+    if (streakElement) {
+        streakElement.textContent = streak;
+        streakElement.classList.add('pulse');
+        setTimeout(() => streakElement.classList.remove('pulse'), 1000);
+    }
+}
+
+export function updateReferralUI(code, count) {
+    const codeElement = document.getElementById('referral-code');
+    const countElement = document.getElementById('referrals-count');
+    
+    if (codeElement) {
+        codeElement.textContent = code;
+    }
+    
+    if (countElement) {
+        countElement.textContent = count;
+    }
+}
 }
 
 // Функции для обработки копирования
