@@ -7,18 +7,53 @@
   <!-- Основные скрипты -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
+    // Функция для отображения отладочной информации
+    function showDebugInfo() {
+      const debugInfo = document.createElement('div');
+      debugInfo.style.position = 'fixed';
+      debugInfo.style.top = '10px';
+      debugInfo.style.left = '10px';
+      debugInfo.style.background = 'rgba(0, 0, 0, 0.8)';
+      debugInfo.style.color = 'white';
+      debugInfo.style.padding = '10px';
+      debugInfo.style.borderRadius = '5px';
+      debugInfo.style.zIndex = '10000';
+      debugInfo.style.fontSize = '12px';
+      debugInfo.style.maxWidth = '80%';
+      debugInfo.style.wordBreak = 'break-all';
+
+      const info = [
+        `UserAgent: ${navigator.userAgent}`,
+        `Telegram object: ${window.Telegram ? 'Есть' : 'Нет'}`,
+        `WebApp object: ${window.Telegram?.WebApp ? 'Есть' : 'Нет'}`,
+        `Init data: ${window.Telegram?.WebApp?.initData || 'Нет'}`,
+        `Platform: ${window.Telegram?.WebApp?.platform || 'Нет'}`
+      ].join('<br>');
+
+      debugInfo.innerHTML = info;
+      document.body.appendChild(debugInfo);
+    }
+
     // Проверяем загрузку Telegram Web App
     window.TelegramWebAppLoaded = new Promise((resolve, reject) => {
+      console.log('Начинаем проверку Telegram Web App...');
+      showDebugInfo(); // Показываем отладочную информацию
+
       if (window.Telegram?.WebApp) {
+        console.log('WebApp найден сразу');
         resolve(window.Telegram.WebApp);
       } else {
         let attempts = 0;
         const maxAttempts = 50;
         const checkTelegram = () => {
           attempts++;
+          console.log(`Попытка ${attempts}/${maxAttempts}`);
+          
           if (window.Telegram?.WebApp) {
+            console.log('WebApp найден!');
             resolve(window.Telegram.WebApp);
           } else if (attempts >= maxAttempts) {
+            console.error('WebApp не найден после всех попыток');
             reject(new Error('Не удалось загрузить Telegram Web App'));
           } else {
             setTimeout(checkTelegram, 100);
