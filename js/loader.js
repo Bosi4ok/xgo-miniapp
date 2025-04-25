@@ -30,7 +30,7 @@ export async function loadModules() {
             loadModule: async (moduleName) => {
                 if (modulePromises[moduleName]) {
                     const module = await modulePromises[moduleName]();
-                    return module.default || module;
+                    return module;
                 }
                 throw new Error(`Module ${moduleName} not found`);
             }
