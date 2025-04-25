@@ -176,7 +176,7 @@ const referralCache = new Map();
 const referralCountCache = new Map();
 
 // Функции для работы с рефералами
-export async function getReferralCode(telegramId) {
+async function getReferralCode(telegramId) {
   const userId = String(telegramId);
   const cacheKey = `referral:${userId}`;
 
