@@ -1,3 +1,5 @@
+import { backgroundManager } from './background.js';
+
 // Функции для работы с модальными окнами
 export function closeAllModals() {
   const modals = ['referral-modal', 'checkin-modal', 'tasks-modal'];
@@ -9,12 +11,8 @@ export function closeAllModals() {
   const overlay = document.getElementById('modal-overlay');
   if (overlay) overlay.style.display = 'none';
 
-  // Управляем видимостью фоновых видео
-  const startBg = document.getElementById('start-bg');
-  const checkinBg = document.getElementById('checkin-bg');
-  
-  if (startBg) startBg.style.display = 'block';
-  if (checkinBg) checkinBg.style.display = 'none';
+  // Используем менеджер фона
+  backgroundManager.switchTo('start');
 }
 
 // Функции для работы с уведомлениями
