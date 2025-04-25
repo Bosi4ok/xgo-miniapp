@@ -1108,7 +1108,7 @@
           document.getElementById('checkin-btn').disabled = false;
 
           await initUser();
-          updatePointsDisplay();
+          ui.updatePointsDisplay(userPoints);
           console.log('Initialization completed successfully:', userData);
         } else {
           console.error('Telegram WebApp is not available');
@@ -1166,14 +1166,12 @@
           finalUser = newUser;
         }
 
-        // Сохраняем данные пользователя
-        userPoints = finalUser.points;
-        referralCode = finalUser.referral_code;
+        // Сохраняем данные пользователя в глобальном объекте
+        userData = { ...userData, ...finalUser };
 
         // Обновляем интерфейс
-        document.getElementById('points-display').textContent = `🎯 Очки: ${userPoints}`;
-        document.getElementById('referral-code').textContent = referralCode;
-        document.getElementById('user-info').textContent = `👤 ${userData.first_name || 'Player'}`;
+        ui.updatePointsDisplay(userData.points);
+        ui.updateUserInfo(userData.first_name || 'Player');
 
         // Обновляем статистику рефералов
         await updateReferralStats();
@@ -1192,77 +1190,65 @@
 
     // Применение реферального кода
     async function applyReferralCode() {
+      if (!userData) {
+        ui.showNotification('Не удалось получить данные пользователя', 'error');
+        return;
+      }
+
       try {
         const code = document.getElementById('referral-input').value.trim().toUpperCase();
         if (!code) {
-          window.ui.showNotification('Введите реферальный код', 'error');
+          ui.showNotification('Введите реферальный код', 'error');
           return;
         }
 
-        const result = await window.referral.checkReferralCode(code, userData.id);
+        const result = await referral.checkReferralCode(code, userData.id);
         if (result.success) {
-          window.ui.showNotification(result.message, 'success');
-          window.ui.updateReferralUI(result.code, result.referrals_count);
-          setTimeout(() => window.closeAllModals(), 1500);
+          ui.showNotification(result.message, 'success');
+          ui.updateReferralUI(result.code, result.referrals_count);
+          setTimeout(() => ui.closeAllModals(), 1500);
         } else {
-          window.ui.showNotification(result.message, 'error');
+          ui.showNotification(result.message, 'error');
         }
       } catch (error) {
-        console.error('Ошибка при применении кода:', error);
-        window.ui.showNotification('Произошла ошибка при проверке кода', 'error');
+        console.error('Ошибка при проверке кода:', error);
+        ui.showNotification('Произошла ошибка при проверке кода', 'error');
       }
     }
 
     // Обновление статистики рефералов
     async function updateReferralStats() {
       try {
-        const stats = await window.referral.getReferralStats(userData.id);
-        window.ui.updateReferralUI(stats.code, stats.referrals_count);
+        const stats = await referral.getReferralStats(userData.id);
+        ui.updateReferralUI(stats.code, stats.referrals_count);
       } catch (error) {
         console.error('Ошибка при обновлении статистики:', error);
-        window.ui.showNotification('Ошибка при обновлении статистики', 'error');
+        ui.showNotification('Ошибка при обновлении статистики', 'error');
       }
     }
 
-    // Обновление отображения очков
-    function updatePointsDisplay() {
-      document.getElementById('points-display').textContent = `🎯 Очки: ${userPoints}`;
-    }
+
 
     // Логика ежедневного чекина
     async function handleCheckin() {
-      if (!userData) return;
-      
-      const lastCheckin = localStorage.getItem('lastCheckin');
-      const now = Date.now();
-      
-      if (lastCheckin && (now - lastCheckin) < 86400000) {
-        tg.showAlert('Вы уже выполняли чекин сегодня!');
+      if (!userData) {
+        ui.showNotification('Не удалось получить данные пользователя', 'error');
         return;
       }
-
+      
       try {
-        const { data: currentUser } = await supabaseClient
-          .from('users')
-          .select('points')
-          .eq('telegram_id', userData.id)
-          .single();
-
-        const { data, error } = await supabaseClient
-          .from('users')
-          .update({ points: (currentUser?.points || 0) + 10 })
-          .eq('telegram_id', userData.id)
-          .select();
-
-        if (error) throw error;
-
-        localStorage.setItem('lastCheckin', now);
-        userPoints += 10;
-        updatePointsDisplay();
-        tg.showAlert('✅ Чекин успешно выполнен! +10 очков');
+        const result = await checkin.performCheckin(userData);
+        if (result.success) {
+          ui.showNotification(result.message, 'success');
+          ui.animateXP(result.xp);
+          ui.updateCheckinUI(result.streak);
+          setTimeout(() => ui.closeAllModals(), 2000);
+        } else {
+          ui.showNotification(result.message, 'error');
+        }
       } catch (error) {
-        console.error('Error during checkin:', error);
-        tg.showAlert('⚠️ Ошибка при выполнении чекина');
+        console.error('Ошибка при выполнении чекина:', error);
+        ui.showNotification('Произошла ошибка при выполнении чекина', 'error');
       }
     }
 
