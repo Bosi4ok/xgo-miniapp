@@ -32,12 +32,12 @@ async function initializeApp() {
         
         // Добавляем UI функции в глобальную область
         window.ui = ui;
-        window.closeAllModals = ui.closeAllModals.bind(ui);
-        window.showNotification = ui.showNotification.bind(ui);
-        window.showModal = ui.showModal.bind(ui);
+        window.closeAllModals = ui.closeAllModals;
+        window.showNotification = ui.showNotification;
+        window.showModal = ui.showModal;
 
         // Закрываем все модальные окна при старте
-        window.closeAllModals();
+        ui.closeAllModals();
 
         // Настраиваем навигацию
         const navItems = document.querySelectorAll('.nav-item');
@@ -53,7 +53,7 @@ async function initializeApp() {
                 item.classList.add('active');
                 
                 // Закрываем все модальные окна перед открытием нового
-                window.closeAllModals();
+                ui.closeAllModals();
                 
                 // Обрабатываем клик по экрану
                 switch(screen) {
@@ -61,13 +61,13 @@ async function initializeApp() {
                         // Просто закрываем все модальные окна
                         break;
                     case 'checkin':
-                        window.showModal('checkin-modal');
+                        ui.showModal('checkin-modal');
                         break;
                     case 'tasks':
-                        window.showModal('tasks-modal');
+                        ui.showModal('tasks-modal');
                         break;
                     case 'referral':
-                        window.showModal('referral-modal');
+                        ui.showModal('referral-modal');
                         break;
                     case 'profile':
                         // Добавим позже
@@ -113,16 +113,16 @@ async function setupEventListeners() {
                 try {
                     const result = await checkin.performCheckin(userData);
                     if (result.success) {
-                        window.showNotification(result.message, 'success');
-                        window.ui.animateXP(result.xp);
-                        window.ui.updateCheckinUI(result.streak);
-                        setTimeout(() => window.closeAllModals(), 2000);
+                        ui.showNotification(result.message, 'success');
+                        ui.animateXP(result.xp);
+                        ui.updateCheckinUI(result.streak);
+                        setTimeout(() => ui.closeAllModals(), 2000);
                     } else {
-                        window.showNotification(result.message, 'error');
+                        ui.showNotification(result.message, 'error');
                     }
                 } catch (error) {
                     console.error('Ошибка при выполнении чекина:', error);
-                    window.showNotification('Произошла ошибка при выполнении чекина', 'error');
+                    ui.showNotification('Произошла ошибка при выполнении чекина', 'error');
                 }
             });
         }
@@ -134,22 +134,22 @@ async function setupEventListeners() {
             referralSubmit.addEventListener('click', async () => {
                 const code = referralInput.value.trim().toUpperCase();
                 if (!code) {
-                    window.showNotification('Введите реферальный код', 'error');
+                    ui.showNotification('Введите реферальный код', 'error');
                     return;
                 }
 
                 try {
                     const result = await referral.checkReferralCode(code, userData.id);
                     if (result.success) {
-                        window.showNotification(result.message, 'success');
-                        window.ui.updateReferralUI(result.code, result.referrals_count);
-                        setTimeout(() => window.closeAllModals(), 1500);
+                        ui.showNotification(result.message, 'success');
+                        ui.updateReferralUI(result.code, result.referrals_count);
+                        setTimeout(() => ui.closeAllModals(), 1500);
                     } else {
-                        window.showNotification(result.message, 'error');
+                        ui.showNotification(result.message, 'error');
                     }
                 } catch (error) {
                     console.error('Ошибка при проверке реферального кода:', error);
-                    window.showNotification('Произошла ошибка при проверке кода', 'error');
+                    ui.showNotification('Произошла ошибка при проверке кода', 'error');
                 }
             });
 
