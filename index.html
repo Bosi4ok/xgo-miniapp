@@ -1088,7 +1088,26 @@
   </div>
 
   <script type="module">
-    // Вся логика инициализации перенесена в main.js
+    import * as ui from './js/modules/ui.js';
+    import * as database from './js/modules/database.js';
+    import * as referral from './js/modules/referral.js';
+    import * as checkin from './js/modules/checkin.js';
+
+    // Инициализация переменных
+    let userData = null;
+    const tg = window.Telegram?.WebApp;
+
+    // Инициализация приложения
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        await initTelegram();
+        document.getElementById('start-bg').style.display = 'none';
+        document.getElementById('checkin-bg').style.display = 'block';
+      } catch (error) {
+        console.error('Ошибка при инициализации:', error);
+        ui.showError('Ошибка при инициализации: ' + error.message);
+      }
+    });
 
     // Инициализация Web App
     async function initTelegram() {
@@ -1102,68 +1121,61 @@
             username: 'test_user'
           };
           
-          document.getElementById('user-name').textContent = 
-            `${userData.first_name || 'User'} @${userData.username || 'no_username'}`;
-          
+          ui.updateUserName(userData.first_name || 'User', userData.username || 'no_username');
           document.getElementById('checkin-btn').disabled = false;
 
           await initUser();
-          ui.updatePointsDisplay(userPoints);
-          console.log('Initialization completed successfully:', userData);
+          ui.updatePointsDisplay(userData.points);
+          console.log('Инициализация завершена:', userData);
         } else {
-          console.error('Telegram WebApp is not available');
-          document.getElementById('user-info').innerHTML = '⚠️ Initialization error';
+          throw new Error('Telegram WebApp недоступен');
         }
       } catch (error) {
-        console.error('Error during initialization:', error);
-        document.getElementById('user-info').innerHTML = '⚠️ Error: ' + error.message;
         console.error('Ошибка при инициализации:', error);
-        document.getElementById('user-info').innerHTML = '⚠️ Ошибка: ' + error.message;
+        ui.showError('Ошибка при инициализации: ' + error.message);
       }
     }
 
     // Инициализация пользователя в Supabase
     async function initUser() {
-      if (!userData) return;
+      if (!userData) {
+        ui.showError('Не удалось получить данные пользователя');
+        return;
+      }
 
       try {
         console.log('Начало инициализации пользователя:', userData.id);
         
         // Проверяем существование пользователя
-        const { data: user, error: selectError } = await supabaseClient
-          .from('users')
-          .select('*')
-          .eq('telegram_id', String(userData.id))
-          .single();
-
-        if (selectError && selectError.code !== 'PGRST116') {
-          throw selectError;
+        let finalUser;
+        try {
+          finalUser = await database.getUser(userData.id);
+        } catch (error) {
+          console.error('Ошибка при получении пользователя:', error);
+          ui.showError('Ошибка при получении данных пользователя');
+          return;
         }
 
-        let finalUser = user;
-
-        if (!user) {
+        if (!finalUser) {
           console.log('Создаем нового пользователя');
           
-          // Генерируем реферальный код
-          const referralCode = await generateReferralCode();
-          
-          // Создаем пользователя
-          const { data: newUser, error: insertError } = await supabaseClient
-            .from('users')
-            .insert({
+          try {
+            finalUser = await database.createUser({
               telegram_id: String(userData.id),
               username: userData.username || null,
               first_name: userData.first_name || null,
               last_name: userData.last_name || null,
-              points: 0,
-              referral_code: referralCode
-            })
-            .select()
-            .single();
+              points: 0
+            });
+          } catch (error) {
+            console.error('Ошибка при создании пользователя:', error);
+            ui.showError('Ошибка при создании пользователя');
+            return;
+          }
+        }
 
-          if (insertError) throw insertError;
-          finalUser = newUser;
+        if (!finalUser) {
+          throw new Error('Не удалось получить или создать пользователя');
         }
 
         // Сохраняем данные пользователя в глобальном объекте
@@ -1174,7 +1186,12 @@
         ui.updateUserInfo(userData.first_name || 'Player');
 
         // Обновляем статистику рефералов
-        await updateReferralStats();
+        try {
+          await updateReferralStats();
+        } catch (error) {
+          console.error('Ошибка при обновлении статистики:', error);
+          // Не прерываем инициализацию из-за ошибки статистики
+        }
 
         console.log('Инициализация пользователя завершена');
       } catch (error) {
@@ -1218,9 +1235,18 @@
 
     // Обновление статистики рефералов
     async function updateReferralStats() {
+      if (!userData?.id) {
+        ui.showNotification('Не удалось получить данные пользователя', 'error');
+        return;
+      }
+
       try {
         const stats = await referral.getReferralStats(userData.id);
-        ui.updateReferralUI(stats.code, stats.referrals_count);
+        if (stats?.success) {
+          ui.updateReferralUI(stats.code, stats.referrals_count);
+        } else {
+          throw new Error('Некорректный ответ от сервера');
+        }
       } catch (error) {
         console.error('Ошибка при обновлении статистики:', error);
         ui.showNotification('Ошибка при обновлении статистики', 'error');
