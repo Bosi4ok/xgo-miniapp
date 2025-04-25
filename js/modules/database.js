@@ -1,20 +1,8 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+import { supabase } from '../../supabase-config.js';
 import { CacheManager } from './cache.js';
 
-const SUPABASE_URL = 'https://msstnczyshmnhjcnzjlg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zc3RuY3p5c2htbmhqY256amxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMjI0MjUsImV4cCI6MjA2MDg5ODQyNX0.9Oa_ghFyX9qVquxokvLMSNRfQq7FzA6mQEvlsM2ZyRc';
-
-// Конфигурация Supabase с оптимизированными настройками
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: false },
-  db: { schema: 'public' },
-  global: { 
-    headers: { 'x-custom-header': 'telegram-mini-app' }
-  },
-  realtime: { enabled: false }, // Отключаем realtime для оптимизации
-  autoRefreshToken: false, // Отключаем авто-обновление токена
-  persistSession: false // Отключаем сохранение сессии
-});
+// Используем supabase клиент из конфига
+const supabaseClient = supabase;
 
 // Экспортируем все необходимые функции и объекты
 export { 
@@ -160,7 +148,7 @@ async function updateUser(telegramId, updates) {
   }
 }
 
-export async function incrementXP(userId, amount) {
+async function incrementXP(userId, amount) {
   userId = String(userId);
 
   try {
