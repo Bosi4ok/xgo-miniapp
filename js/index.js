@@ -90,6 +90,11 @@ async function initializeApp() {
             if (xpElement) {
                 xpElement.textContent = userData.points || 0;
             }
+
+            // Инициализируем навигацию
+            console.log('Вызываем initNavigation...');
+            ui.initNavigation();
+            ui.switchScreen('home');
         } catch (error) {
             console.error('Ошибка при работе с базой данных:', error);
             throw new Error('Ошибка при работе с базой данных: ' + error.message);

@@ -2,11 +2,14 @@ import { backgroundManager } from './background.js';
 
 // Инициализация навигации
 export function initNavigation() {
+    console.log('Инициализация навигации...');
     const navItems = document.querySelectorAll('.nav-item');
+    console.log('Найдено элементов навигации:', navItems.length);
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
             const screen = item.dataset.screen;
+            console.log('Клик по навигации:', screen);
             switchScreen(screen);
             updateActiveNavItem(item);
         });
