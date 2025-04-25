@@ -25,44 +25,22 @@ function showError(message) {
 async function initializeApp() {
     try {
         // Ждем загрузки Telegram Web App
-        await new Promise((resolve, reject) => {
-            if (window.Telegram?.WebApp) {
-                resolve();
-            } else {
-                let attempts = 0;
-                const maxAttempts = 50; // 5 секунд максимум
-                const checkTelegram = () => {
-                    attempts++;
-                    if (window.Telegram?.WebApp) {
-                        resolve();
-                    } else if (attempts >= maxAttempts) {
-                        reject(new Error('Не удалось загрузить Telegram Web App'));
-                    } else {
-                        setTimeout(checkTelegram, 100);
-                    }
-                };
-                checkTelegram();
-            }
-        });
-
-        const tg = window.Telegram.WebApp;
+        const tg = await window.TelegramWebAppLoaded;
+        
+        // Проверяем инициализацию
         if (!tg.initData) {
             throw new Error('Приложение должно быть открыто в Telegram');
         }
-        
-        // Проверяем, что приложение готово
-        await new Promise((resolve) => {
-            if (tg.isExpanded) {
-                resolve();
-            } else {
-                tg.onEvent('viewportChanged', () => {
-                    if (tg.isExpanded) resolve();
-                });
-                tg.expand();
-            }
-        });
 
+        // Проверяем размер окна
+        if (!tg.isExpanded) {
+            tg.expand();
+        }
+
+        // Инициализируем WebApp
         tg.ready();
+
+        // Получаем данные пользователя
         userData = tg.initDataUnsafe?.user;
         if (!userData) {
             throw new Error('Не удалось получить данные пользователя. Попробуйте перезапустить приложение');

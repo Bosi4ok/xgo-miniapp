@@ -6,6 +6,28 @@
   <title>XGO Mini App (Update: 23:40)</title>
   <!-- Основные скрипты -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    // Проверяем загрузку Telegram Web App
+    window.TelegramWebAppLoaded = new Promise((resolve, reject) => {
+      if (window.Telegram?.WebApp) {
+        resolve(window.Telegram.WebApp);
+      } else {
+        let attempts = 0;
+        const maxAttempts = 50;
+        const checkTelegram = () => {
+          attempts++;
+          if (window.Telegram?.WebApp) {
+            resolve(window.Telegram.WebApp);
+          } else if (attempts >= maxAttempts) {
+            reject(new Error('Не удалось загрузить Telegram Web App'));
+          } else {
+            setTimeout(checkTelegram, 100);
+          }
+        };
+        checkTelegram();
+      }
+    });
+  </script>
   <script type="module" src="js/index.js"></script>
   <style>
     @font-face {
