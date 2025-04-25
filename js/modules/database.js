@@ -232,7 +232,7 @@ async function checkReferralCode(code) {
   }
 }
 
-export async function createReferral(referrerId, referredId) {
+async function createReferral(referrerId, referredId) {
   referrerId = String(referrerId);
   referredId = String(referredId);
 
