@@ -114,14 +114,15 @@ export function showModal(modalId) {
     const overlay = document.getElementById('modal-overlay');
     
     if (modal && overlay) {
+        // Сначала показываем элементы
         modal.style.display = 'block';
         overlay.style.display = 'block';
         
         // Запускаем анимацию
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             modal.classList.add('show');
             overlay.classList.add('show');
-        }, 10);
+        });
     }
 }
 
@@ -142,7 +143,7 @@ export function animateXP(amount) {
     indicator.textContent = `+${amount} XP`;
     document.body.appendChild(indicator);
     
-    setTimeout(() => indicator.classList.add('show'), 10);
+    requestAnimationFrame(() => indicator.classList.add('show'));
     
     function update(currentTime) {
         const elapsed = currentTime - start;
@@ -180,10 +181,16 @@ export function updateReferralUI(code, count) {
     
     if (codeElement) {
         codeElement.textContent = code;
+        // Добавляем анимацию обновления
+        codeElement.classList.add('pulse');
+        setTimeout(() => codeElement.classList.remove('pulse'), 1000);
     }
     
     if (countElement) {
         countElement.textContent = count;
+        // Добавляем анимацию обновления
+        countElement.classList.add('pulse');
+        setTimeout(() => countElement.classList.remove('pulse'), 1000);
     }
 }
 }
