@@ -48,19 +48,22 @@ async function initializeApp() {
                 // Добавляем активный класс выбранному
                 item.classList.add('active');
                 
+                // Закрываем все модальные окна перед открытием нового
+                window.closeAllModals();
+                
                 // Обрабатываем клик по экрану
                 switch(screen) {
+                    case 'home':
+                        // Просто закрываем все модальные окна
+                        break;
                     case 'checkin':
-                        document.getElementById('checkin-modal').style.display = 'block';
-                        document.getElementById('modal-overlay').style.display = 'block';
+                        window.ui.showModal('checkin-modal');
                         break;
                     case 'tasks':
-                        document.getElementById('tasks-modal').style.display = 'block';
-                        document.getElementById('modal-overlay').style.display = 'block';
+                        window.ui.showModal('tasks-modal');
                         break;
                     case 'referral':
-                        document.getElementById('referral-modal').style.display = 'block';
-                        document.getElementById('modal-overlay').style.display = 'block';
+                        window.ui.showModal('referral-modal');
                         break;
                     case 'profile':
                         // Добавим позже
@@ -68,6 +71,16 @@ async function initializeApp() {
                 }
             });
         });
+
+        // Добавляем обработчик для клика по оверлею
+        const modalOverlay = document.getElementById('modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) {
+                    window.closeAllModals();
+                }
+            });
+        }
 
         // Настраиваем обработчики событий
         await setupEventListeners();
@@ -95,7 +108,7 @@ async function setupEventListeners() {
                         window.ui.showNotification(result.message, 'success');
                         window.ui.animateXP(result.xp);
                         window.ui.updateCheckinUI(result.streak);
-                        window.closeAllModals();
+                        setTimeout(() => window.closeAllModals(), 2000); // Закрываем модальное окно через 2 секунды
                     } else {
                         window.ui.showNotification(result.message, 'error');
                     }
@@ -121,7 +134,8 @@ async function setupEventListeners() {
                     const result = await referral.checkReferralCode(code, userData.id);
                     if (result.success) {
                         window.ui.showNotification(result.message, 'success');
-                        window.closeAllModals();
+                        window.ui.updateReferralUI(result.code, result.referrals_count);
+                        setTimeout(() => window.closeAllModals(), 1500);
                     } else {
                         window.ui.showNotification(result.message, 'error');
                     }
@@ -130,13 +144,12 @@ async function setupEventListeners() {
                     window.ui.showNotification('Произошла ошибка при проверке кода', 'error');
                 }
             });
-        }
 
-        // Обработчик для оверлея
-        const modalOverlay = document.getElementById('modal-overlay');
-        if (modalOverlay) {
-            modalOverlay.addEventListener('click', () => {
-                window.closeAllModals();
+            // Добавляем обработчик нажатия Enter в поле ввода
+            referralInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    referralSubmit.click();
+                }
             });
         }
 
@@ -161,6 +174,7 @@ async function setupEventListeners() {
 
     } catch (error) {
         console.error('Ошибка при настройке обработчиков событий:', error);
+        window.ui.showNotification('Произошла ошибка при загрузке приложения', 'error');
     }
 }
 
