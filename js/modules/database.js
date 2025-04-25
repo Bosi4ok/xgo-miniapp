@@ -100,7 +100,8 @@ async function createUser(telegramId) {
     const userData = {
       telegram_id: userId,
       points: 0,
-      streak: 0,
+      current_streak: 0,
+      max_streak: 0,
       last_checkin: null,
       referral_code: null
     };
@@ -319,7 +320,10 @@ async function createCheckin(userId, streak, xpEarned) {
     const cachedUser = userCache.get(userId);
     if (cachedUser) {
       cachedUser.last_checkin = now;
-      cachedUser.streak = streak;
+      cachedUser.current_streak = streak;
+      if ((cachedUser.max_streak || 0) < streak) {
+        cachedUser.max_streak = streak;
+      }
       userCache.set(userId, cachedUser);
     }
   } catch (error) {
