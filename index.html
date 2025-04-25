@@ -1124,7 +1124,17 @@
   </div>
 
   <script type="module">
-    import * as ui from './js/modules/ui.js';
+    import { 
+      initNavigation,
+      updatePointsDisplay,
+      updateUserInfo,
+      updateUserName,
+      showError,
+      showNotification,
+      closeAllModals,
+      showModal,
+      updateReferralUI
+    } from './js/modules/ui.js';
     import * as database from './js/modules/database.js';
     import * as referral from './js/modules/referral.js';
     import * as checkin from './js/modules/checkin.js';
@@ -1132,6 +1142,17 @@
     // Инициализация переменных
     let userData = null;
     const tg = window.Telegram?.WebApp;
+    const ui = { 
+      initNavigation,
+      updatePointsDisplay,
+      updateUserInfo,
+      updateUserName,
+      showError,
+      showNotification,
+      closeAllModals,
+      showModal,
+      updateReferralUI
+    };
 
     // Инициализация приложения
     document.addEventListener('DOMContentLoaded', async () => {
