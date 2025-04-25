@@ -8,11 +8,24 @@ let moduleLoader = null;
 async function initializeApp() {
     try {
         // Инициализация Telegram
-        const tg = window.Telegram?.WebApp;
-        if (!tg) {
-            throw new Error('Это приложение можно открыть только в Telegram');
-        }
+        // Ждем загрузки Telegram Web App
+        await new Promise((resolve, reject) => {
+            let attempts = 0;
+            const maxAttempts = 50; // 5 секунд максимум
+            const checkTelegram = () => {
+                attempts++;
+                if (window.Telegram?.WebApp) {
+                    resolve();
+                } else if (attempts >= maxAttempts) {
+                    reject(new Error('Не удалось загрузить Telegram Web App'));
+                } else {
+                    setTimeout(checkTelegram, 100);
+                }
+            };
+            checkTelegram();
+        });
 
+        const tg = window.Telegram.WebApp;
         tg.ready();
         userData = tg.initDataUnsafe?.user;
         if (!userData) {
