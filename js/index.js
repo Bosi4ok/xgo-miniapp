@@ -46,10 +46,26 @@ async function initializeApp() {
         });
 
         const tg = window.Telegram.WebApp;
+        if (!tg.initData) {
+            throw new Error('Приложение должно быть открыто в Telegram');
+        }
+        
+        // Проверяем, что приложение готово
+        await new Promise((resolve) => {
+            if (tg.isExpanded) {
+                resolve();
+            } else {
+                tg.onEvent('viewportChanged', () => {
+                    if (tg.isExpanded) resolve();
+                });
+                tg.expand();
+            }
+        });
+
         tg.ready();
         userData = tg.initDataUnsafe?.user;
         if (!userData) {
-            throw new Error('Не удалось получить данные пользователя');
+            throw new Error('Не удалось получить данные пользователя. Попробуйте перезапустить приложение');
         }
 
         // Загружаем базовые модули

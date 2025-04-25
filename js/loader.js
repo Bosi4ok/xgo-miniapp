@@ -1,6 +1,10 @@
+import { checkSupabaseConnection } from './modules/supabase-check.js';
+
 // Асинхронная загрузка модулей
 export async function loadModules() {
     try {
+        // Проверяем подключение к Supabase
+        await checkSupabaseConnection();
         // Определяем все доступные модули
         const modules = {
             database: './modules/database.js',
