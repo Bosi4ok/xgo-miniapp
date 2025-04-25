@@ -111,13 +111,17 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       background: #000;
-      transition: transform 0.3s ease-in-out;
+      transition: transform 0.3s ease-out;
       transform: translateX(100%);
+      visibility: hidden;
+      opacity: 0;
     }
 
     .screen.active {
       transform: translateX(0);
       z-index: 1;
+      visibility: visible;
+      opacity: 1;
     }
 
     .screen h2 {

@@ -3,15 +3,31 @@ import { backgroundManager } from './background.js';
 // Инициализация навигации
 export function initNavigation() {
     console.log('Инициализация навигации...');
+    
+    // Показываем начальный экран
+    const initialScreen = document.querySelector('.screen');
+    if (initialScreen) {
+        initialScreen.classList.add('active');
+        initialScreen.style.transform = 'translateX(0)';
+    }
+    
+    // Инициализируем обработчики кликов
     const navItems = document.querySelectorAll('.nav-item');
     console.log('Найдено элементов навигации:', navItems.length);
+    
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation(); // Предотвращаем всплытие
+            
             const screen = item.dataset.screen;
+            if (!screen) {
+                console.error('Не найден data-screen атрибут:', item);
+                return;
+            }
+            
             console.log('Клик по навигации:', screen);
             switchScreen(screen);
-            updateActiveNavItem(item);
         });
     });
 }
@@ -30,29 +46,24 @@ export function switchScreen(screenId) {
         console.error('Целевой экран не найден:', `${screenId}-screen`);
         return;
     }
-    
-    // Скрываем все экраны
+
+    // Сначала удаляем класс active у всех экранов
     screens.forEach(screen => {
-        const isTarget = screen.id === `${screenId}-screen`;
-        console.log(`Экран ${screen.id}: ${isTarget ? 'показываем' : 'скрываем'}`);
-        screen.style.display = isTarget ? 'block' : 'none';
-        // Добавляем/убираем класс active
-        if (isTarget) {
-            screen.classList.add('active');
-        } else {
-            screen.classList.remove('active');
-        }
+        screen.classList.remove('active');
+        screen.style.transform = 'translateX(100%)';
+    });
+
+    // Затем добавляем класс active целевому экрану
+    requestAnimationFrame(() => {
+        targetScreen.classList.add('active');
+        targetScreen.style.transform = 'translateX(0)';
     });
     
     // Обновляем активный пункт меню
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {
         const isActive = item.dataset.screen === screenId;
-        if (isActive) {
-            item.classList.add('active');
-        } else {
-            item.classList.remove('active');
-        }
+        item.classList.toggle('active', isActive);
     });
 }
 
