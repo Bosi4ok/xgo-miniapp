@@ -126,11 +126,30 @@
       overflow: hidden;
     }
 
+    #screens-container {
+      flex: 1;
+      position: relative;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+
     .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       padding: 20px;
-      min-height: calc(100vh - 60px);
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      background: #000;
+      transition: transform 0.3s ease-in-out;
+      transform: translateX(100%);
+    }
+
+    .screen.active {
+      transform: translateX(0);
+      z-index: 1;
     }
 
     .screen h2 {
@@ -1160,10 +1179,97 @@
   </video>
 
   <!-- Основной контент -->
-  <!-- Home Screen -->
-  <div class="screen" id="home-screen">
-    <div class="points-display-main" id="points-display-main">
-      <span id="xp-amount">0</span> XP
+  <!-- Экраны -->
+  <div id="screens-container">
+    <!-- Home Screen -->
+    <div class="screen" id="home-screen">
+      <div class="points-display-main" id="points-display-main">
+        <span id="xp-amount">0</span> XP
+      </div>
+    </div>
+
+    <!-- Check-in Screen -->
+    <div class="screen" id="checkin-screen" style="display: none;">
+      <h2>Daily Check-in</h2>
+      <div class="checkin-container">
+        <button id="checkin-button" class="btn">Получить награду</button>
+        <div class="streak-info">
+          <span>Streak: </span>
+          <span id="streak-count">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks Screen -->
+    <div class="screen" id="tasks-screen" style="display: none;">
+      <h2>Tasks</h2>
+      <div class="tasks-container">
+        <div class="task-item">
+          <div class="task-info">
+            <div class="task-title">Follow Telegram Channel</div>
+            <div class="task-description">Subscribe to our Telegram channel</div>
+            <div class="task-reward">+10 XP</div>
+          </div>
+          <a href="https://t.me/xgo_pump" target="_blank" class="task-link-btn">Join</a>
+          <button class="task-verify-btn" onclick="window.verifyTask('telegram')">Verify</button>
+          <div class="task-status" id="telegram-task-status"></div>
+        </div>
+
+        <div class="task-item">
+          <div class="task-info">
+            <div class="task-title">Follow Twitter Account</div>
+            <div class="task-description">Follow us on Twitter</div>
+            <div class="task-reward">+10 XP</div>
+          </div>
+          <a href="https://x.com/xgo_pump" target="_blank" class="task-link-btn">Follow</a>
+          <button class="task-verify-btn" onclick="window.verifyTask('twitter')">Verify</button>
+          <div class="task-status" id="twitter-task-status"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Referral Screen -->
+    <div class="screen" id="referral-screen" style="display: none;">
+      <h2>Referral Program</h2>
+      <div class="referral-container">
+        <div class="referral-code-container">
+          <h3>Your Referral Code:</h3>
+          <div class="referral-code" id="referral-code" onclick="window.ui.handleCopy(this.textContent)">Loading...</div>
+        </div>
+        <div class="referral-stats">
+          <h3>Referrals:</h3>
+          <div class="referral-count" id="referrals-count">0</div>
+        </div>
+        <div class="referral-input-container">
+          <input type="text" id="referral-input" placeholder="Enter referral code" class="referral-input">
+          <button id="referral-submit" class="referral-submit">Submit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div class="screen" id="profile-screen" style="display: none;">
+      <h2>Profile</h2>
+      <div class="profile-container">
+        <div class="user-info" id="user-info">
+          <div class="user-icon">👤</div>
+          <div class="user-name" id="user-name"></div>
+        </div>
+        <div class="stats-container">
+          <div class="stat-item">
+            <span class="stat-label">Total XP:</span>
+            <span class="stat-value" id="total-xp">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Current Streak:</span>
+            <span class="stat-value" id="current-streak">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Max Streak:</span>
+            <span class="stat-value" id="max-streak">0</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

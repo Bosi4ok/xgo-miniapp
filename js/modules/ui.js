@@ -19,11 +19,40 @@ export function initNavigation() {
 // Переключение экранов
 export function switchScreen(screenId) {
     console.log('Переключаем на экран:', screenId);
+    
+    // Проверяем наличие экранов
     const screens = document.querySelectorAll('.screen');
+    console.log('Найдено экранов:', screens.length);
+    
+    // Проверяем наличие целевого экрана
+    const targetScreen = document.getElementById(`${screenId}-screen`);
+    if (!targetScreen) {
+        console.error('Целевой экран не найден:', `${screenId}-screen`);
+        return;
+    }
+    
+    // Скрываем все экраны
     screens.forEach(screen => {
         const isTarget = screen.id === `${screenId}-screen`;
         console.log(`Экран ${screen.id}: ${isTarget ? 'показываем' : 'скрываем'}`);
         screen.style.display = isTarget ? 'block' : 'none';
+        // Добавляем/убираем класс active
+        if (isTarget) {
+            screen.classList.add('active');
+        } else {
+            screen.classList.remove('active');
+        }
+    });
+    
+    // Обновляем активный пункт меню
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        const isActive = item.dataset.screen === screenId;
+        if (isActive) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
     });
 }
 
