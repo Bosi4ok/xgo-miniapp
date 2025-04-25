@@ -9,6 +9,8 @@ export function initNavigation() {
     if (initialScreen) {
         initialScreen.classList.add('active');
         initialScreen.style.transform = 'translateX(0)';
+        initialScreen.style.visibility = 'visible';
+        initialScreen.style.opacity = '1';
     }
     
     // Инициализируем обработчики кликов
@@ -16,7 +18,7 @@ export function initNavigation() {
     console.log('Найдено элементов навигации:', navItems.length);
     
     navItems.forEach(item => {
-        item.addEventListener('click', (e) => {
+        item.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation(); // Предотвращаем всплытие
             
@@ -27,6 +29,37 @@ export function initNavigation() {
             }
             
             console.log('Клик по навигации:', screen);
+
+            // Обрабатываем клики по кнопкам
+            switch (screen) {
+                case 'checkin':
+                    // Показываем экран чекина
+                    const checkinButton = document.getElementById('checkin-button');
+                    if (checkinButton) {
+                        const checkin = await import('./checkin.js');
+                        const canDoCheckin = await checkin.canCheckin(window.userData);
+                        checkinButton.disabled = !canDoCheckin;
+                        checkinButton.textContent = canDoCheckin ? 'Получить награду' : 'Уже получено';
+                    }
+                    break;
+
+                case 'tasks':
+                    // Показываем экран заданий
+                    const tasks = await import('./tasks.js');
+                    await tasks.loadTasks();
+                    break;
+
+                case 'referral':
+                    // Показываем экран реферальной системы
+                    const referral = await import('./referral.js');
+                    const stats = await referral.getReferralStats(window.userData.id);
+                    if (stats) {
+                        updateReferralUI(stats.code, stats.referrals_count);
+                    }
+                    break;
+            }
+
+            // Переключаем экран
             switchScreen(screen);
         });
     });
