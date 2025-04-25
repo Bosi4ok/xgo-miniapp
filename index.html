@@ -801,9 +801,35 @@
   <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;" preload="none">
     <source src="assets/chek-in.mp4" type="video/mp4" />
   </video>
-  <div class="user-info" id="user-info">
-    <div class="user-icon">👤</div>
-    <div class="user-name" id="user-name"></div>
+
+  <!-- Основной контент -->
+  <div class="screen" id="start-screen">
+    <div class="modal-content">
+      <button class="close" onclick="window.closeTasksModal()">&times;</button>
+      <h2>Tasks</h2>
+      
+      <div class="task-item">
+        <div class="task-info">
+          <div class="task-title">Follow Telegram Channel</div>
+          <div class="task-description">Subscribe to our Telegram channel</div>
+          <div class="task-reward">+10 XP</div>
+        </div>
+        <a href="https://t.me/xgo_pump" target="_blank" class="task-link-btn">Join</a>
+        <button class="task-verify-btn" onclick="window.verifyTask('telegram')">Verify</button>
+        <div class="task-status" id="telegram-task-status"></div>
+      </div>
+
+      <div class="task-item">
+        <div class="task-info">
+          <div class="task-title">Follow Twitter Account</div>
+          <div class="task-description">Follow us on Twitter</div>
+          <div class="task-reward">+10 XP</div>
+        </div>
+        <a href="https://x.com/xgo_pump" target="_blank" class="task-link-btn">Follow</a>
+        <button class="task-verify-btn" onclick="window.verifyTask('twitter')">Verify</button>
+        <div class="task-status" id="twitter-task-status"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Tasks Modal -->
@@ -836,85 +862,15 @@
     </div>
   </div>
 
-  <!-- Стартовый экран -->
-  <div class="screen active" id="start-screen">
-    <div class="points-display-main" id="points-display-main">0 XP</div>
-
-  <nav class="bottom-nav">
-    <a href="#" class="nav-item active" id="home-nav">
-      <div class="nav-icon">
-        <svg viewBox="0 0 24 24">
-          <path d="M3 12l9-9 9 9M5 10v10h14V10"/>
-        </svg>
-      </div>
-      <span class="nav-label">Home</span>
-    </a>
-    <a href="#" class="nav-item" onclick="window.openCheckinModal()">
-      <div class="nav-icon">
-        <svg viewBox="0 0 24 24">
-          <rect x="3" y="4" width="18" height="18" rx="2"/>
-          <path d="M16 2v4M8 2v4M3 10h18M8 14h8"/>
-        </svg>
-      </div>
-      <span class="nav-label">Check-in</span>
-    </a>
-    <a href="#" class="nav-item" onclick="window.openTasksModal()">
-      <div class="nav-icon">
-        <svg viewBox="0 0 24 24">
-          <path d="M9 11l3 3 8-8M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h7"/>
-        </svg>
-      </div>
-      <span class="nav-label">Tasks</span>
-    </a>
-    <a href="#" class="nav-item" onclick="window.openReferralModal()">
-      <div class="nav-icon">
-        <svg viewBox="0 0 24 24">
-          <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M19 8v6m-3-3h6"/>
-        </svg>
-      </div>
-      <span class="nav-label">Referral</span>
-    </a>
-    <a href="#" class="nav-item" id="profile-btn">
-      <div class="nav-icon">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-      </div>
-      <span class="nav-label">Profile</span>
-    </a>
-  </nav>
-
+  <!-- Пользовательская информация -->
+  <div class="user-info" id="user-info">
+    <div class="user-icon">👤</div>
+    <div class="user-name" id="user-name"></div>
   </div>
 
-  <!-- Модальное окно реферальной системы -->
-  <div class="modal-overlay" id="modal-overlay"></div>
-
-  <!-- Daily Check-in Modal -->
-  <div class="checkin-modal" id="checkin-modal">
-    <div class="modal-content">
-      <button class="close" onclick="window.closeCheckinModal()">&times;</button>
-      <h2>Daily Check-in</h2>
-      <div class="streak-counter" id="streak-text">Current streak: 1 day</div>
-      <div class="next-reward-container">
-        <div class="next-reward-label">Next reward:</div>
-        <div class="next-reward-value" id="xp-earned">+10 XP</div>
-      </div>
-      <button id="checkin-btn" class="checkin-button" onclick="window.handleCheckin()">GET REWARD</button>
-      <div class="checkin-status" id="checkin-status"></div>
-    </div>
-  </div>
-  <div class="referral-modal" id="referral-modal">
-    <div class="modal-content">
-      <button class="close" onclick="window.closeReferralModal()">&times;</button>
-      <h2>Реферальная система</h2>
-      
-      <!-- Раздел для приглашения -->
-      <div class="referral-section">
-        <h3>Пригласите друзей</h3>
-        <p>Поделитесь своим кодом и получите 50 XP за каждого приглашенного друга!</p>
-        
-        <div class="referral-code-container">
-          <div class="referral-code-wrapper" onclick="window.copyReferralCode()">
+  <!-- Скрипты -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script type="module" src="js/index.js"></script>
             <span id="referral-code">Loading...</span>
             <span class="copy-icon">📋</span>
           </div>
@@ -1195,136 +1151,5 @@
 
         if (userError) throw userError;
 
-        const streak = userDb.current_streak || 0;
-        const nextXP = calculateXP(streak + 1);
-
-        // Обновляем интерфейс
-        document.getElementById('current-streak').textContent = `🔥 Текущий стрик: ${streak} дней`;
-        document.getElementById('points-display').textContent = `🎯 Очки: ${userDb.points || 0}`;
-
-
-
-        // Показываем следующую награду
-        document.getElementById('next-reward').textContent = `+${nextXP} XP`;
-
-        // Разблокируем кнопку, если не было чекина сегодня
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const lastCheckinDate = userDb.last_checkin ? new Date(userDb.last_checkin).getTime() : 0;
-
-        if (lastCheckinDate >= today) {
-          document.getElementById('checkin-btn').disabled = true;
-          document.getElementById('checkin-status').textContent = '✅ Чекин уже выполнен';
-        } else {
-          document.getElementById('checkin-btn').disabled = false;
-          document.getElementById('checkin-status').textContent = '';
-        }
-      } catch (error) {
-        console.error('Error loading checkin data:', error);
-      }
-    }
-
-    // Выполнение чекина
-    async function performCheckin() {
-      if (!userData) {
-        console.error('Нет данных пользователя');
-        return;
-      }
-
-      // Блокируем кнопку
-      const checkinBtn = document.querySelector('.checkin-button');
-      const checkinStatus = document.getElementById('checkin-status');
-      checkinBtn.disabled = true;
-
-      try {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        // Проверяем, не делал ли пользователь чекин сегодня
-        const { data: userDb, error: fetchError } = await supabaseClient
-          .from('users')
-          .select('*')
-          .eq('telegram_id', String(userData.id))
-          .single();
-
-        if (fetchError) throw fetchError;
-
-        if (userDb.last_checkin) {
-          const lastCheckin = new Date(userDb.last_checkin);
-          if (lastCheckin.getFullYear() === today.getFullYear() &&
-              lastCheckin.getMonth() === today.getMonth() &&
-              lastCheckin.getDate() === today.getDate()) {
-            checkinStatus.textContent = '❌ Вы уже получили награду сегодня';
-            checkinBtn.disabled = true;
-            return;
-          }
-        }
-
-        // Вычисляем стрик
-        let streak = userDb.current_streak || 0;
-        const lastCheckin = userDb.last_checkin ? new Date(userDb.last_checkin) : null;
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        if (lastCheckin && 
-            lastCheckin.getFullYear() === yesterday.getFullYear() &&
-            lastCheckin.getMonth() === yesterday.getMonth() &&
-            lastCheckin.getDate() === yesterday.getDate()) {
-          streak++;
-        } else {
-          streak = 1;
-        }
-
-        const xpToEarn = calculateXP(streak);
-        const maxStreak = Math.max(streak, userDb.max_streak || 0);
-
-        // Записываем чекин в историю
-        const { error: checkinError } = await supabaseClient
-          .from('checkins')
-          .insert({
-            user_id: String(userData.id),
-            streak_count: streak,
-            xp_earned: xpToEarn
-          });
-
-        if (checkinError) throw checkinError;
-
-        // Начисляем XP
-        await supabaseClient.rpc('increment_xp', {
-          user_id: String(userData.id),
-          xp_amount: xpToEarn
-        });
-
-        // Обновляем данные пользователя
-        const { error: updateError } = await supabaseClient
-          .from('users')
-          .update({
-            points: userDb.points + xpToEarn,
-            current_streak: streak,
-            max_streak: maxStreak,
-            last_checkin: now.toISOString()
-          })
-          .eq('telegram_id', String(userData.id));
-
-        if (updateError) throw updateError;
-
-        // Обновляем интерфейс
-        document.getElementById('points-display-main').textContent = `${userDb.points + xpToEarn} XP`;
-        checkinStatus.textContent = '✅ Reward claimed!';
-        document.getElementById('xp-earned').textContent = `+${xpToEarn} XP`;
-        document.getElementById('streak-text').textContent = `Current streak: ${streak} day${streak !== 1 ? 's' : ''}`;
-
-        // Перезагружаем данные
-        await loadCheckinData();
-
-        console.log('Check-in completed successfully');
-      } catch (error) {
-        console.error('Error during check-in:', error);
-        checkinStatus.textContent = '❗ Error claiming reward';
-        checkinBtn.disabled = false;
-      }
-    }
-
-  </script>
 </body>
 </html>
