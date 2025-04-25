@@ -35,6 +35,40 @@ async function initializeApp() {
         window.showNotification = ui.showNotification;
         window.ui = ui; // Делаем ui доступным глобально
 
+        // Настраиваем навигацию
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const screen = item.getAttribute('data-screen');
+                
+                // Убираем активный класс у всех элементов
+                navItems.forEach(i => i.classList.remove('active'));
+                
+                // Добавляем активный класс выбранному
+                item.classList.add('active');
+                
+                // Обрабатываем клик по экрану
+                switch(screen) {
+                    case 'checkin':
+                        document.getElementById('checkin-modal').style.display = 'block';
+                        document.getElementById('modal-overlay').style.display = 'block';
+                        break;
+                    case 'tasks':
+                        document.getElementById('tasks-modal').style.display = 'block';
+                        document.getElementById('modal-overlay').style.display = 'block';
+                        break;
+                    case 'referral':
+                        document.getElementById('referral-modal').style.display = 'block';
+                        document.getElementById('modal-overlay').style.display = 'block';
+                        break;
+                    case 'profile':
+                        // Добавим позже
+                        break;
+                }
+            });
+        });
+
         // Настраиваем обработчики событий
         await setupEventListeners();
 
@@ -51,54 +85,82 @@ async function setupEventListeners() {
         const checkin = await moduleLoader.loadModule('checkin');
         const referral = await moduleLoader.loadModule('referral');
 
-        // Обработчик чекина
-        document.getElementById('checkinButton')?.addEventListener('click', async () => {
-            try {
-                const result = await checkin.performCheckin(userData);
-                if (result.success) {
-                    window.showNotification(result.message, 'success');
-                    checkin.updateCheckinUI(result.streak);
-                    ui.animateXP(result.xp);
-                } else {
-                    window.showNotification(result.message, 'error');
+        // Обработчик для чекина
+        const checkinButton = document.getElementById('checkinButton');
+        if (checkinButton) {
+            checkinButton.addEventListener('click', async () => {
+                try {
+                    const result = await checkin.performCheckin(userData);
+                    if (result.success) {
+                        window.ui.showNotification(result.message, 'success');
+                        window.ui.animateXP(result.xp);
+                        window.ui.updateCheckinUI(result.streak);
+                        window.closeAllModals();
+                    } else {
+                        window.ui.showNotification(result.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Ошибка при выполнении чекина:', error);
+                    window.ui.showNotification('Произошла ошибка при выполнении чекина', 'error');
                 }
-            } catch (error) {
-                console.error('Ошибка при выполнении чекина:', error);
-                window.showNotification('Ошибка при выполнении чекина', 'error');
-            }
-        });
+            });
+        }
 
-        // Обработчики рефералов
-        document.getElementById('referralButton')?.addEventListener('click', async () => {
-            try {
-                const code = await referral.ensureReferralCode(userData);
-                window.showNotification(`Ваш реферальный код: ${code}`, 'info');
-            } catch (error) {
-                console.error('Ошибка при получении кода:', error);
-                window.showNotification('Ошибка при получении кода', 'error');
-            }
-        });
-
-        document.getElementById('applyReferralButton')?.addEventListener('click', async () => {
-            const code = prompt('Введите реферальный код:');
-            if (!code) return;
-
-            try {
-                const result = await referral.applyReferralCode(userData, code);
-                if (result.success) {
-                    window.showNotification(result.message, 'success');
-                    ui.animateXP(20);
-                } else {
-                    window.showNotification(result.message, 'error');
+        // Обработчик для реферального кода
+        const referralSubmit = document.getElementById('referral-submit');
+        const referralInput = document.getElementById('referral-input');
+        if (referralSubmit && referralInput) {
+            referralSubmit.addEventListener('click', async () => {
+                const code = referralInput.value.trim();
+                if (!code) {
+                    window.ui.showNotification('Введите реферальный код', 'error');
+                    return;
                 }
-            } catch (error) {
-                console.error('Ошибка при применении кода:', error);
-                window.showNotification('Ошибка при применении кода', 'error');
-            }
-        });
+
+                try {
+                    const result = await referral.checkReferralCode(code, userData.id);
+                    if (result.success) {
+                        window.ui.showNotification(result.message, 'success');
+                        window.closeAllModals();
+                    } else {
+                        window.ui.showNotification(result.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Ошибка при проверке реферального кода:', error);
+                    window.ui.showNotification('Произошла ошибка при проверке кода', 'error');
+                }
+            });
+        }
+
+        // Обработчик для оверлея
+        const modalOverlay = document.getElementById('modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', () => {
+                window.closeAllModals();
+            });
+        }
+
+        // Загружаем данные пользователя
+        const userNameElement = document.getElementById('user-name');
+        if (userNameElement && userData) {
+            userNameElement.textContent = userData.first_name || 'User';
+        }
+
+        // Загружаем реферальный код
+        const referralCode = await referral.getReferralCode(userData.id);
+        if (referralCode) {
+            window.ui.updateReferralUI(referralCode.code, referralCode.referrals_count);
+        }
+
+        // Проверяем возможность чекина
+        const canDoCheckin = await checkin.canCheckin(userData);
+        if (checkinButton) {
+            checkinButton.disabled = !canDoCheckin;
+            checkinButton.textContent = canDoCheckin ? 'Получить награду' : 'Уже получено';
+        }
+
     } catch (error) {
-        console.error('Error setting up event listeners:', error);
-        window.showNotification('Ошибка при инициализации приложения', 'error');
+        console.error('Ошибка при настройке обработчиков событий:', error);
     }
 }
 
