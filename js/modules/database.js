@@ -328,7 +328,7 @@ async function createCheckin(userId, streak, xpEarned) {
   }
 }
 
-export async function getLastCheckin(userId) {
+async function getLastCheckin(userId) {
   userId = String(userId);
 
   // Проверяем кэш
