@@ -17,6 +17,20 @@ export function updateUserInfo(name) {
     }
 }
 
+export function updateUserName(firstName, username) {
+    const userNameElement = document.getElementById('user-name');
+    if (userNameElement) {
+        userNameElement.textContent = `${firstName} @${username}`;
+    }
+}
+
+export function showError(message) {
+    const userInfoElement = document.getElementById('user-info');
+    if (userInfoElement) {
+        userInfoElement.innerHTML = `⚠️ ${message}`;
+    }
+}
+
 // Функции для работы с модальными окнами
 export function closeAllModals() {
     const modals = document.querySelectorAll('.modal');
