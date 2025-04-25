@@ -136,7 +136,7 @@ async function createUser(telegramId) {
   }
 }
 
-export async function updateUser(telegramId, updates) {
+async function updateUser(telegramId, updates) {
   const userId = String(telegramId);
 
   try {
