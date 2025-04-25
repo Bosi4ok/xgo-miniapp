@@ -1192,90 +1192,35 @@
 
     // Применение реферального кода
     async function applyReferralCode() {
-      const code = document.getElementById('referral-input').value.trim().toUpperCase();
-      if (!code) {
-        document.getElementById('referral-input-status').textContent = '⚠️ Введите код';
-        return;
-      }
-
       try {
-        console.log('Применяем код:', code);
-        
-        // Проверяем, не использовал ли пользователь уже реферальный код
-        const { data: currentUser } = await supabaseClient
-          .from('users')
-          .select('referred_by')
-          .eq('telegram_id', userData.id)
-          .single();
-
-        if (currentUser?.referred_by) {
-          document.getElementById('referral-input-status').textContent = '⚠️ Вы уже использовали реферальный код';
+        const code = document.getElementById('referral-input').value.trim().toUpperCase();
+        if (!code) {
+          window.ui.showNotification('Введите реферальный код', 'error');
           return;
         }
 
-        // Проверяем, что код существует и принадлежит другому пользователю
-        const { data: referrer, error } = await supabaseClient
-          .from('users')
-          .select('*')
-          .eq('referral_code', code)
-          .single();
-
-        if (error || !referrer) {
-          document.getElementById('referral-input-status').textContent = '❌ Код не найден';
-          return;
+        const result = await window.referral.checkReferralCode(code, userData.id);
+        if (result.success) {
+          window.ui.showNotification(result.message, 'success');
+          window.ui.updateReferralUI(result.code, result.referrals_count);
+          setTimeout(() => window.closeAllModals(), 1500);
+        } else {
+          window.ui.showNotification(result.message, 'error');
         }
-
-        if (referrer.telegram_id === userData.id) {
-          document.getElementById('referral-input-status').textContent = '⚠️ Нельзя использовать свой код';
-          return;
-        }
-
-        // Обновляем данные пользователя
-        const { error: updateError } = await supabaseClient
-          .from('users')
-          .update({
-            referred_by: referrer.telegram_id,
-            points: userPoints + 50
-          })
-          .eq('telegram_id', userData.id);
-
-        if (updateError) throw updateError;
-
-        // Начисляем бонус рефереру
-        const { error: referrerError } = await supabaseClient
-          .from('users')
-          .update({
-            points: referrer.points + 100
-          })
-          .eq('telegram_id', referrer.telegram_id);
-
-        if (referrerError) throw referrerError;
-
-        // Обновляем интерфейс
-        userPoints += 50;
-        document.getElementById('points-display').textContent = `🎯 Очки: ${userPoints}`;
-        document.getElementById('referral-input-status').textContent = '✅ Код успешно применён! +50 очков';
-        document.getElementById('referral-input').disabled = true;
-
-        // Обновляем статистику рефералов
-        await updateReferralStats();
       } catch (error) {
         console.error('Ошибка при применении кода:', error);
-        document.getElementById('referral-input-status').textContent = '❌ Ошибка при применении кода';
+        window.ui.showNotification('Произошла ошибка при проверке кода', 'error');
       }
     }
 
     // Обновление статистики рефералов
     async function updateReferralStats() {
       try {
-        const { count } = await supabaseClient
-          .from('users')
-          .select('*', { count: 'exact' })
-          .eq('referred_by', userData.id);
-
-        document.getElementById('referral-count').textContent = count || 0;
+        const stats = await window.referral.getReferralStats(userData.id);
+        window.ui.updateReferralUI(stats.code, stats.referrals_count);
       } catch (error) {
-        console.error('Error updating referral stats:', error);
+        console.error('Ошибка при обновлении статистики:', error);
+        window.ui.showNotification('Ошибка при обновлении статистики', 'error');
       }
     }
 
