@@ -256,7 +256,7 @@ async function createReferral(referrerId, referredId) {
   }
 }
 
-export async function getReferralsCount(telegramId) {
+async function getReferralsCount(telegramId) {
   const userId = String(telegramId);
 
   // Проверяем кэш
