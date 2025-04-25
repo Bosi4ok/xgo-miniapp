@@ -1,4 +1,4 @@
-import { supabaseClient } from './database.js';
+import { supabaseClient } from '../../supabase-config.js';
 import { showNotification } from './ui.js';
 
 // Кэш данных профиля
