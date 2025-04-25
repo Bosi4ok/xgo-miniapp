@@ -292,7 +292,7 @@ const checkinCache = new Map();
 const CHECKIN_CACHE_LIFETIME = 60000; // 1 минута
 
 // Функции для работы с чекинами
-export async function createCheckin(userId, streak, xpEarned) {
+async function createCheckin(userId, streak, xpEarned) {
   userId = String(userId);
 
   try {
