@@ -4,25 +4,45 @@ import { loadModules } from './loader.js';
 let userData = null;
 let moduleLoader = null;
 
+// Функция для показа ошибки
+function showError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.position = 'fixed';
+    errorDiv.style.top = '50%';
+    errorDiv.style.left = '50%';
+    errorDiv.style.transform = 'translate(-50%, -50%)';
+    errorDiv.style.background = 'rgba(255, 0, 0, 0.9)';
+    errorDiv.style.color = 'white';
+    errorDiv.style.padding = '20px';
+    errorDiv.style.borderRadius = '10px';
+    errorDiv.style.textAlign = 'center';
+    errorDiv.style.zIndex = '9999';
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
+}
+
 // Инициализация приложения
 async function initializeApp() {
     try {
-        // Инициализация Telegram
         // Ждем загрузки Telegram Web App
         await new Promise((resolve, reject) => {
-            let attempts = 0;
-            const maxAttempts = 50; // 5 секунд максимум
-            const checkTelegram = () => {
-                attempts++;
-                if (window.Telegram?.WebApp) {
-                    resolve();
-                } else if (attempts >= maxAttempts) {
-                    reject(new Error('Не удалось загрузить Telegram Web App'));
-                } else {
-                    setTimeout(checkTelegram, 100);
-                }
-            };
-            checkTelegram();
+            if (window.Telegram?.WebApp) {
+                resolve();
+            } else {
+                let attempts = 0;
+                const maxAttempts = 50; // 5 секунд максимум
+                const checkTelegram = () => {
+                    attempts++;
+                    if (window.Telegram?.WebApp) {
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        reject(new Error('Не удалось загрузить Telegram Web App'));
+                    } else {
+                        setTimeout(checkTelegram, 100);
+                    }
+                };
+                checkTelegram();
+            }
         });
 
         const tg = window.Telegram.WebApp;
@@ -33,18 +53,37 @@ async function initializeApp() {
         }
 
         // Загружаем базовые модули
-        moduleLoader = await loadModules();
+        try {
+            moduleLoader = await loadModules();
+        } catch (error) {
+            throw new Error('Не удалось загрузить модули: ' + error.message);
+        }
 
         // Загружаем и инициализируем основные модули
-        const database = await moduleLoader.loadModule('database');
-        const ui = await moduleLoader.loadModule('ui');
+        let database, ui;
+        try {
+            database = await moduleLoader.loadModule('database');
+            ui = await moduleLoader.loadModule('ui');
+            if (!database || !ui) {
+                throw new Error('Не удалось загрузить основные модули');
+            }
+        } catch (error) {
+            throw new Error('Ошибка загрузки модулей: ' + error.message);
+        }
         
         // Загружаем данные пользователя
-        const userInfo = await database.getUser(userData.id);
-        userData = { ...userData, ...userInfo };
+        try {
+            const userInfo = await database.getUser(userData.id);
+            if (!userInfo) {
+                throw new Error('Не удалось получить данные пользователя из базы данных');
+            }
+            userData = { ...userData, ...userInfo };
+        } catch (error) {
+            throw new Error('Ошибка при работе с базой данных: ' + error.message);
+        }
         
         // Добавляем UI функции в глобальную область
-        if (ui) {
+        try {
             window.ui = ui;
             window.closeAllModals = ui.closeAllModals;
             window.showNotification = ui.showNotification;
@@ -52,8 +91,8 @@ async function initializeApp() {
 
             // Закрываем все модальные окна при старте
             ui.closeAllModals();
-        } else {
-            throw new Error('Не удалось инициализировать UI модуль');
+        } catch (error) {
+            throw new Error('Ошибка инициализации UI: ' + error.message);
         }
 
         // Настраиваем навигацию
@@ -230,4 +269,15 @@ window.verifyTask = async function(taskType) {
 
 // Инициализация
 // Запуск приложения при загрузке DOM
-document.addEventListener('DOMContentLoaded', initializeApp);
+document.addEventListener('DOMContentLoaded', () => {
+    // Проверяем, что мы в Telegram
+    if (!window.Telegram && !window.location.href.includes('telegram.org')) {
+        showError('Это приложение можно открыть только в Telegram');
+        return;
+    }
+
+    initializeApp().catch(error => {
+        console.error('Ошибка инициализации:', error);
+        showError(error.message);
+    });
+});
