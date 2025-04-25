@@ -1,4 +1,4 @@
-import { supabaseClient } from '../../supabase-config.js';
+import { supabaseClient } from './database.js';
 import { showNotification, animateXP } from './ui.js';
 
 // Загрузка статуса задач
