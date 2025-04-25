@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>XGO Mini App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script type="module" src="js/index.js"></script>
+  <!-- Основные скрипты -->
+  <script src="https://telegram.org/js/telegram-web-app.js" async></script>
+  <script type="module" src="js/index.js" defer></script>
   <style>
     @font-face {
       font-family: 'Brinnan';
@@ -21,7 +22,9 @@
       background-color: #000;
       color: white;
     }
+    /* Оптимизированный фон */
     .background-video {
+      transition: opacity 0.3s ease-in-out;
       position: fixed;
       top: 0;
       left: 0;
@@ -791,10 +794,11 @@
   </style>
 </head>
 <body>
-  <video muted loop playsinline autoplay class="background-video" id="start-bg">
+  <!-- Оптимизированные видео -->
+  <video muted loop playsinline autoplay class="background-video" id="start-bg" preload="metadata">
     <source src="assets/стиль1.mp4" type="video/mp4" />
   </video>
-  <video muted loop playsinline autoplay class="background-video" id="checkin-bg" style="display: none;">
+  <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;" preload="none">
     <source src="assets/chek-in.mp4" type="video/mp4" />
   </video>
   <div class="user-info" id="user-info">
