@@ -13,16 +13,152 @@
       src: url('assets/Brinnan Bold.otf') format('opentype');
       font-weight: bold;
     }
-    html, body {
+    /* Основные стили */
+    body {
       margin: 0;
       padding: 0;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Brinnan', monospace;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
       background-color: #000;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Стили для навигации */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      z-index: 1000;
+    }
+
+    .nav-item {
+      text-decoration: none;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0.5;
+      transition: opacity 0.3s;
+    }
+
+    .nav-item.active {
+      opacity: 1;
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 4px;
+    }
+
+    .nav-icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .nav-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Стили для модальных окон */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      z-index: 1001;
+      width: 90%;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+    }
+
+    /* Стили для задач */
+    .task-item {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .task-info {
+      margin-bottom: 10px;
+    }
+
+    .task-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .task-description {
+      font-size: 14px;
+      opacity: 0.7;
+      margin-bottom: 5px;
+    }
+
+    .task-reward {
+      color: #00ff00;
+      font-weight: bold;
+    }
+
+    .task-link-btn,
+    .task-verify-btn {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: none;
+      margin-right: 10px;
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
+
+    .task-link-btn {
+      background: #ff3b30;
       color: white;
     }
-    /* Оптимизированный фон */
+
+    .task-verify-btn {
+      background: #34c759;
+      color: white;
+    }
+
     .background-video {
       transition: opacity 0.3s ease-in-out;
       position: fixed;
@@ -804,40 +940,67 @@
 
   <!-- Основной контент -->
   <div class="screen" id="start-screen">
-    <div class="modal-content">
-      <button class="close" onclick="window.closeTasksModal()">&times;</button>
-      <h2>Tasks</h2>
-      
-      <div class="task-item">
-        <div class="task-info">
-          <div class="task-title">Follow Telegram Channel</div>
-          <div class="task-description">Subscribe to our Telegram channel</div>
-          <div class="task-reward">+10 XP</div>
+    <div class="points-display-main" id="points-display-main">0 XP</div>
+    <!-- Навигация внизу экрана -->
+    <nav class="bottom-nav">
+      <a href="#" class="nav-item active" data-screen="home">
+        <div class="nav-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          </svg>
         </div>
-        <a href="https://t.me/xgo_pump" target="_blank" class="task-link-btn">Join</a>
-        <button class="task-verify-btn" onclick="window.verifyTask('telegram')">Verify</button>
-        <div class="task-status" id="telegram-task-status"></div>
-      </div>
-
-      <div class="task-item">
-        <div class="task-info">
-          <div class="task-title">Follow Twitter Account</div>
-          <div class="task-description">Follow us on Twitter</div>
-          <div class="task-reward">+10 XP</div>
+        <span class="nav-label">HOME</span>
+      </a>
+      <a href="#" class="nav-item" data-screen="checkin">
+        <div class="nav-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
         </div>
-        <a href="https://x.com/xgo_pump" target="_blank" class="task-link-btn">Follow</a>
-        <button class="task-verify-btn" onclick="window.verifyTask('twitter')">Verify</button>
-        <div class="task-status" id="twitter-task-status"></div>
-      </div>
-    </div>
+        <span class="nav-label">CHECK-IN</span>
+      </a>
+      <a href="#" class="nav-item" data-screen="tasks">
+        <div class="nav-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <span class="nav-label">TASKS</span>
+      </a>
+      <a href="#" class="nav-item" data-screen="referral">
+        <div class="nav-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <span class="nav-label">REFERRAL</span>
+      </a>
+      <a href="#" class="nav-item" data-screen="profile">
+        <div class="nav-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <span class="nav-label">PROFILE</span>
+      </a>
+    </nav>
   </div>
 
   <!-- Tasks Modal -->
-  <div class="tasks-modal" id="tasks-modal">
+  <div class="modal" id="tasks-modal">
     <div class="modal-content">
-      <button class="close" onclick="window.closeTasksModal()">&times;</button>
       <h2>Tasks</h2>
-      
       <div class="task-item">
         <div class="task-info">
           <div class="task-title">Follow Telegram Channel</div>
