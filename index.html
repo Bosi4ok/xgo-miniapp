@@ -194,13 +194,15 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.95);
       backdrop-filter: blur(10px);
       display: flex;
       justify-content: space-around;
       padding: 10px 0;
-      z-index: 1000;
+      z-index: 9999;
       border-top: 1px solid rgba(255, 255, 255, 0.1);
+      height: 60px;
+      align-items: center;
     }
 
     .nav-item {
@@ -213,6 +215,9 @@
       transition: all 0.3s;
       cursor: pointer;
       padding: 5px 15px;
+      position: relative;
+      flex: 1;
+      max-width: 80px;
       border-radius: 10px;
       pointer-events: auto;
     }
@@ -249,11 +254,13 @@
     }
 
     .nav-label {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size: 10px;
+      margin-top: 2px;
+      color: #666;
       font-weight: 500;
       transition: color 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .nav-item:hover .nav-label {
@@ -447,11 +454,12 @@
 
     .nav-icon {
       position: relative;
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-bottom: 4px;
     }
 
     .nav-icon svg {
@@ -1241,6 +1249,8 @@
         </div>
       </div>
     </div>
+  </div>
+
   <!-- Навигация внизу экрана -->
   <nav class="bottom-nav">
     <a href="#" class="nav-item active" data-screen="home">
@@ -1295,7 +1305,6 @@
       <span class="nav-label">PROFILE</span>
     </a>
   </nav>
-  </div>
 
   <!-- Tasks Modal -->
   <div class="modal" id="tasks-modal">
