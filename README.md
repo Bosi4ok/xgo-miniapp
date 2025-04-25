@@ -1,6 +1,10 @@
 # Telegram Mini App - 2048
 
+[![Vercel Status](https://img.shields.io/github/deployments/Bosi4ok/xgo-miniapp/Production?label=vercel&logo=vercel)](https://xgo-miniapp-git-main-artems-projects-e7783d6f.vercel.app/)
+
 Мини-приложение для Telegram с системой ежедневных чекинов, реферальной системой и системой задач.
+
+🌐 [Открыть приложение](https://xgo-miniapp-git-main-artems-projects-e7783d6f.vercel.app/)
 
 ## Функциональность
 
