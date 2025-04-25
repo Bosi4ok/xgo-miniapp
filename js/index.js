@@ -24,19 +24,19 @@ async function initializeApp() {
 
         // Загружаем и инициализируем основные модули
         const database = await moduleLoader.loadModule('database');
+        const ui = await moduleLoader.loadModule('ui');
         
         // Загружаем данные пользователя
-        await database.getUser(userData.id);
-
-        // Инициализируем UI
-        const ui = await moduleLoader.loadModule('ui');
+        const userInfo = await database.getUser(userData.id);
+        userData = { ...userData, ...userInfo };
         
         // Добавляем UI функции в глобальную область
         window.closeAllModals = ui.closeAllModals;
         window.showNotification = ui.showNotification;
+        window.ui = ui; // Делаем ui доступным глобально
 
         // Настраиваем обработчики событий
-        setupEventListeners();
+        await setupEventListeners();
 
     } catch (error) {
         console.error('Initialization error:', error);
