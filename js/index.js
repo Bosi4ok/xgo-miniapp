@@ -24,18 +24,16 @@ async function initializeApp() {
 
         // Загружаем и инициализируем основные модули
         const database = await moduleLoader.loadModule('database');
-        const { getUser } = database;
         
         // Загружаем данные пользователя
-        await getUser(userData.id);
+        await database.getUser(userData.id);
 
         // Инициализируем UI
         const ui = await moduleLoader.loadModule('ui');
-        const { closeAllModals, showNotification } = ui;
         
         // Добавляем UI функции в глобальную область
-        window.closeAllModals = closeAllModals;
-        window.showNotification = showNotification;
+        window.closeAllModals = ui.closeAllModals;
+        window.showNotification = ui.showNotification;
 
         // Настраиваем обработчики событий
         setupEventListeners();
@@ -50,39 +48,34 @@ async function initializeApp() {
 async function setupEventListeners() {
     try {
         // Загружаем необходимые модули
-        const [checkin, referral, ui] = await Promise.all([
-            moduleLoader.loadModule('checkin'),
-            moduleLoader.loadModule('referral'),
-            moduleLoader.loadModule('ui')
-        ]);
-
-        const { performCheckin } = checkin;
-        const { getReferralCode, applyReferralCode } = referral;
-        const { showNotification, animateXP, updateCheckinUI } = ui;
+        const checkin = await moduleLoader.loadModule('checkin');
+        const referral = await moduleLoader.loadModule('referral');
 
         // Обработчик чекина
         document.getElementById('checkinButton')?.addEventListener('click', async () => {
             try {
-                const result = await performCheckin(userData);
+                const result = await checkin.performCheckin(userData);
                 if (result.success) {
-                    showNotification(result.message, 'success');
-                    updateCheckinUI(result.streak);
-                    animateXP(result.xp);
+                    window.showNotification(result.message, 'success');
+                    checkin.updateCheckinUI(result.streak);
+                    ui.animateXP(result.xp);
                 } else {
-                    showNotification(result.message, 'error');
+                    window.showNotification(result.message, 'error');
                 }
             } catch (error) {
-                showNotification('Ошибка при выполнении чекина', 'error');
+                console.error('Ошибка при выполнении чекина:', error);
+                window.showNotification('Ошибка при выполнении чекина', 'error');
             }
         });
 
         // Обработчики рефералов
         document.getElementById('referralButton')?.addEventListener('click', async () => {
             try {
-                const code = await getReferralCode(userData);
-                showNotification(`Ваш реферальный код: ${code}`, 'info');
+                const code = await referral.ensureReferralCode(userData);
+                window.showNotification(`Ваш реферальный код: ${code}`, 'info');
             } catch (error) {
-                showNotification('Ошибка при получении кода', 'error');
+                console.error('Ошибка при получении кода:', error);
+                window.showNotification('Ошибка при получении кода', 'error');
             }
         });
 
@@ -91,20 +84,21 @@ async function setupEventListeners() {
             if (!code) return;
 
             try {
-                const result = await applyReferralCode(userData, code);
+                const result = await referral.applyReferralCode(userData, code);
                 if (result.success) {
-                    showNotification(result.message, 'success');
-                    animateXP(20);
+                    window.showNotification(result.message, 'success');
+                    ui.animateXP(20);
                 } else {
-                    showNotification(result.message, 'error');
+                    window.showNotification(result.message, 'error');
                 }
             } catch (error) {
-                showNotification('Ошибка при применении кода', 'error');
+                console.error('Ошибка при применении кода:', error);
+                window.showNotification('Ошибка при применении кода', 'error');
             }
         });
     } catch (error) {
         console.error('Error setting up event listeners:', error);
-        showNotification('Ошибка при инициализации приложения', 'error');
+        window.showNotification('Ошибка при инициализации приложения', 'error');
     }
 }
 
