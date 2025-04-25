@@ -91,10 +91,18 @@ async function initializeApp() {
                 xpElement.textContent = userData.points || 0;
             }
 
+            // Инициализация навигации
+            const ui = await import('./modules/ui.js');
+            window.ui = ui; // Делаем модуль доступным глобально
+
             // Инициализируем навигацию
-            console.log('Вызываем initNavigation...');
             ui.initNavigation();
-            ui.switchScreen('home');
+
+            // Показываем начальный экран
+            document.addEventListener('DOMContentLoaded', () => {
+                ui.switchScreen('home');
+            });
+
         } catch (error) {
             console.error('Ошибка при работе с базой данных:', error);
             throw new Error('Ошибка при работе с базой данных: ' + error.message);

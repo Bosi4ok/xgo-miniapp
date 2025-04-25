@@ -118,35 +118,41 @@ export function closeAllModals() {
     const overlay = document.getElementById('modal-overlay');
     
     modals.forEach(modal => {
-        modal.classList.remove('show');
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 300);
+        modal.classList.remove('active');
     });
 
     if (overlay) {
-        overlay.classList.remove('show');
-        setTimeout(() => {
-            overlay.style.display = 'none';
-        }, 300);
+        overlay.classList.remove('active');
     }
 }
 
 export function showModal(modalId) {
+    console.log('Открываем модальное окно:', modalId);
+    
+    // Сначала закрываем все модальные окна
+    closeAllModals();
+    
     const modal = document.getElementById(modalId);
     const overlay = document.getElementById('modal-overlay');
     
-    if (modal && overlay) {
-        // Сначала показываем элементы
-        modal.style.display = 'block';
-        overlay.style.display = 'block';
-        
-        // Запускаем анимацию
-        requestAnimationFrame(() => {
-            modal.classList.add('show');
-            overlay.classList.add('show');
-        });
+    if (!modal) {
+        console.error('Модальное окно не найдено:', modalId);
+        return;
     }
+    
+    if (!overlay) {
+        console.error('Оверлей не найден');
+        // Создаем оверлей
+        const newOverlay = document.createElement('div');
+        newOverlay.id = 'modal-overlay';
+        newOverlay.className = 'modal-overlay';
+        newOverlay.addEventListener('click', closeAllModals);
+        document.body.appendChild(newOverlay);
+    }
+    
+    // Добавляем классы для отображения
+    modal.classList.add('active');
+    overlay.classList.add('active');
 }
 
 export function animateXP(amount) {

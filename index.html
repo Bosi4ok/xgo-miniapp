@@ -7,45 +7,13 @@
   <!-- Основные скрипты -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
-    // Функция для отображения отладочной информации
-    function showDebugInfo() {
-      // Ждем загрузки DOM
-      if (!document.body) {
-        setTimeout(showDebugInfo, 100);
-        return;
-      }
 
-      const debugInfo = document.createElement('div');
-      debugInfo.style.position = 'fixed';
-      debugInfo.style.top = '10px';
-      debugInfo.style.left = '10px';
-      debugInfo.style.background = 'rgba(0, 0, 0, 0.8)';
-      debugInfo.style.color = 'white';
-      debugInfo.style.padding = '10px';
-      debugInfo.style.borderRadius = '5px';
-      debugInfo.style.zIndex = '10000';
-      debugInfo.style.fontSize = '12px';
-      debugInfo.style.maxWidth = '80%';
-      debugInfo.style.wordBreak = 'break-all';
-
-      const info = [
-        `UserAgent: ${navigator.userAgent}`,
-        `Telegram object: ${window.Telegram ? 'Есть' : 'Нет'}`,
-        `WebApp object: ${window.Telegram?.WebApp ? 'Есть' : 'Нет'}`,
-        `Init data: ${window.Telegram?.WebApp?.initData || 'Нет'}`,
-        `Platform: ${window.Telegram?.WebApp?.platform || 'Нет'}`
-      ].join('<br>');
-
-      debugInfo.innerHTML = info;
-      document.body.appendChild(debugInfo);
-    }
 
     // Проверяем загрузку Telegram Web App
     window.TelegramWebAppLoaded = new Promise((resolve, reject) => {
       console.log('Начинаем проверку Telegram Web App...');
       
-      // Показываем отладочную информацию после загрузки DOM
-      document.addEventListener('DOMContentLoaded', showDebugInfo);
+
 
       if (window.Telegram?.WebApp) {
         console.log('WebApp найден сразу');
@@ -302,20 +270,16 @@
       border-radius: 25px;
       padding: 25px;
       z-index: 1001;
-      width: 90%;
-      max-width: 400px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 0 40px rgba(255, 59, 48, 0.2);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      transition: transform 0.3s, opacity 0.3s;
-      opacity: 0;
-      transform: translate(-50%, -45%);
+      pointer-events: none;
+      visibility: hidden;
     }
 
-    .modal.show {
+    .modal.active {
       opacity: 1;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(1);
+      pointer-events: auto;
+      visibility: visible;
     }
 
     .modal h2 {
@@ -327,21 +291,24 @@
     }
 
     .modal-overlay {
-      display: none;
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
       background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(10px);
-      z-index: 1000;
+      backdrop-filter: blur(5px);
+      z-index: 10000;
       opacity: 0;
-      transition: opacity 0.3s;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      visibility: hidden;
     }
 
-    .modal-overlay.show {
+    .modal-overlay.active {
       opacity: 1;
+      pointer-events: auto;
+      visibility: visible;
     }
 
     /* Стили для задач */
