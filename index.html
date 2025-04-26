@@ -1287,7 +1287,7 @@
       </div>
       <span class="nav-label">REFERRAL</span>
     </a>
-    <a href="#" class="nav-item" data-screen="profile" onclick="activateNavItem(this); return false;">
+    <a href="#" class="nav-item" data-screen="profile" onclick="activateNavItem(this); openModal('profile-modal'); return false;">
       <div class="nav-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -1348,7 +1348,7 @@
 
   <!-- Referral Modal -->
   <div class="modal" id="referral-modal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 320px;">
       <h2>Referral Program</h2>
       <button class="close-modal" onclick="closeAllModals()">&times;</button>
       <div class="referral-section">
@@ -1375,6 +1375,34 @@
     </div>
   </div>
 
+  <!-- Profile Modal -->
+  <div class="modal" id="profile-modal">
+    <div class="modal-content">
+      <h2>Profile</h2>
+      <button class="close-modal" onclick="closeAllModals()">&times;</button>
+      <div class="profile-container">
+        <div class="user-info" id="user-info-modal">
+          <div class="user-icon">👤</div>
+          <div class="user-name" id="user-name-modal"></div>
+        </div>
+        <div class="stats-container">
+          <div class="stat-item">
+            <span class="stat-label">Total XP:</span>
+            <span class="stat-value" id="total-xp-modal">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Current Streak:</span>
+            <span class="stat-value" id="current-streak-modal">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Max Streak:</span>
+            <span class="stat-value" id="max-streak-modal">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Пользовательская информация -->
   <div class="user-info" id="user-info">
     <div class="user-icon">👤</div>
@@ -1395,9 +1423,9 @@
       // Добавляем активный класс выбранному элементу
       element.classList.add('active');
       
-      // Переключаем экран, если это домашний экран или профиль
+      // Переключаем экран только для домашнего экрана
       const screen = element.getAttribute('data-screen');
-      if (screen === 'home' || screen === 'profile') {
+      if (screen === 'home') {
         switchScreen(screen);
       }
     }
@@ -1458,8 +1486,44 @@
         modal.style.display = 'block';
         modal.classList.add('active');
         console.log('Открыто модальное окно:', modalId);
+        
+        // Обновляем данные в модальном окне профиля
+        if (modalId === 'profile-modal') {
+          updateProfileModal();
+        }
       } else {
         console.error('Модальное окно не найдено:', modalId);
+      }
+    }
+    
+    // Функция для обновления данных в модальном окне профиля
+    function updateProfileModal() {
+      // Получаем данные из основного профиля
+      const userName = document.getElementById('user-name');
+      const totalXp = document.getElementById('xp-amount');
+      const currentStreak = document.getElementById('streak-count');
+      
+      // Обновляем данные в модальном окне
+      const userNameModal = document.getElementById('user-name-modal');
+      const totalXpModal = document.getElementById('total-xp-modal');
+      const currentStreakModal = document.getElementById('current-streak-modal');
+      const maxStreakModal = document.getElementById('max-streak-modal');
+      
+      if (userNameModal && userName) {
+        userNameModal.textContent = userName.textContent || 'User';
+      }
+      
+      if (totalXpModal && totalXp) {
+        totalXpModal.textContent = totalXp.textContent || '0';
+      }
+      
+      if (currentStreakModal && currentStreak) {
+        currentStreakModal.textContent = currentStreak.textContent || '0';
+      }
+      
+      if (maxStreakModal && currentStreak) {
+        // Для примера используем текущий стрик как максимальный
+        maxStreakModal.textContent = currentStreak.textContent || '0';
       }
     }
     
