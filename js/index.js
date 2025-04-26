@@ -126,10 +126,13 @@ async function initializeApp() {
 
         // Настраиваем навигацию
         const navItems = document.querySelectorAll('.nav-item');
+        console.log('Найдено элементов навигации:', navItems.length);
+        
         navItems.forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const screen = item.getAttribute('data-screen');
+                console.log('Клик по навигации:', screen);
                 
                 // Убираем активный класс у всех элементов
                 navItems.forEach(i => i.classList.remove('active'));
@@ -138,24 +141,48 @@ async function initializeApp() {
                 item.classList.add('active');
                 
                 // Закрываем все модальные окна перед открытием нового
-                ui.closeAllModals();
+                if (window.ui && window.ui.closeAllModals) {
+                    window.ui.closeAllModals();
+                } else {
+                    console.error('UI модуль не найден');
+                }
                 
                 // Обрабатываем клик по экрану
                 switch(screen) {
                     case 'home':
                         // Просто закрываем все модальные окна
+                        console.log('Переключение на домашний экран');
                         break;
                     case 'checkin':
-                        ui.showModal('checkin-modal');
+                        console.log('Открываем модальное окно чекина');
+                        if (window.ui && window.ui.showModal) {
+                            window.ui.showModal('checkin-modal');
+                        } else {
+                            console.error('UI модуль не найден для открытия модального окна чекина');
+                        }
                         break;
                     case 'tasks':
-                        ui.showModal('tasks-modal');
+                        console.log('Открываем модальное окно задач');
+                        if (window.ui && window.ui.showModal) {
+                            window.ui.showModal('tasks-modal');
+                        } else {
+                            console.error('UI модуль не найден для открытия модального окна задач');
+                        }
                         break;
                     case 'referral':
-                        ui.showModal('referral-modal');
+                        console.log('Открываем модальное окно рефералов');
+                        if (window.ui && window.ui.showModal) {
+                            window.ui.showModal('referral-modal');
+                        } else {
+                            console.error('UI модуль не найден для открытия модального окна рефералов');
+                        }
                         break;
                     case 'profile':
+                        console.log('Переключение на профиль');
                         // Добавим позже
+                        break;
+                    default:
+                        console.log('Неизвестный экран:', screen);
                         break;
                 }
             });

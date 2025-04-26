@@ -162,24 +162,23 @@ export function showNotification(message, type = 'info') {
 
 // Функции для работы с модальными окнами
 export function closeAllModals() {
+    console.log('Закрываем все модальные окна');
     const modals = document.querySelectorAll('.modal');
     const overlay = document.getElementById('modal-overlay');
     
-    // Remove active class first for animation
+    console.log('Найдено модальных окон:', modals.length);
+    
+    // Скрываем все модальные окна
     modals.forEach(modal => {
         modal.classList.remove('active');
+        modal.style.display = 'none';
     });
 
+    // Скрываем оверлей
     if (overlay) {
         overlay.classList.remove('active');
+        overlay.style.display = 'none';
     }
-    
-    // After animation completes, hide the modals
-    setTimeout(() => {
-        modals.forEach(modal => {
-            modal.style.display = 'none';
-        });
-    }, 300); // Match the CSS transition time
 }
 
 export function showModal(modalId) {
@@ -196,34 +195,29 @@ export function showModal(modalId) {
         return;
     }
     
+    console.log('Найдено модальное окно:', modal);
+    
+    // Проверяем наличие оверлея
     if (!overlay) {
         console.error('Оверлей не найден');
-        // Создаем оверлей
-        const newOverlay = document.createElement('div');
-        newOverlay.id = 'modal-overlay';
-        newOverlay.className = 'modal-overlay';
-        newOverlay.addEventListener('click', closeAllModals);
-        document.body.appendChild(newOverlay);
-    } else {
-        // Добавляем обработчик клика на оверлей, если его еще нет
-        if (!overlay.hasEventListener) {
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    closeAllModals();
-                }
-            });
-            overlay.hasEventListener = true;
-        }
+        return;
     }
     
-    // Показываем модальное окно
-    modal.style.display = 'block';
+    // Добавляем обработчик клика на оверлей
+    if (!overlay.hasEventListener) {
+        overlay.addEventListener('click', function() {
+            closeAllModals();
+        });
+        overlay.hasEventListener = true;
+    }
     
-    // Добавляем классы для отображения с небольшой задержкой для анимации
-    setTimeout(() => {
-        modal.classList.add('active');
-        overlay.classList.add('active');
-    }, 10);
+    // Показываем модальное окно и оверлей
+    modal.style.display = 'block';
+    overlay.style.display = 'block';
+    
+    // Добавляем активный класс
+    modal.classList.add('active');
+    overlay.classList.add('active');
 }
 
 export function animateXP(amount) {
