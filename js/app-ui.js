@@ -347,6 +347,34 @@ window.addEventListener('load', function() {
   }
 });
 
+// Функция специально для кнопки Home
+function homeButtonClick() {
+  console.log('Нажата кнопка Home');
+  
+  // Закрываем все модальные окна
+  closeAllModals();
+  
+  // Убедимся, что все экраны скрыты, кроме домашнего
+  const screens = document.querySelectorAll('.screen');
+  screens.forEach(screen => {
+    if (screen.id !== 'home-screen') {
+      screen.style.display = 'none';
+    } else {
+      screen.style.display = 'block';
+    }
+  });
+  
+  // Обновляем активный элемент меню
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(item => {
+    if (item.dataset.screen === 'home') {
+      item.classList.add('active');
+    } else {
+      item.classList.remove('active');
+    }
+  });
+}
+
 // Экспортируем функции в глобальную область видимости
 window.switchScreen = switchScreen;
 window.activateNavItem = activateNavItem;
@@ -356,3 +384,4 @@ window.generateReferralCode = generateReferralCode;
 window.handleCopy = handleCopy;
 window.claimDailyReward = claimDailyReward;
 window.updateProfileModal = updateProfileModal;
+window.homeButtonClick = homeButtonClick;
