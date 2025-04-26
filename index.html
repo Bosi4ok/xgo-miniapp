@@ -1546,22 +1546,24 @@
     
     // Function to switch screens
     function switchScreen(screenId) {
-      // Hide all screens
+      // Make sure we're only switching to a valid screen
+      if (screenId !== 'home') {
+        console.error('Invalid screen ID:', screenId);
+        return;
+      }
+      
+      // Hide all screens first
       const screens = document.querySelectorAll('.screen');
       screens.forEach(screen => {
         screen.classList.remove('active');
-        screen.style.transform = 'translateX(100%)';
-        screen.style.visibility = 'hidden';
-        screen.style.opacity = '0';
+        screen.style.display = 'none';
       });
       
-      // Show target screen
-      const targetScreen = document.getElementById(`${screenId}-screen`);
-      if (targetScreen) {
-        targetScreen.style.transform = 'translateX(0)';
-        targetScreen.style.visibility = 'visible';
-        targetScreen.style.opacity = '1';
-        targetScreen.classList.add('active');
+      // Show only the home screen
+      const homeScreen = document.getElementById('home-screen');
+      if (homeScreen) {
+        homeScreen.style.display = 'block';
+        homeScreen.classList.add('active');
       }
     }
     
@@ -1810,9 +1812,16 @@
     }
   }
   
-  // Generate referral code on page load
-  document.addEventListener('DOMContentLoaded', function() {
+  // Generate referral code on page load and initialize app
+  window.addEventListener('load', function() {
+    // Generate referral code immediately
     generateReferralCode();
+    
+    // Make sure home screen is visible by default
+    switchScreen('home');
+    
+    // Initialize user data
+    initializeUserData();
   });
   
   // Function to handle copying text
@@ -1953,14 +1962,20 @@
       localStorage.setItem('streak', '0');
     }
     
-    // Check if already claimed today
-    const lastClaimDate = localStorage.getItem('lastClaimDate');
-    const today = new Date().toDateString();
+    // Initialize checkin button
     const checkinButton = document.getElementById('checkin-button');
-    
-    if (lastClaimDate === today && checkinButton) {
-      checkinButton.disabled = true;
-      checkinButton.textContent = 'CLAIMED';
+    if (checkinButton) {
+      // Enable the button by default
+      checkinButton.disabled = false;
+      
+      // Check if already claimed today
+      const lastClaimDate = localStorage.getItem('lastClaimDate');
+      const today = new Date().toDateString();
+      
+      if (lastClaimDate === today) {
+        checkinButton.disabled = true;
+        checkinButton.textContent = 'CLAIMED';
+      }
     }
     
     // Update UI with stored values
