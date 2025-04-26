@@ -1348,26 +1348,26 @@
   <!-- Referral Modal -->
   <div class="modal" id="referral-modal">
     <div class="modal-content" style="max-width: 320px; padding: 15px;">
-      <h2 style="margin: 0 0 15px 0;">Referral Program</h2>
+      <h2 style="margin: 0 0 10px 0;">Referral Program</h2>
       <button class="close-modal" onclick="closeAllModals()">&times;</button>
-      <div class="referral-section" style="margin: 10px 0;">
+      <div class="referral-section" style="margin: 0;">
         <h3 style="margin: 0 0 5px 0;">Your Referral Code:</h3>
         <div class="referral-code-wrapper">
           <div class="referral-code" id="referral-code" onclick="handleCopy(this.textContent)" style="margin: 5px 0; padding: 10px;">Loading...</div>
           <div class="copy-status"></div>
         </div>
       </div>
-      <div class="referral-section" style="margin: 10px 0;">
-        <h3 style="margin: 0 0 5px 0;">Enter Referral Code:</h3>
+      <div class="referral-section" style="margin: 0;">
+        <h3 style="margin: 5px 0;">Enter Referral Code:</h3>
         <div class="referral-input-container" style="margin: 5px 0;">
           <input type="text" id="referral-input" placeholder="Enter referral code" class="referral-input">
           <button id="referral-submit" class="referral-submit">Submit</button>
         </div>
         <div id="referral-input-status"></div>
       </div>
-      <div class="referral-section" style="margin: 10px 0;">
+      <div class="referral-section" style="margin: 5px 0 0 0;">
         <h3 style="margin: 0 0 5px 0;">Your Referrals:</h3>
-        <div class="referral-stats" style="margin: 5px 0;">
+        <div class="referral-stats" style="margin: 0;">
           <div>Total Referrals: <span id="referrals-count">0</span></div>
         </div>
       </div>
@@ -1695,6 +1695,11 @@
     }
   }
   
+  // Generate referral code on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    generateReferralCode();
+  });
+  
   // Function to handle copying text
   function handleCopy(text) {
     navigator.clipboard.writeText(text)
@@ -1718,6 +1723,19 @@
     const streakElement = document.getElementById('checkin-streak');
     const xpAmount = document.getElementById('xp-amount');
     
+    // Check if already claimed today
+    const lastClaimDate = localStorage.getItem('lastClaimDate');
+    const today = new Date().toDateString();
+    
+    if (lastClaimDate === today) {
+      // Already claimed today
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'CLAIMED';
+      }
+      return;
+    }
+    
     // Get current streak or initialize to 0
     let currentStreak = parseInt(localStorage.getItem('streak') || '0');
     let totalXp = parseInt(localStorage.getItem('totalXp') || '0');
@@ -1729,6 +1747,7 @@
     // Update localStorage
     localStorage.setItem('streak', currentStreak.toString());
     localStorage.setItem('totalXp', totalXp.toString());
+    localStorage.setItem('lastClaimDate', today);
     
     // Update UI
     if (streakElement) {
@@ -1817,6 +1836,16 @@
     
     if (!localStorage.getItem('streak')) {
       localStorage.setItem('streak', '0');
+    }
+    
+    // Check if already claimed today
+    const lastClaimDate = localStorage.getItem('lastClaimDate');
+    const today = new Date().toDateString();
+    const checkinButton = document.getElementById('checkin-button');
+    
+    if (lastClaimDate === today && checkinButton) {
+      checkinButton.disabled = true;
+      checkinButton.textContent = 'CLAIMED';
     }
     
     // Update UI with stored values
