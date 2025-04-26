@@ -6,9 +6,34 @@ let currentUser = null;
 
 // Функция для получения Telegram ID пользователя
 async function getTelegramUserId() {
-  // Временное решение: используем фиксированный ID для тестирования
-  // В реальном приложении нужно получать ID из Telegram Mini App API
-  return '123456789';
+  try {
+    // Пытаемся получить ID пользователя из Telegram Web App API
+    if (window.Telegram && window.Telegram.WebApp) {
+      const user = window.Telegram.WebApp.initDataUnsafe?.user;
+      if (user && user.id) {
+        console.log('Получен Telegram ID:', user.id);
+        return user.id.toString();
+      }
+    }
+    
+    // Если не удалось получить ID из Telegram, пытаемся получить из localStorage
+    const savedId = localStorage.getItem('telegram_user_id');
+    if (savedId) {
+      console.log('Используем сохраненный Telegram ID:', savedId);
+      return savedId;
+    }
+    
+    // Если и это не удалось, генерируем уникальный ID и сохраняем его
+    const uniqueId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('telegram_user_id', uniqueId);
+    console.log('Создан новый уникальный ID:', uniqueId);
+    return uniqueId;
+  } catch (error) {
+    console.error('Ошибка при получении Telegram ID:', error);
+    
+    // В случае ошибки возвращаем фиксированный ID
+    return 'error_user_' + Date.now();
+  }
 }
 
 // Функция для переключения экранов
@@ -102,10 +127,16 @@ function closeAllModals() {
     overlay.classList.remove('active');
     overlay.style.display = 'none';
   }
+  
+  // Сбрасываем активное состояние всех кнопок навигации
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(item => {
+    item.classList.remove('active');
+  });
 }
 
 // Функция для открытия модального окна
-function openModal(modalId) {
+async function openModal(modalId) {
   console.log('Попытка открыть модальное окно:', modalId);
   
   try {
@@ -123,26 +154,33 @@ function openModal(modalId) {
       overlay.classList.add('active');
     }
     
-    // Показываем модальное окно
+    // Показываем выбранное модальное окно
     const modal = document.getElementById(modalId);
     if (modal) {
       modal.style.display = 'block';
       modal.classList.add('active');
-      console.log('Открыто модальное окно:', modalId);
       
-      // Обновляем данные в модальном окне профиля
-      if (modalId === 'profile-modal') {
-        updateProfileModal();
-      }
+      // Обновляем активный элемент навигации
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        item.classList.remove('active');
+      });
       
-      // Генерируем реферальный код если открыто модальное окно рефералов
-      if (modalId === 'referral-modal') {
-        generateReferralCode();
-      }
-      
-      // Обновляем состояние кнопки чекина
+      // Подсвечиваем соответствующую кнопку в зависимости от открытого модального окна
       if (modalId === 'checkin-modal') {
-        updateCheckinButton();
+        const checkinButton = document.querySelector('.nav-item[onclick*="checkin-modal"]');
+        if (checkinButton) checkinButton.classList.add('active');
+        await updateCheckinButton();
+      } else if (modalId === 'tasks-modal') {
+        const tasksButton = document.querySelector('.nav-item[onclick*="tasks-modal"]');
+        if (tasksButton) tasksButton.classList.add('active');
+      } else if (modalId === 'referral-modal') {
+        const referralButton = document.querySelector('.nav-item[onclick*="referral-modal"]');
+        if (referralButton) referralButton.classList.add('active');
+      } else if (modalId === 'profile-modal') {
+        const profileButton = document.querySelector('.nav-item[onclick*="profile-modal"]');
+        if (profileButton) profileButton.classList.add('active');
+        await updateProfileModal();
       }
     } else {
       console.error('Модальное окно не найдено:', modalId);
@@ -415,6 +453,39 @@ async function initializeApp() {
   }
 }
 
+// Функция для инициализации Telegram Web App
+async function initializeTelegramWebApp() {
+  return new Promise((resolve, reject) => {
+    try {
+      console.log('Инициализация Telegram Web App...');
+      
+      // Проверяем, доступен ли Telegram Web App API
+      if (window.Telegram && window.Telegram.WebApp) {
+        console.log('Telegram Web App API найден');
+        
+        // Устанавливаем цвета и другие параметры
+        window.Telegram.WebApp.expand();
+        
+        // Получаем данные пользователя
+        const user = window.Telegram.WebApp.initDataUnsafe?.user;
+        if (user) {
+          console.log('Пользователь Telegram:', user.id, user.username || 'без имени');
+        } else {
+          console.warn('Данные пользователя Telegram не найдены');
+        }
+        
+        resolve(window.Telegram.WebApp);
+      } else {
+        console.warn('Telegram Web App API не найден, используем веб-режим');
+        resolve(null);
+      }
+    } catch (error) {
+      console.error('Ошибка при инициализации Telegram Web App:', error);
+      reject(error);
+    }
+  });
+}
+
 // Инициализируем приложение при загрузке страницы
 window.addEventListener('load', async function() {
   try {
@@ -424,7 +495,10 @@ window.addEventListener('load', async function() {
       loadingIndicator.style.display = 'block';
     }
     
-    // Инициализируем приложение
+    // Сначала инициализируем Telegram Web App
+    await initializeTelegramWebApp();
+    
+    // Затем инициализируем основное приложение
     await initializeApp();
     
     // Скрываем индикатор загрузки
