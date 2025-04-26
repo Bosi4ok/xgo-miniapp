@@ -1332,43 +1332,42 @@
     <div class="modal-content">
       <h2>Daily Check-in</h2>
       <button class="close-modal" onclick="closeAllModals()">&times;</button>
-      <div class="streak-counter">
-        <div>Current Streak: <span id="streak-count">0</span></div>
-      </div>
-      <div class="next-reward-container">
-        <div class="next-reward-label">Next Reward:</div>
-        <div class="next-reward-value">+10 XP</div>
-      </div>
-      <div class="checkin-controls">
-        <button id="checkinButton" class="checkin-button">Получить награду</button>
-        <div class="checkin-status"></div>
+      <div class="daily-checkin-content">
+        <div class="streak-display">
+          <div class="streak-title">Current Streak: <span id="checkin-streak">0</span></div>
+        </div>
+        <div class="reward-display">
+          <div class="reward-title">Next Reward:</div>
+          <div class="reward-amount">+10 XP</div>
+        </div>
+        <button class="checkin-button" id="checkin-button" onclick="claimDailyReward()">CLAIM REWARD</button>
       </div>
     </div>
   </div>
 
   <!-- Referral Modal -->
   <div class="modal" id="referral-modal">
-    <div class="modal-content" style="max-width: 320px;">
-      <h2>Referral Program</h2>
+    <div class="modal-content" style="max-width: 320px; padding: 15px;">
+      <h2 style="margin: 0 0 15px 0;">Referral Program</h2>
       <button class="close-modal" onclick="closeAllModals()">&times;</button>
-      <div class="referral-section">
-        <h3>Your Referral Code:</h3>
+      <div class="referral-section" style="margin: 10px 0;">
+        <h3 style="margin: 0 0 5px 0;">Your Referral Code:</h3>
         <div class="referral-code-wrapper">
-          <div class="referral-code" id="referral-code" onclick="window.ui.handleCopy(this.textContent)">Loading...</div>
+          <div class="referral-code" id="referral-code" onclick="handleCopy(this.textContent)" style="margin: 5px 0; padding: 10px;">Loading...</div>
           <div class="copy-status"></div>
         </div>
       </div>
-      <div class="referral-section">
-        <h3>Enter Referral Code:</h3>
-        <div class="referral-input-container">
+      <div class="referral-section" style="margin: 10px 0;">
+        <h3 style="margin: 0 0 5px 0;">Enter Referral Code:</h3>
+        <div class="referral-input-container" style="margin: 5px 0;">
           <input type="text" id="referral-input" placeholder="Enter referral code" class="referral-input">
           <button id="referral-submit" class="referral-submit">Submit</button>
         </div>
         <div id="referral-input-status"></div>
       </div>
-      <div class="referral-section">
-        <h3>Your Referrals:</h3>
-        <div class="referral-stats">
+      <div class="referral-section" style="margin: 10px 0;">
+        <h3 style="margin: 0 0 5px 0;">Your Referrals:</h3>
+        <div class="referral-stats" style="margin: 5px 0;">
           <div>Total Referrals: <span id="referrals-count">0</span></div>
         </div>
       </div>
@@ -1414,25 +1413,25 @@
   
   <!-- Простые функции для работы с меню и модальными окнами -->
   <script>
-    // Функция для активации элемента меню
+    // Function to activate a menu item
     function activateNavItem(element) {
-      // Убираем активный класс у всех элементов
+      // Remove active class from all elements
       const navItems = document.querySelectorAll('.nav-item');
       navItems.forEach(item => item.classList.remove('active'));
       
-      // Добавляем активный класс выбранному элементу
+      // Add active class to the selected element
       element.classList.add('active');
       
-      // Переключаем экран только для домашнего экрана
+      // Switch screen only for the home screen
       const screen = element.getAttribute('data-screen');
       if (screen === 'home') {
         switchScreen(screen);
       }
     }
     
-    // Функция для переключения экранов
+    // Function to switch screens
     function switchScreen(screenId) {
-      // Скрываем все экраны
+      // Hide all screens
       const screens = document.querySelectorAll('.screen');
       screens.forEach(screen => {
         screen.classList.remove('active');
@@ -1441,7 +1440,7 @@
         screen.style.opacity = '0';
       });
       
-      // Показываем целевой экран
+      // Show target screen
       const targetScreen = document.getElementById(`${screenId}-screen`);
       if (targetScreen) {
         targetScreen.style.transform = 'translateX(0)';
@@ -1451,16 +1450,16 @@
       }
     }
     
-    // Функция для закрытия всех модальных окон
+    // Function to close all modal windows
     function closeAllModals() {
-      // Закрываем все модальные окна
+      // Close all modal windows
       const modals = document.querySelectorAll('.modal');
       modals.forEach(modal => {
         modal.classList.remove('active');
         modal.style.display = 'none';
       });
       
-      // Скрываем оверлей
+      // Hide overlay
       const overlay = document.getElementById('modal-overlay');
       if (overlay) {
         overlay.classList.remove('active');
@@ -1468,49 +1467,141 @@
       }
     }
     
-    // Функция для открытия модального окна
+    // Function to open modal window
     function openModal(modalId) {
-      // Сначала закрываем все модальные окна
+      // First close all modal windows
       closeAllModals();
       
-      // Показываем оверлей
+      // Show overlay
       const overlay = document.getElementById('modal-overlay');
       if (overlay) {
         overlay.style.display = 'block';
         overlay.classList.add('active');
       }
       
-      // Показываем модальное окно
+      // Show modal window
       const modal = document.getElementById(modalId);
       if (modal) {
         modal.style.display = 'block';
         modal.classList.add('active');
-        console.log('Открыто модальное окно:', modalId);
+        console.log('Modal opened:', modalId);
         
-        // Обновляем данные в модальном окне профиля
+        // Update data in profile modal
         if (modalId === 'profile-modal') {
           updateProfileModal();
         }
+        
+        // Generate referral code if referral modal is opened
+        if (modalId === 'referral-modal') {
+          generateReferralCode();
+        }
       } else {
-        console.error('Модальное окно не найдено:', modalId);
+        console.error('Modal not found:', modalId);
       }
     }
     
-    // Функция для обновления данных в модальном окне профиля
+    // Function to generate and display referral code
+    function generateReferralCode() {
+      const referralCodeElement = document.getElementById('referral-code');
+      
+      // Check if we already have a referral code in localStorage
+      let referralCode = localStorage.getItem('referralCode');
+      
+      // If no code exists, generate a new one
+      if (!referralCode) {
+        // Generate a random 8-character code
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        referralCode = '';
+        for (let i = 0; i < 8; i++) {
+          referralCode += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        
+        // Save to localStorage
+        localStorage.setItem('referralCode', referralCode);
+      }
+      
+      // Display the code
+      if (referralCodeElement) {
+        referralCodeElement.textContent = referralCode;
+      }
+    }
+    
+    // Function to handle copying text
+    function handleCopy(text) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          const copyStatus = document.querySelector('.copy-status');
+          if (copyStatus) {
+            copyStatus.textContent = 'Copied!';
+            setTimeout(() => {
+              copyStatus.textContent = '';
+            }, 2000);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to copy: ', err);
+        });
+    }
+    
+    // Function to claim daily reward
+    function claimDailyReward() {
+      const button = document.getElementById('checkin-button');
+      const streakElement = document.getElementById('checkin-streak');
+      const xpAmount = document.getElementById('xp-amount');
+      
+      // Get current streak or initialize to 0
+      let currentStreak = parseInt(localStorage.getItem('streak') || '0');
+      let totalXp = parseInt(localStorage.getItem('totalXp') || '0');
+      
+      // Increase streak and XP
+      currentStreak += 1;
+      totalXp += 10;
+      
+      // Update localStorage
+      localStorage.setItem('streak', currentStreak.toString());
+      localStorage.setItem('totalXp', totalXp.toString());
+      
+      // Update UI
+      if (streakElement) {
+        streakElement.textContent = currentStreak.toString();
+      }
+      
+      if (xpAmount) {
+        xpAmount.textContent = totalXp.toString();
+      }
+      
+      // Disable button after claiming
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'CLAIMED';
+      }
+      
+      // Update profile data
+      updateProfileModal();
+    }
+    
+    // Function to update data in the profile modal window
     function updateProfileModal() {
-      // Получаем данные из основного профиля
+      // Get data from the main profile
       const userName = document.getElementById('user-name');
       const totalXp = document.getElementById('xp-amount');
       const currentStreak = document.getElementById('streak-count');
       
-      // Обновляем данные в модальном окне
+      // Update data in the modal window
       const userNameModal = document.getElementById('user-name-modal');
       const totalXpModal = document.getElementById('total-xp-modal');
       const currentStreakModal = document.getElementById('current-streak-modal');
       const maxStreakModal = document.getElementById('max-streak-modal');
       
-      if (userNameModal && userName) {
-        userNameModal.textContent = userName.textContent || 'User';
+      // Get username from localStorage or use default
+      const storedUsername = localStorage.getItem('username') || 'Player';
+      
+      if (userNameModal) {
+        userNameModal.textContent = storedUsername;
+      }
+      
+      if (userName) {
+        userName.textContent = storedUsername;
       }
       
       if (totalXpModal && totalXp) {
@@ -1522,28 +1613,240 @@
       }
       
       if (maxStreakModal && currentStreak) {
-        // Для примера используем текущий стрик как максимальный
+        // For example, use current streak as max streak
         maxStreakModal.textContent = currentStreak.textContent || '0';
       }
     }
+  }
+  
+  // Function to close all modal windows
+  function closeAllModals() {
+    // Close all modal windows
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    });
     
-    // Добавляем обработчик клика на оверлей для закрытия модальных окон
-    document.addEventListener('DOMContentLoaded', function() {
-      const overlay = document.getElementById('modal-overlay');
-      if (overlay) {
-        overlay.addEventListener('click', function(e) {
-          if (e.target === this) {
-            closeAllModals();
-          }
-        });
+    // Hide overlay
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+      overlay.classList.remove('active');
+      overlay.style.display = 'none';
+    }
+  }
+  
+  // Function to open modal window
+  function openModal(modalId) {
+    // First close all modal windows
+    closeAllModals();
+    
+    // Show overlay
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+      overlay.style.display = 'block';
+      overlay.classList.add('active');
+    }
+    
+    // Show modal window
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.style.display = 'block';
+      modal.classList.add('active');
+      console.log('Modal opened:', modalId);
+      
+      // Update data in profile modal
+      if (modalId === 'profile-modal') {
+        updateProfileModal();
       }
       
-      // Добавляем обработчики кликов на кнопки закрытия модальных окон
-      const closeButtons = document.querySelectorAll('.close-modal');
-      closeButtons.forEach(button => {
-        button.addEventListener('click', closeAllModals);
+      // Generate referral code if referral modal is opened
+      if (modalId === 'referral-modal') {
+        generateReferralCode();
+      }
+    } else {
+      console.error('Modal not found:', modalId);
+    }
+  }
+  
+  // Function to generate and display referral code
+  function generateReferralCode() {
+    const referralCodeElement = document.getElementById('referral-code');
+    
+    // Check if we already have a referral code in localStorage
+    let referralCode = localStorage.getItem('referralCode');
+    
+    // If no code exists, generate a new one
+    if (!referralCode) {
+      // Generate a random 8-character code
+      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      referralCode = '';
+      for (let i = 0; i < 8; i++) {
+        referralCode += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('referralCode', referralCode);
+    }
+    
+    // Display the code
+    if (referralCodeElement) {
+      referralCodeElement.textContent = referralCode;
+    }
+  }
+  
+  // Function to handle copying text
+  function handleCopy(text) {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        const copyStatus = document.querySelector('.copy-status');
+        if (copyStatus) {
+          copyStatus.textContent = 'Copied!';
+          setTimeout(() => {
+            copyStatus.textContent = '';
+          }, 2000);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
       });
-    });
-  </script>
+  }
+  
+  // Function to claim daily reward
+  function claimDailyReward() {
+    const button = document.getElementById('checkin-button');
+    const streakElement = document.getElementById('checkin-streak');
+    const xpAmount = document.getElementById('xp-amount');
+    
+    // Get current streak or initialize to 0
+    let currentStreak = parseInt(localStorage.getItem('streak') || '0');
+    let totalXp = parseInt(localStorage.getItem('totalXp') || '0');
+    
+    // Increase streak and XP
+    currentStreak += 1;
+    totalXp += 10;
+    
+    // Update localStorage
+    localStorage.setItem('streak', currentStreak.toString());
+    localStorage.setItem('totalXp', totalXp.toString());
+    
+    // Update UI
+    if (streakElement) {
+      streakElement.textContent = currentStreak.toString();
+    }
+    
+    if (xpAmount) {
+      xpAmount.textContent = totalXp.toString();
+    }
+    
+    // Disable button after claiming
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'CLAIMED';
+    }
+    
+    // Update profile data
+    updateProfileModal();
+  }
+  
+  // Function to update data in the profile modal window
+  function updateProfileModal() {
+    // Get data from the main profile
+    const userName = document.getElementById('user-name');
+    const totalXp = document.getElementById('xp-amount');
+    const currentStreak = document.getElementById('streak-count');
+    
+    // Update data in the modal window
+    const userNameModal = document.getElementById('user-name-modal');
+    const totalXpModal = document.getElementById('total-xp-modal');
+    const currentStreakModal = document.getElementById('current-streak-modal');
+    const maxStreakModal = document.getElementById('max-streak-modal');
+    
+    // Get username from localStorage or use default
+    const storedUsername = localStorage.getItem('username') || 'Player';
+    
+    if (userNameModal) {
+      userNameModal.textContent = storedUsername;
+    }
+    
+    if (userName) {
+      userName.textContent = storedUsername;
+    }
+    
+    if (totalXpModal && totalXp) {
+      totalXpModal.textContent = totalXp.textContent || '0';
+    }
+    
+    if (currentStreakModal && currentStreak) {
+      currentStreakModal.textContent = currentStreak.textContent || '0';
+    }
+    
+    if (maxStreakModal && currentStreak) {
+      // For example, use current streak as max streak
+      maxStreakModal.textContent = currentStreak.textContent || '0';
+    }
+  }
+  
+  // Add click handler on overlay to close modal windows
+  document.addEventListener('DOMContentLoaded', function() {
+    // Set up overlay click handler
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+          closeAllModals();
+        }
+      });
+    }
+    
+    // Initialize user data
+    initializeUserData();
+  });
+  
+  // Function to initialize user data
+  function initializeUserData() {
+    // Set default username if not already set
+    if (!localStorage.getItem('username')) {
+      localStorage.setItem('username', 'Player');
+    }
+    
+    // Initialize XP and streak if not set
+    if (!localStorage.getItem('totalXp')) {
+      localStorage.setItem('totalXp', '0');
+    }
+    
+    if (!localStorage.getItem('streak')) {
+      localStorage.setItem('streak', '0');
+    }
+    
+    // Update UI with stored values
+    const userName = document.getElementById('user-name');
+    const totalXp = document.getElementById('xp-amount');
+    const streakCount = document.getElementById('streak-count');
+    const checkinStreak = document.getElementById('checkin-streak');
+    
+    if (userName) {
+      userName.textContent = localStorage.getItem('username');
+    }
+    
+    if (totalXp) {
+      totalXp.textContent = localStorage.getItem('totalXp');
+    }
+    
+    if (streakCount) {
+      streakCount.textContent = localStorage.getItem('streak');
+    }
+    
+    if (checkinStreak) {
+      checkinStreak.textContent = localStorage.getItem('streak');
+    }
+  }
+  
+  // Add click handlers on close buttons to close modal windows
+  const closeButtons = document.querySelectorAll('.close-modal');
+  closeButtons.forEach(button => {
+    button.addEventListener('click', closeAllModals);
+  });
+</script>
 </body>
 </html>
