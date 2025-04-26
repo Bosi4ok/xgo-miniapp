@@ -124,69 +124,8 @@ async function initializeApp() {
             throw new Error('Ошибка инициализации UI: ' + error.message);
         }
 
-        // Настраиваем навигацию
-        const navItems = document.querySelectorAll('.nav-item');
-        console.log('Найдено элементов навигации:', navItems.length);
-        
-        navItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const screen = item.getAttribute('data-screen');
-                console.log('Клик по навигации:', screen);
-                
-                // Убираем активный класс у всех элементов
-                navItems.forEach(i => i.classList.remove('active'));
-                
-                // Добавляем активный класс выбранному
-                item.classList.add('active');
-                
-                // Закрываем все модальные окна перед открытием нового
-                if (window.ui && window.ui.closeAllModals) {
-                    window.ui.closeAllModals();
-                } else {
-                    console.error('UI модуль не найден');
-                }
-                
-                // Обрабатываем клик по экрану
-                switch(screen) {
-                    case 'home':
-                        // Просто закрываем все модальные окна
-                        console.log('Переключение на домашний экран');
-                        break;
-                    case 'checkin':
-                        console.log('Открываем модальное окно чекина');
-                        if (window.ui && window.ui.showModal) {
-                            window.ui.showModal('checkin-modal');
-                        } else {
-                            console.error('UI модуль не найден для открытия модального окна чекина');
-                        }
-                        break;
-                    case 'tasks':
-                        console.log('Открываем модальное окно задач');
-                        if (window.ui && window.ui.showModal) {
-                            window.ui.showModal('tasks-modal');
-                        } else {
-                            console.error('UI модуль не найден для открытия модального окна задач');
-                        }
-                        break;
-                    case 'referral':
-                        console.log('Открываем модальное окно рефералов');
-                        if (window.ui && window.ui.showModal) {
-                            window.ui.showModal('referral-modal');
-                        } else {
-                            console.error('UI модуль не найден для открытия модального окна рефералов');
-                        }
-                        break;
-                    case 'profile':
-                        console.log('Переключение на профиль');
-                        // Добавим позже
-                        break;
-                    default:
-                        console.log('Неизвестный экран:', screen);
-                        break;
-                }
-            });
-        });
+        // Навигация инициализируется в модуле UI
+        console.log('Навигация инициализирована в модуле UI');
 
         // Добавляем обработчик для клика по оверлею
         const modalOverlay = document.getElementById('modal-overlay');

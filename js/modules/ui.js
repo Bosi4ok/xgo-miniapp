@@ -28,39 +28,85 @@ export function initNavigation() {
                 return;
             }
             
-            console.log('Клик по навигации:', screen);
+            console.log('Клик по навигации в ui.js:', screen);
+            
+            // Убираем активный класс у всех элементов
+            navItems.forEach(i => i.classList.remove('active'));
+            
+            // Добавляем активный класс выбранному
+            item.classList.add('active');
+            
+            // Закрываем все модальные окна перед открытием нового
+            closeAllModals();
 
             // Обрабатываем клики по кнопкам
             switch (screen) {
+                case 'home':
+                    // Просто переключаем на домашний экран
+                    console.log('Переключение на домашний экран');
+                    switchScreen('home');
+                    break;
+                    
                 case 'checkin':
-                    // Показываем экран чекина
-                    const checkinButton = document.getElementById('checkin-button');
+                    // Показываем модальное окно чекина
+                    console.log('Открываем модальное окно чекина');
+                    showModal('checkin-modal');
+                    
+                    // Обновляем состояние кнопки чекина
+                    const checkinButton = document.getElementById('checkinButton');
                     if (checkinButton) {
-                        const checkin = await import('./checkin.js');
-                        const canDoCheckin = await checkin.canCheckin(window.userData);
-                        checkinButton.disabled = !canDoCheckin;
-                        checkinButton.textContent = canDoCheckin ? 'Получить награду' : 'Уже получено';
+                        try {
+                            const checkin = await import('./checkin.js');
+                            const canDoCheckin = await checkin.canCheckin(window.userData);
+                            checkinButton.disabled = !canDoCheckin;
+                            checkinButton.textContent = canDoCheckin ? 'Получить награду' : 'Уже получено';
+                        } catch (error) {
+                            console.error('Ошибка при обновлении состояния кнопки чекина:', error);
+                        }
                     }
                     break;
 
                 case 'tasks':
-                    // Показываем экран заданий
-                    const tasks = await import('./tasks.js');
-                    await tasks.loadTasks();
+                    // Показываем модальное окно заданий
+                    console.log('Открываем модальное окно задач');
+                    showModal('tasks-modal');
+                    
+                    // Загружаем задания
+                    try {
+                        const tasks = await import('./tasks.js');
+                        await tasks.loadTasks();
+                    } catch (error) {
+                        console.error('Ошибка при загрузке заданий:', error);
+                    }
                     break;
 
                 case 'referral':
-                    // Показываем экран реферальной системы
-                    const referral = await import('./referral.js');
-                    const stats = await referral.getReferralStats(window.userData.id);
-                    if (stats) {
-                        updateReferralUI(stats.code, stats.referrals_count);
+                    // Показываем модальное окно реферальной системы
+                    console.log('Открываем модальное окно рефералов');
+                    showModal('referral-modal');
+                    
+                    // Обновляем информацию о рефералах
+                    try {
+                        const referral = await import('./referral.js');
+                        const stats = await referral.getReferralStats(window.userData.id);
+                        if (stats) {
+                            updateReferralUI(stats.code, stats.referrals_count);
+                        }
+                    } catch (error) {
+                        console.error('Ошибка при загрузке информации о рефералах:', error);
                     }
                     break;
+                    
+                case 'profile':
+                    // Переключаем на экран профиля
+                    console.log('Переключение на профиль');
+                    switchScreen('profile');
+                    break;
+                    
+                default:
+                    console.log('Неизвестный экран:', screen);
+                    break;
             }
-
-            // Переключаем экран
-            switchScreen(screen);
         });
     });
 }
