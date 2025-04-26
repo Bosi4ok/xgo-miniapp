@@ -54,10 +54,65 @@
       z-index: 1;
     }
     
-    /* Стиль для кнопки Home, чтобы она выглядела как обычный текст */
-    .nav-item[data-screen="home"] {
-      pointer-events: none;
-      cursor: default;
+    /* Стили для нижней навигации */
+    .bottom-nav {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: #1a1a1a;
+      padding: 10px 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+      z-index: 100;
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #888;
+      cursor: pointer;
+      padding: 5px 0;
+      width: 25%;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-item.active {
+      background-color: #2a2a2a;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+      position: relative;
+    }
+    
+    .nav-item.active:after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background-color: #ff4d4d;
+      border-radius: 3px;
+    }
+    
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 5px;
+    }
+    
+    .nav-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .nav-label {
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
     }
 
     /* Стили для уведомлений */
@@ -1328,57 +1383,6 @@
       <span class="nav-label">PROFILE</span>
     </div>
   </div>
-  
-  <style>
-    /* Стили для нижней навигации */
-    .bottom-nav {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background-color: #1a1a1a;
-      padding: 10px 0;
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
-      z-index: 100;
-    }
-    
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      color: #888;
-      cursor: pointer;
-      padding: 5px 0;
-      width: 25%;
-      transition: all 0.3s ease;
-    }
-    
-    .nav-item.active {
-      background-color: #2a2a2a;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
-    }
-    
-    .nav-icon {
-      width: 24px;
-      height: 24px;
-      margin-bottom: 5px;
-    }
-    
-    .nav-icon svg {
-      width: 100%;
-      height: 100%;
-    }
-    
-    .nav-label {
-      font-size: 12px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-  </style>
 
   <!-- Tasks Modal -->
   <div class="modal" id="tasks-modal">
