@@ -44,7 +44,7 @@ export function initNavigation() {
                 case 'home':
                     // Просто переключаем на домашний экран
                     console.log('Переключение на домашний экран');
-                    switchScreen('home');
+                    window.switchScreen('home');
                     break;
                     
                 case 'checkin':
@@ -111,44 +111,9 @@ export function initNavigation() {
     });
 }
 
-// Переключение экранов
-export function switchScreen(screenId) {
-    console.log('Переключаем на экран:', screenId);
-    
-    // Проверяем наличие экранов
-    const screens = document.querySelectorAll('.screen');
-    console.log('Найдено экранов:', screens.length);
-    
-    // Проверяем наличие целевого экрана
-    const targetScreen = document.getElementById(`${screenId}-screen`);
-    if (!targetScreen) {
-        console.error('Целевой экран не найден:', `${screenId}-screen`);
-        return;
-    }
+// Переключение экранов - функция перенесена в app-ui.js
+// Теперь используем глобальную функцию window.switchScreen
 
-    // Скрываем все экраны
-    screens.forEach(screen => {
-        if (screen !== targetScreen) {
-            screen.style.transform = 'translateX(100%)';
-            screen.style.visibility = 'hidden';
-            screen.style.opacity = '0';
-            screen.classList.remove('active');
-        }
-    });
-
-    // Показываем целевой экран
-    targetScreen.style.visibility = 'visible';
-    targetScreen.style.opacity = '1';
-    targetScreen.style.transform = 'translateX(0)';
-    targetScreen.classList.add('active');
-    
-    // Обновляем активный пункт меню
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        const isActive = item.dataset.screen === screenId;
-        item.classList.toggle('active', isActive);
-    });
-}
 
 // Обновление активного элемента навигации
 export function updateActiveNavItem(activeItem) {

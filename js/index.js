@@ -100,7 +100,7 @@ async function initializeApp() {
 
             // Показываем начальный экран
             console.log('Переключаемся на домашний экран...');
-            ui.switchScreen('home');
+            window.switchScreen('home');
 
         } catch (error) {
             console.error('Ошибка при работе с базой данных:', error);
