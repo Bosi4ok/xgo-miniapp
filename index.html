@@ -40,6 +40,7 @@
     });
   </script>
   <script type="module" src="js/index.js"></script>
+  <script src="js/app-ui.js"></script>
   <style>
     @font-face {
       font-family: 'Brinnan';
@@ -1734,278 +1735,90 @@
         maxStreakModal.textContent = currentStreak.textContent || '0';
       }
     }
-  }
+  </script>
   
-  // Function to close all modal windows
-  function closeAllModals() {
-    // Close all modal windows
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(modal => {
-      modal.classList.remove('active');
-      modal.style.display = 'none';
+  <!-- Add click handler on overlay to close modal windows -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set up overlay click handler
+      const overlay = document.getElementById('modal-overlay');
+      if (overlay) {
+        overlay.addEventListener('click', function(e) {
+          if (e.target === overlay) {
+            closeAllModals();
+          }
+        });
+      }
+      
+      // Initialize user data
+      initializeUserData();
     });
-    
-    // Hide overlay
-    const overlay = document.getElementById('modal-overlay');
-    if (overlay) {
-      overlay.classList.remove('active');
-      overlay.style.display = 'none';
-    }
-  }
+  </script>
   
-  // Function to open modal window
-  function openModal(modalId) {
-    // First close all modal windows
-    closeAllModals();
-    
-    // Show overlay
-    const overlay = document.getElementById('modal-overlay');
-    if (overlay) {
-      overlay.style.display = 'block';
-      overlay.classList.add('active');
-    }
-    
-    // Show modal window
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.style.display = 'block';
-      modal.classList.add('active');
-      console.log('Modal opened:', modalId);
-      
-      // Update data in profile modal
-      if (modalId === 'profile-modal') {
-        updateProfileModal();
+  <!-- Function to initialize user data -->
+  <script>
+    // Function to initialize user data
+    function initializeUserData() {
+      // Set default username if not already set
+      if (!localStorage.getItem('username')) {
+        localStorage.setItem('username', 'Player');
       }
       
-      // Generate referral code if referral modal is opened
-      if (modalId === 'referral-modal') {
-        generateReferralCode();
-      }
-    } else {
-      console.error('Modal not found:', modalId);
-    }
-  }
-  
-  // Function to generate and display referral code
-  function generateReferralCode() {
-    const referralCodeElement = document.getElementById('referral-code');
-    
-    // Check if we already have a referral code in localStorage
-    let referralCode = localStorage.getItem('referralCode');
-    
-    // If no code exists, generate a new one
-    if (!referralCode) {
-      // Generate a random 8-character code
-      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      referralCode = '';
-      for (let i = 0; i < 8; i++) {
-        referralCode += characters.charAt(Math.floor(Math.random() * characters.length));
+      // Initialize XP and streak if not set
+      if (!localStorage.getItem('totalXp')) {
+        localStorage.setItem('totalXp', '0');
       }
       
-      // Save to localStorage
-      localStorage.setItem('referralCode', referralCode);
-    }
-    
-    // Display the code
-    if (referralCodeElement) {
-      referralCodeElement.textContent = referralCode;
-    }
-  }
-  
-  // Generate referral code on page load and initialize app
-  window.addEventListener('load', function() {
-    // Generate referral code immediately
-    generateReferralCode();
-    
-    // Make sure home screen is visible by default
-    switchScreen('home');
-    
-    // Initialize user data
-    initializeUserData();
-  });
-  
-  // Function to handle copying text
-  function handleCopy(text) {
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        const copyStatus = document.querySelector('.copy-status');
-        if (copyStatus) {
-          copyStatus.textContent = 'Copied!';
-          setTimeout(() => {
-            copyStatus.textContent = '';
-          }, 2000);
+      if (!localStorage.getItem('streak')) {
+        localStorage.setItem('streak', '0');
+      }
+      
+      // Initialize checkin button
+      const checkinButton = document.getElementById('checkin-button');
+      if (checkinButton) {
+        // Enable the button by default
+        checkinButton.disabled = false;
+        
+        // Check if already claimed today
+        const lastClaimDate = localStorage.getItem('lastClaimDate');
+        const today = new Date().toDateString();
+        
+        if (lastClaimDate === today) {
+          checkinButton.disabled = true;
+          checkinButton.textContent = 'CLAIMED';
         }
-      })
-      .catch(err => {
-        console.error('Failed to copy: ', err);
-      });
-  }
-  
-  // Function to claim daily reward
-  function claimDailyReward() {
-    const button = document.getElementById('checkin-button');
-    const streakElement = document.getElementById('checkin-streak');
-    const xpAmount = document.getElementById('xp-amount');
-    
-    // Check if already claimed today
-    const lastClaimDate = localStorage.getItem('lastClaimDate');
-    const today = new Date().toDateString();
-    
-    if (lastClaimDate === today) {
-      // Already claimed today
-      if (button) {
-        button.disabled = true;
-        button.textContent = 'CLAIMED';
       }
-      return;
-    }
-    
-    // Get current streak or initialize to 0
-    let currentStreak = parseInt(localStorage.getItem('streak') || '0');
-    let totalXp = parseInt(localStorage.getItem('totalXp') || '0');
-    
-    // Increase streak and XP
-    currentStreak += 1;
-    totalXp += 10;
-    
-    // Update localStorage
-    localStorage.setItem('streak', currentStreak.toString());
-    localStorage.setItem('totalXp', totalXp.toString());
-    localStorage.setItem('lastClaimDate', today);
-    
-    // Update UI
-    if (streakElement) {
-      streakElement.textContent = currentStreak.toString();
-    }
-    
-    if (xpAmount) {
-      xpAmount.textContent = totalXp.toString();
-    }
-    
-    // Disable button after claiming
-    if (button) {
-      button.disabled = true;
-      button.textContent = 'CLAIMED';
-    }
-    
-    // Update profile data
-    updateProfileModal();
-  }
-  
-  // Function to update data in the profile modal window
-  function updateProfileModal() {
-    // Get data from the main profile
-    const userName = document.getElementById('user-name');
-    const totalXp = document.getElementById('xp-amount');
-    const currentStreak = document.getElementById('streak-count');
-    
-    // Update data in the modal window
-    const userNameModal = document.getElementById('user-name-modal');
-    const totalXpModal = document.getElementById('total-xp-modal');
-    const currentStreakModal = document.getElementById('current-streak-modal');
-    const maxStreakModal = document.getElementById('max-streak-modal');
-    
-    // Get username from localStorage or use default
-    const storedUsername = localStorage.getItem('username') || 'Player';
-    
-    if (userNameModal) {
-      userNameModal.textContent = storedUsername;
-    }
-    
-    if (userName) {
-      userName.textContent = storedUsername;
-    }
-    
-    if (totalXpModal && totalXp) {
-      totalXpModal.textContent = totalXp.textContent || '0';
-    }
-    
-    if (currentStreakModal && currentStreak) {
-      currentStreakModal.textContent = currentStreak.textContent || '0';
-    }
-    
-    if (maxStreakModal && currentStreak) {
-      // For example, use current streak as max streak
-      maxStreakModal.textContent = currentStreak.textContent || '0';
-    }
-  }
-  
-  // Add click handler on overlay to close modal windows
-  document.addEventListener('DOMContentLoaded', function() {
-    // Set up overlay click handler
-    const overlay = document.getElementById('modal-overlay');
-    if (overlay) {
-      overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
-          closeAllModals();
-        }
-      });
-    }
-    
-    // Initialize user data
-    initializeUserData();
-  });
-  
-  // Function to initialize user data
-  function initializeUserData() {
-    // Set default username if not already set
-    if (!localStorage.getItem('username')) {
-      localStorage.setItem('username', 'Player');
-    }
-    
-    // Initialize XP and streak if not set
-    if (!localStorage.getItem('totalXp')) {
-      localStorage.setItem('totalXp', '0');
-    }
-    
-    if (!localStorage.getItem('streak')) {
-      localStorage.setItem('streak', '0');
-    }
-    
-    // Initialize checkin button
-    const checkinButton = document.getElementById('checkin-button');
-    if (checkinButton) {
-      // Enable the button by default
-      checkinButton.disabled = false;
       
-      // Check if already claimed today
-      const lastClaimDate = localStorage.getItem('lastClaimDate');
-      const today = new Date().toDateString();
+      // Update UI with stored values
+      const userName = document.getElementById('user-name');
+      const totalXp = document.getElementById('xp-amount');
+      const streakCount = document.getElementById('streak-count');
+      const checkinStreak = document.getElementById('checkin-streak');
       
-      if (lastClaimDate === today) {
-        checkinButton.disabled = true;
-        checkinButton.textContent = 'CLAIMED';
+      if (userName) {
+        userName.textContent = localStorage.getItem('username');
+      }
+      
+      if (totalXp) {
+        totalXp.textContent = localStorage.getItem('totalXp');
+      }
+      
+      if (streakCount) {
+        streakCount.textContent = localStorage.getItem('streak');
+      }
+      
+      if (checkinStreak) {
+        checkinStreak.textContent = localStorage.getItem('streak');
       }
     }
-    
-    // Update UI with stored values
-    const userName = document.getElementById('user-name');
-    const totalXp = document.getElementById('xp-amount');
-    const streakCount = document.getElementById('streak-count');
-    const checkinStreak = document.getElementById('checkin-streak');
-    
-    if (userName) {
-      userName.textContent = localStorage.getItem('username');
-    }
-    
-    if (totalXp) {
-      totalXp.textContent = localStorage.getItem('totalXp');
-    }
-    
-    if (streakCount) {
-      streakCount.textContent = localStorage.getItem('streak');
-    }
-    
-    if (checkinStreak) {
-      checkinStreak.textContent = localStorage.getItem('streak');
-    }
-  }
+  </script>
   
-  // Add click handlers on close buttons to close modal windows
-  const closeButtons = document.querySelectorAll('.close-modal');
-  closeButtons.forEach(button => {
-    button.addEventListener('click', closeAllModals);
-  });
-</script>
+  <!-- Add click handlers on close buttons to close modal windows -->
+  <script>
+    const closeButtons = document.querySelectorAll('.close-modal');
+    closeButtons.forEach(button => {
+      button.addEventListener('click', closeAllModals);
+    });
+  </script>
 </body>
 </html>
