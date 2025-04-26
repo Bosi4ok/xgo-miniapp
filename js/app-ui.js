@@ -4,40 +4,42 @@
 function switchScreen(screenId) {
   console.log('Переключение на экран:', screenId);
   
-  // Проверяем, что переключаемся только на домашний экран
-  if (screenId !== 'home') {
-    console.error('Переключение разрешено только на домашний экран');
-    screenId = 'home'; // Принудительно переключаем на домашний экран
-  }
-  
-  // Скрываем все экраны
-  const screens = document.querySelectorAll('.screen');
-  screens.forEach(screen => {
-    screen.style.display = 'none';
-    screen.classList.remove('active');
-  });
-  
-  // Показываем домашний экран
-  const homeScreen = document.getElementById('home-screen');
-  if (homeScreen) {
-    homeScreen.style.display = 'block';
-    homeScreen.classList.add('active');
-  } else {
-    console.error('Домашний экран не найден');
-  }
-  
-  // Обновляем активный элемент меню
-  const navItems = document.querySelectorAll('.nav-item');
-  navItems.forEach(item => {
-    if (item.dataset.screen === 'home') {
-      item.classList.add('active');
+  // Если это домашний экран, просто закрываем все модальные окна
+  if (screenId === 'home') {
+    // Закрываем все модальные окна
+    closeAllModals();
+    
+    // Обновляем активный элемент меню
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      if (item.dataset.screen === 'home') {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+    
+    // Убедимся, что домашний экран виден
+    const homeScreen = document.getElementById('home-screen');
+    if (homeScreen) {
+      // Убедимся, что все экраны скрыты
+      const screens = document.querySelectorAll('.screen');
+      screens.forEach(screen => {
+        if (screen !== homeScreen) {
+          screen.style.display = 'none';
+          screen.classList.remove('active');
+        }
+      });
+      
+      // Показываем домашний экран
+      homeScreen.style.display = 'block';
+      homeScreen.classList.add('active');
     } else {
-      item.classList.remove('active');
+      console.error('Домашний экран не найден');
     }
-  });
-  
-  // Закрываем все модальные окна
-  closeAllModals();
+  } else {
+    console.log('Игнорируем переключение на экран:', screenId);
+  }
 }
 
 // Функция для активации элемента меню
@@ -49,10 +51,28 @@ function activateNavItem(element) {
   // Добавляем активный класс выбранному элементу
   element.classList.add('active');
   
-  // Переключаем экран только для домашнего экрана
+  // Если это кнопка Home, закрываем все модальные окна
   const screen = element.getAttribute('data-screen');
   if (screen === 'home') {
-    switchScreen('home');
+    // Закрываем все модальные окна и показываем домашний экран
+    closeAllModals();
+    
+    // Убедимся, что домашний экран виден
+    const homeScreen = document.getElementById('home-screen');
+    if (homeScreen) {
+      // Убедимся, что все экраны скрыты
+      const screens = document.querySelectorAll('.screen');
+      screens.forEach(screen => {
+        if (screen !== homeScreen) {
+          screen.style.display = 'none';
+          screen.classList.remove('active');
+        }
+      });
+      
+      // Показываем домашний экран
+      homeScreen.style.display = 'block';
+      homeScreen.classList.add('active');
+    }
   }
 }
 
