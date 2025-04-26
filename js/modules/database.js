@@ -57,7 +57,18 @@ async function getUser(telegramId) {
   const userId = String(telegramId);
   const cacheKey = `user:${userId}`;
 
+  console.log('Запрос пользователя из базы данных по Telegram ID:', userId);
+
+  // Проверяем локальный кэш сначала
+  const cachedUser = userCache.get(userId);
+  if (cachedUser) {
+    console.log('Найден пользователь в кэше:', cachedUser);
+    return cachedUser;
+  }
+
   try {
+    console.log('Запрос к Supabase для получения пользователя...');
+    
     const { data, error } = await withTimeout(
       supabaseClient
         .from('users')
@@ -67,35 +78,52 @@ async function getUser(telegramId) {
       cacheKey
     );
 
-    if (error && error.code === 'PGRST116') {
-      // Пользователь не найден, создаем нового
-      return await createUser(userId);
-    } else if (error) {
-      throw error;
+    if (error) {
+      console.log('Ошибка при запросе пользователя:', error);
+      
+      if (error.code === 'PGRST116') {
+        console.log('Пользователь не найден, создаем нового...');
+        // Пользователь не найден, создаем нового
+        return await createUser(userId);
+      } else {
+        throw error;
+      }
     }
 
+    console.log('Пользователь найден в базе данных:', data);
+    
     // Обновляем кэш
     userCache.set(userId, data);
     return data;
   } catch (error) {
-    console.error('Ошибка при получении пользователя:', error);
+    console.error('Критическая ошибка при получении пользователя:', error);
     
-    // Проверяем локальный кэш
-    const cachedUser = userCache.get(userId);
-    if (cachedUser) {
-      console.warn('Используем кэшированные данные пользователя');
-      return cachedUser;
-    }
-    throw error;
+    // Создаем временного пользователя в случае критической ошибки
+    const tempUser = {
+      telegram_id: userId,
+      username: 'Temp User',
+      points: 0,
+      current_streak: 0,
+      max_streak: 0,
+      last_checkin: null,
+      referral_code: null,
+      id: 'temp_' + Date.now()
+    };
+    
+    console.log('Создан временный пользователь:', tempUser);
+    return tempUser;
   }
 }
 
 async function createUser(telegramId) {
   const userId = String(telegramId);
   
+  console.log('Создание нового пользователя с Telegram ID:', userId);
+  
   try {
     const userData = {
       telegram_id: userId,
+      username: 'Player_' + userId.substring(0, 4),
       points: 0,
       current_streak: 0,
       max_streak: 0,
@@ -103,6 +131,8 @@ async function createUser(telegramId) {
       referral_code: null
     };
 
+    console.log('Отправка данных для создания пользователя:', userData);
+    
     const { data, error } = await withTimeout(
       supabaseClient
         .from('users')
@@ -111,14 +141,33 @@ async function createUser(telegramId) {
         .single()
     );
 
-    if (error) throw error;
+    if (error) {
+      console.error('Ошибка при создании пользователя в базе данных:', error);
+      throw error;
+    }
 
+    console.log('Пользователь успешно создан в базе данных:', data);
+    
     // Сохраняем в кэш
     userCache.set(userId, data);
     return data;
   } catch (error) {
-    console.error('Ошибка при создании пользователя:', error);
-    throw error;
+    console.error('Критическая ошибка при создании пользователя:', error);
+    
+    // Создаем временного пользователя в случае критической ошибки
+    const tempUser = {
+      telegram_id: userId,
+      username: 'Temp_' + userId.substring(0, 4),
+      points: 0,
+      current_streak: 0,
+      max_streak: 0,
+      last_checkin: null,
+      referral_code: null,
+      id: 'temp_' + Date.now()
+    };
+    
+    console.log('Создан временный пользователь из-за ошибки:', tempUser);
+    return tempUser;
   }
 }
 

@@ -7,32 +7,34 @@ let currentUser = null;
 // Функция для получения Telegram ID пользователя
 async function getTelegramUserId() {
   try {
-    // Пытаемся получить ID пользователя из Telegram Web App API
+    // Для отладки: выводим все данные Telegram WebApp
     if (window.Telegram && window.Telegram.WebApp) {
+      console.log('Telegram WebApp доступен');
+      console.log('initData:', window.Telegram.WebApp.initData);
+      console.log('initDataUnsafe:', JSON.stringify(window.Telegram.WebApp.initDataUnsafe));
+      
+      // Пытаемся получить ID пользователя из Telegram Web App API
       const user = window.Telegram.WebApp.initDataUnsafe?.user;
       if (user && user.id) {
         console.log('Получен Telegram ID:', user.id);
+        // Сохраняем ID в localStorage для использования на других устройствах
+        localStorage.setItem('telegram_user_id', user.id.toString());
         return user.id.toString();
       }
+    } else {
+      console.warn('Telegram WebApp недоступен');
     }
     
-    // Если не удалось получить ID из Telegram, пытаемся получить из localStorage
-    const savedId = localStorage.getItem('telegram_user_id');
-    if (savedId) {
-      console.log('Используем сохраненный Telegram ID:', savedId);
-      return savedId;
-    }
-    
-    // Если и это не удалось, генерируем уникальный ID и сохраняем его
-    const uniqueId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('telegram_user_id', uniqueId);
-    console.log('Создан новый уникальный ID:', uniqueId);
-    return uniqueId;
+    // Используем фиксированный ID для тестирования
+    // Это гарантирует, что все устройства будут использовать один и тот же ID
+    const FIXED_TEST_ID = '12345678';
+    console.log('Используем фиксированный ID для тестирования:', FIXED_TEST_ID);
+    return FIXED_TEST_ID;
   } catch (error) {
     console.error('Ошибка при получении Telegram ID:', error);
     
     // В случае ошибки возвращаем фиксированный ID
-    return 'error_user_' + Date.now();
+    return '12345678';
   }
 }
 
@@ -398,14 +400,34 @@ function handleCopy(text) {
     });
 }
 
-// Инициализация приложения
+// Функция для отображения информации о пользователе в консоли
+function logUserInfo(user, telegramId) {
+  console.group('Информация о пользователе:');
+  console.log('Telegram ID:', telegramId);
+  console.log('User ID in DB:', user.id);
+  console.log('Username:', user.username);
+  console.log('Points:', user.points);
+  console.log('Current Streak:', user.current_streak);
+  console.log('Max Streak:', user.max_streak);
+  console.log('Last Checkin:', user.last_checkin);
+  console.log('Referral Code:', user.referral_code);
+  console.groupEnd();
+}
+
+// Функция для инициализации приложения
 async function initializeApp() {
   try {
     // Получаем ID пользователя
     const telegramId = await getTelegramUserId();
+    console.log('Получен Telegram ID:', telegramId);
     
     // Получаем данные пользователя из базы данных или создаем нового пользователя
+    console.log('Запрашиваем данные пользователя из базы данных...');
     const user = await getUser(telegramId);
+    console.log('Получены данные пользователя:', user);
+    
+    // Выводим подробную информацию о пользователе
+    logUserInfo(user, telegramId);
     
     // Сохраняем данные пользователя в глобальную переменную
     currentUser = user;
