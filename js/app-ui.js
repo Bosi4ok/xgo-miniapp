@@ -349,30 +349,47 @@ window.addEventListener('load', function() {
 
 // Функция специально для кнопки Home
 function homeButtonClick() {
-  console.log('Нажата кнопка Home');
+  console.log('Нажата кнопка Home - просто закрываем модальные окна');
   
-  // Закрываем все модальные окна
-  closeAllModals();
-  
-  // Убедимся, что все экраны скрыты, кроме домашнего
-  const screens = document.querySelectorAll('.screen');
-  screens.forEach(screen => {
-    if (screen.id !== 'home-screen') {
+  try {
+    // Закрываем все модальные окна
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+      modal.style.display = 'none';
+    });
+    
+    // Скрываем оверлей
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+    
+    // Убедимся, что домашний экран виден
+    const homeScreen = document.getElementById('home-screen');
+    if (homeScreen) {
+      homeScreen.style.display = 'block';
+    }
+    
+    // Скрываем все остальные экраны
+    const otherScreens = document.querySelectorAll('.screen:not(#home-screen)');
+    otherScreens.forEach(screen => {
       screen.style.display = 'none';
-    } else {
-      screen.style.display = 'block';
-    }
-  });
-  
-  // Обновляем активный элемент меню
-  const navItems = document.querySelectorAll('.nav-item');
-  navItems.forEach(item => {
-    if (item.dataset.screen === 'home') {
-      item.classList.add('active');
-    } else {
-      item.classList.remove('active');
-    }
-  });
+    });
+    
+    // Обновляем активный элемент меню
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      if (item.dataset.screen === 'home') {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+    
+    console.log('Домашний экран отображен успешно');
+  } catch (error) {
+    console.error('Ошибка при обработке кнопки Home:', error);
+  }
 }
 
 // Экспортируем функции в глобальную область видимости
