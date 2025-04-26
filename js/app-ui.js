@@ -95,39 +95,49 @@ function closeAllModals() {
 
 // Функция для открытия модального окна
 function openModal(modalId) {
-  // Сначала закрываем все модальные окна
-  closeAllModals();
+  console.log('Попытка открыть модальное окно:', modalId);
   
-  // Показываем оверлей
-  const overlay = document.getElementById('modal-overlay');
-  if (overlay) {
-    overlay.style.display = 'block';
-    overlay.classList.add('active');
-  }
-  
-  // Показываем модальное окно
-  const modal = document.getElementById(modalId);
-  if (modal) {
-    modal.style.display = 'block';
-    modal.classList.add('active');
-    console.log('Открыто модальное окно:', modalId);
+  try {
+    // Сначала закрываем все модальные окна
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+      modal.style.display = 'none';
+      modal.classList.remove('active');
+    });
     
-    // Обновляем данные в модальном окне профиля
-    if (modalId === 'profile-modal') {
-      updateProfileModal();
+    // Показываем оверлей
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+      overlay.style.display = 'block';
+      overlay.classList.add('active');
     }
     
-    // Генерируем реферальный код если открыто модальное окно рефералов
-    if (modalId === 'referral-modal') {
-      generateReferralCode();
+    // Показываем модальное окно
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.style.display = 'block';
+      modal.classList.add('active');
+      console.log('Открыто модальное окно:', modalId);
+      
+      // Обновляем данные в модальном окне профиля
+      if (modalId === 'profile-modal') {
+        updateProfileModal();
+      }
+      
+      // Генерируем реферальный код если открыто модальное окно рефералов
+      if (modalId === 'referral-modal') {
+        generateReferralCode();
+      }
+      
+      // Обновляем состояние кнопки чекина
+      if (modalId === 'checkin-modal') {
+        updateCheckinButton();
+      }
+    } else {
+      console.error('Модальное окно не найдено:', modalId);
     }
-    
-    // Обновляем состояние кнопки чекина
-    if (modalId === 'checkin-modal') {
-      updateCheckinButton();
-    }
-  } else {
-    console.error('Модальное окно не найдено:', modalId);
+  } catch (error) {
+    console.error('Ошибка при открытии модального окна:', error);
   }
 }
 
@@ -349,7 +359,7 @@ window.addEventListener('load', function() {
 
 // Функция специально для кнопки Home
 function homeButtonClick() {
-  console.log('Нажата кнопка Home - просто закрываем модальные окна');
+  console.log('Нажата кнопка Home - только закрываем модальные окна');
   
   try {
     // Закрываем все модальные окна
@@ -364,18 +374,6 @@ function homeButtonClick() {
       overlay.style.display = 'none';
     }
     
-    // Убедимся, что домашний экран виден
-    const homeScreen = document.getElementById('home-screen');
-    if (homeScreen) {
-      homeScreen.style.display = 'block';
-    }
-    
-    // Скрываем все остальные экраны
-    const otherScreens = document.querySelectorAll('.screen:not(#home-screen)');
-    otherScreens.forEach(screen => {
-      screen.style.display = 'none';
-    });
-    
     // Обновляем активный элемент меню
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {
@@ -386,7 +384,7 @@ function homeButtonClick() {
       }
     });
     
-    console.log('Домашний экран отображен успешно');
+    console.log('Модальные окна закрыты');
   } catch (error) {
     console.error('Ошибка при обработке кнопки Home:', error);
   }
