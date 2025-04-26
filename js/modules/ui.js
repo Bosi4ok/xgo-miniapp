@@ -165,6 +165,7 @@ export function closeAllModals() {
     const modals = document.querySelectorAll('.modal');
     const overlay = document.getElementById('modal-overlay');
     
+    // Remove active class first for animation
     modals.forEach(modal => {
         modal.classList.remove('active');
     });
@@ -172,6 +173,13 @@ export function closeAllModals() {
     if (overlay) {
         overlay.classList.remove('active');
     }
+    
+    // After animation completes, hide the modals
+    setTimeout(() => {
+        modals.forEach(modal => {
+            modal.style.display = 'none';
+        });
+    }, 300); // Match the CSS transition time
 }
 
 export function showModal(modalId) {
@@ -196,11 +204,26 @@ export function showModal(modalId) {
         newOverlay.className = 'modal-overlay';
         newOverlay.addEventListener('click', closeAllModals);
         document.body.appendChild(newOverlay);
+    } else {
+        // Добавляем обработчик клика на оверлей, если его еще нет
+        if (!overlay.hasEventListener) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeAllModals();
+                }
+            });
+            overlay.hasEventListener = true;
+        }
     }
     
-    // Добавляем классы для отображения
-    modal.classList.add('active');
-    overlay.classList.add('active');
+    // Показываем модальное окно
+    modal.style.display = 'block';
+    
+    // Добавляем классы для отображения с небольшой задержкой для анимации
+    setTimeout(() => {
+        modal.classList.add('active');
+        overlay.classList.add('active');
+    }, 10);
 }
 
 export function animateXP(amount) {

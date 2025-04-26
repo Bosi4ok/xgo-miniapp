@@ -268,7 +268,7 @@
       position: fixed;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(0.95);
       background: rgba(20, 20, 20, 0.95);
       backdrop-filter: blur(20px);
       border-radius: 25px;
@@ -277,6 +277,12 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
       pointer-events: none;
       visibility: hidden;
+      opacity: 0;
+      transition: all 0.3s ease;
+      max-width: 90%;
+      width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
     }
 
     .modal.active {
@@ -1141,6 +1147,8 @@
 </head>
 <body>
   <div id="notification-container"></div>
+  <!-- Modal Overlay -->
+  <div id="modal-overlay" class="modal-overlay"></div>
   <!-- Оптимизированные видео -->
   <video muted loop playsinline autoplay class="background-video" id="start-bg" preload="metadata">
     <source src="assets/стиль1.mp4" type="video/mp4" />
@@ -1305,6 +1313,7 @@
   <div class="modal" id="tasks-modal">
     <div class="modal-content">
       <h2>Tasks</h2>
+      <button class="close-modal" onclick="window.ui.closeAllModals()">&times;</button>
       <div class="task-item">
         <div class="task-info">
           <div class="task-title">Follow Telegram Channel</div>
@@ -1325,6 +1334,54 @@
         <a href="https://x.com/xgo_pump" target="_blank" class="task-link-btn">Follow</a>
         <button class="task-verify-btn" onclick="window.verifyTask('twitter')">Verify</button>
         <div class="task-status" id="twitter-task-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Check-in Modal -->
+  <div class="modal" id="checkin-modal">
+    <div class="modal-content">
+      <h2>Daily Check-in</h2>
+      <button class="close-modal" onclick="window.ui.closeAllModals()">&times;</button>
+      <div class="streak-counter">
+        <div>Current Streak: <span id="streak-count">0</span></div>
+      </div>
+      <div class="next-reward-container">
+        <div class="next-reward-label">Next Reward:</div>
+        <div class="next-reward-value">+10 XP</div>
+      </div>
+      <div class="checkin-controls">
+        <button id="checkinButton" class="checkin-button">Получить награду</button>
+        <div class="checkin-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Referral Modal -->
+  <div class="modal" id="referral-modal">
+    <div class="modal-content">
+      <h2>Referral Program</h2>
+      <button class="close-modal" onclick="window.ui.closeAllModals()">&times;</button>
+      <div class="referral-section">
+        <h3>Your Referral Code:</h3>
+        <div class="referral-code-wrapper">
+          <div class="referral-code" id="referral-code" onclick="window.ui.handleCopy(this.textContent)">Loading...</div>
+          <div class="copy-status"></div>
+        </div>
+      </div>
+      <div class="referral-section">
+        <h3>Enter Referral Code:</h3>
+        <div class="referral-input-container">
+          <input type="text" id="referral-input" placeholder="Enter referral code" class="referral-input">
+          <button id="referral-submit" class="referral-submit">Submit</button>
+        </div>
+        <div id="referral-input-status"></div>
+      </div>
+      <div class="referral-section">
+        <h3>Your Referrals:</h3>
+        <div class="referral-stats">
+          <div>Total Referrals: <span id="referrals-count">0</span></div>
+        </div>
       </div>
     </div>
   </div>

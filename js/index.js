@@ -80,6 +80,9 @@ async function initializeApp() {
             }
             userData = { ...userData, ...userInfo };
             
+            // Делаем UI модуль доступным глобально
+            window.ui = ui;
+
             // Обновляем UI
             console.log('Обновляем UI с данными пользователя:', userData);
             ui.updatePointsDisplay(userData.points || 0);
@@ -91,17 +94,13 @@ async function initializeApp() {
                 xpElement.textContent = userData.points || 0;
             }
 
-            // Инициализация навигации
-            const ui = await import('./modules/ui.js');
-            window.ui = ui; // Делаем модуль доступным глобально
-
             // Инициализируем навигацию
+            console.log('Инициализируем навигацию...');
             ui.initNavigation();
 
             // Показываем начальный экран
-            document.addEventListener('DOMContentLoaded', () => {
-                ui.switchScreen('home');
-            });
+            console.log('Переключаемся на домашний экран...');
+            ui.switchScreen('home');
 
         } catch (error) {
             console.error('Ошибка при работе с базой данных:', error);
@@ -195,8 +194,10 @@ async function setupEventListeners() {
         // Обработчик для чекина
         const checkinButton = document.getElementById('checkinButton');
         if (checkinButton) {
+            console.log('Найдена кнопка чекина');
             checkinButton.addEventListener('click', async () => {
                 try {
+                    console.log('Клик по кнопке чекина');
                     const result = await checkin.performCheckin(userData);
                     if (result.success) {
                         ui.showNotification(result.message, 'success');
@@ -211,6 +212,32 @@ async function setupEventListeners() {
                     ui.showNotification('Произошла ошибка при выполнении чекина', 'error');
                 }
             });
+        } else {
+            console.error('Кнопка чекина не найдена');
+            // Попробуем найти кнопку чекина по другому ID
+            const altCheckinButton = document.getElementById('checkin-button');
+            if (altCheckinButton) {
+                console.log('Найдена альтернативная кнопка чекина');
+                altCheckinButton.addEventListener('click', async () => {
+                    try {
+                        console.log('Клик по альтернативной кнопке чекина');
+                        const result = await checkin.performCheckin(userData);
+                        if (result.success) {
+                            ui.showNotification(result.message, 'success');
+                            ui.animateXP(result.xp);
+                            ui.updateCheckinUI(result.streak);
+                            setTimeout(() => ui.closeAllModals(), 2000);
+                        } else {
+                            ui.showNotification(result.message, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Ошибка при выполнении чекина:', error);
+                        ui.showNotification('Произошла ошибка при выполнении чекина', 'error');
+                    }
+                });
+            } else {
+                console.error('Ни одна кнопка чекина не найдена');
+            }
         }
 
         // Обработчик для реферального кода
