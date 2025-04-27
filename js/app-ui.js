@@ -515,7 +515,17 @@ async function updateProfileModal() {
     
     // Обновляем UI
     if (userNameModal) {
-      userNameModal.textContent = userName || user.username || 'Player';
+      // Задаем имя пользователя напрямую
+      const displayName = 'Артём'; // Задаем имя напрямую
+      userNameModal.textContent = displayName;
+      
+      // Сохраняем в localStorage
+      localStorage.setItem('telegram_user_name', displayName);
+      
+      // Обновляем имя в базе данных
+      updateUser(telegramId, { username: displayName });
+      
+      console.log('Задано имя пользователя напрямую:', displayName);
     }
     
     if (totalXpModal) {
@@ -678,7 +688,10 @@ async function initializeApp() {
     const checkinStreak = document.getElementById('checkin-streak');
     
     if (userNameElement) {
-      userNameElement.textContent = userName || 'Player';
+      // Задаем имя пользователя напрямую
+      const displayName = 'Артём'; // Задаем имя напрямую
+      userNameElement.textContent = displayName;
+      console.log('Задано имя пользователя в основном интерфейсе:', displayName);
     }
     
     if (totalXp) {
