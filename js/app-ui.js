@@ -392,56 +392,26 @@ async function updateProfileModal() {
     const user = await getUser(telegramId);
     console.log('Данные пользователя для профиля:', user);
     
-    // Получаем реферальный код
-    const referralCode = await getReferralCode(telegramId);
+    // Получаем количество рефералов
+    const referralsCount = await getReferralsCount(telegramId);
+    console.log('Количество рефералов:', referralsCount);
     
     // Получаем элементы UI
     const userNameModal = document.getElementById('user-name-modal');
-    const userIdModal = document.getElementById('user-id-modal');
-    const telegramIdModal = document.getElementById('telegram-id-modal');
     const totalXpModal = document.getElementById('total-xp-modal');
-    const currentStreakModal = document.getElementById('current-streak-modal');
-    const maxStreakModal = document.getElementById('max-streak-modal');
-    const lastCheckinModal = document.getElementById('last-checkin-modal');
-    const referralCodeElement = document.getElementById('profile-referral-code');
+    const referralsCountModal = document.getElementById('referrals-count-modal');
     
     // Обновляем UI
     if (userNameModal) {
       userNameModal.textContent = user.username || 'Player';
     }
     
-    if (userIdModal) {
-      userIdModal.textContent = user.id || 'Unknown';
-    }
-    
-    if (telegramIdModal) {
-      telegramIdModal.textContent = user.telegram_id || 'Unknown';
-    }
-    
     if (totalXpModal) {
       totalXpModal.textContent = (user.points || 0).toString();
     }
     
-    if (currentStreakModal) {
-      currentStreakModal.textContent = (user.current_streak || 0).toString();
-    }
-    
-    if (maxStreakModal) {
-      maxStreakModal.textContent = (user.max_streak || 0).toString();
-    }
-    
-    if (lastCheckinModal) {
-      if (user.last_checkin) {
-        // Форматируем дату последнего чекина
-        const date = new Date(user.last_checkin);
-        lastCheckinModal.textContent = date.toLocaleString();
-      } else {
-        lastCheckinModal.textContent = 'Never';
-      }
-    }
-    
-    if (referralCodeElement) {
-      referralCodeElement.textContent = referralCode || 'NONE';
+    if (referralsCountModal) {
+      referralsCountModal.textContent = referralsCount.toString();
     }
     
     // Сохраняем данные пользователя в глобальную переменную для быстрого доступа
