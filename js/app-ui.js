@@ -371,6 +371,19 @@ async function openModal(modalId) {
         const profileButton = document.querySelector('.nav-item[onclick*="profile-modal"]');
         if (profileButton) profileButton.classList.add('active');
         await updateProfileModal();
+        
+        // Дополнительно обновляем имя пользователя в модальном окне профиля
+        const userNameModal = document.getElementById('user-name-modal');
+        if (userNameModal) {
+          const savedName = localStorage.getItem('telegram_user_name');
+          if (savedName) {
+            userNameModal.textContent = savedName;
+            console.log('Имя пользователя обновлено в модальном окне профиля при открытии:', savedName);
+          } else {
+            userNameModal.textContent = 'Артём';
+            console.log('Имя пользователя установлено по умолчанию в модальном окне профиля');
+          }
+        }
       }
     } else {
       console.error('Модальное окно не найдено:', modalId);
@@ -566,17 +579,24 @@ async function updateProfileModal() {
       return;
     }
     
+    // Проверяем, есть ли имя в localStorage
+    const savedName = localStorage.getItem('telegram_user_name');
+    if (savedName) {
+      userNameModalElement.textContent = savedName;
+      console.log('Имя пользователя установлено из localStorage:', savedName);
+    } else {
+      // Если имя не найдено в localStorage, используем имя по умолчанию
+      const defaultName = 'Артём';
+      userNameModalElement.textContent = defaultName;
+      console.log('Имя пользователя установлено по умолчанию:', defaultName);
+      
+      // Сохраняем имя в localStorage для будущих сессий
+      localStorage.setItem('telegram_user_name', defaultName);
+    }
+    
     // Получаем ID пользователя
     const telegramId = await getTelegramUserId();
     console.log('Telegram ID для профиля:', telegramId);
-    
-    // Получаем имя пользователя с помощью обновленной функции
-    const userName = await getTelegramUserName();
-    console.log('Получено имя пользователя для профиля:', userName);
-    
-    // Обновляем имя пользователя в модальном окне
-    userNameModalElement.textContent = userName;
-    console.log('Имя пользователя обновлено в модальном окне:', userName);
     
     // Получаем данные пользователя из базы данных
     const user = await getUser(telegramId);
@@ -606,24 +626,6 @@ async function updateProfileModal() {
     console.log('Модальное окно профиля успешно обновлено');
   } catch (error) {
     console.error('Ошибка при обновлении профиля:', error);
-    
-    // В случае ошибки пытаемся хотя бы отобразить имя пользователя из localStorage
-    try {
-      const savedName = localStorage.getItem('telegram_user_name');
-      if (savedName) {
-        const userNameModalElement = document.getElementById('user-name-modal');
-        if (userNameModalElement) {
-          userNameModalElement.textContent = savedName;
-          console.log('Имя пользователя установлено из localStorage (в случае ошибки):', savedName);
-        }
-      }
-    } catch (localStorageError) {
-      console.error('Ошибка при получении имени из localStorage:', localStorageError);
-    }
-    const userNameModal = document.getElementById('user-name-modal');
-    if (userNameModal) {
-      userNameModal.textContent = 'Error loading profile';
-    }
   }
 }
 

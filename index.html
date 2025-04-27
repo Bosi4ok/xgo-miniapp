@@ -162,6 +162,7 @@
   </script>
   <script type="module" src="js/index.js"></script>
   <script src="js/app-ui.js"></script>
+  <script src="js/update-profile-name.js"></script>
   
   <!-- Скрипт для немедленной установки имени пользователя -->
   <script>
@@ -220,6 +221,30 @@
     
     // Вызываем функцию сразу после загрузки страницы
     setUserName();
+    
+    // Добавляем обработчик события для обновления имени пользователя при открытии модального окна профиля
+    document.addEventListener('DOMContentLoaded', function() {
+      // Находим кнопку, которая открывает модальное окно профиля
+      const profileButton = document.querySelector('.nav-item[onclick*="profile-modal"]');
+      if (profileButton) {
+        profileButton.addEventListener('click', function() {
+          // Обновляем имя пользователя в модальном окне профиля
+          setTimeout(function() {
+            const userNameModal = document.getElementById('user-name-modal');
+            if (userNameModal) {
+              const savedName = localStorage.getItem('telegram_user_name');
+              if (savedName) {
+                userNameModal.textContent = savedName;
+                console.log('Имя пользователя обновлено в модальном окне профиля при клике:', savedName);
+              } else {
+                userNameModal.textContent = 'Артём';
+                console.log('Имя пользователя установлено по умолчанию в модальном окне профиля при клике');
+              }
+            }
+          }, 100); // Небольшая задержка для гарантированного обновления после открытия модального окна
+        });
+      }
+    });
   </script>
   <style>
     @font-face {
