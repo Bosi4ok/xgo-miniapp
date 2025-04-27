@@ -95,8 +95,30 @@ async function getTelegramUserId() {
     // В крайнем случае используем фиксированный ID для тестирования
     // Это нужно только для отладки и тестирования
     const FIXED_TEST_ID = '12345678';
-    console.log('Используем фиксированный ID для тестирования:', FIXED_TEST_ID);
+    console.log('Используем фиксированный тестовый ID для браузера:', FIXED_TEST_ID);
+    
+    // Сохраняем фиксированный ID в localStorage для консистентности
     localStorage.setItem('telegram_user_id', FIXED_TEST_ID);
+    
+    // Устанавливаем тестовое имя пользователя
+    const testUserName = 'Test User';
+    localStorage.setItem('telegram_user_name', testUserName);
+    
+    // Обновляем имя пользователя в UI
+    updateUserNameInUI(testUserName);
+    
+    // Создаем пользователя в базе данных, если его еще нет
+    try {
+      await updateUser(FIXED_TEST_ID, { 
+        username: testUserName,
+        first_name: 'Test',
+        last_name: 'User'
+      });
+      console.log('Тестовый пользователь создан или обновлен в базе данных');
+    } catch (error) {
+      console.error('Ошибка при создании тестового пользователя:', error);
+    }
+    
     return FIXED_TEST_ID;
   } catch (error) {
     console.error('Ошибка при получении Telegram ID:', error);
