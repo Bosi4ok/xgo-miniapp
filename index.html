@@ -21,6 +21,21 @@
     // Функция для извлечения данных пользователя из Telegram WebApp
     function extractTelegramUserData() {
       try {
+        console.log('Начало извлечения данных пользователя из Telegram WebApp');
+        console.log('window.Telegram доступен:', !!window.Telegram);
+        console.log('window.Telegram.WebApp доступен:', !!(window.Telegram && window.Telegram.WebApp));
+        console.log('window.Telegram.WebApp.initDataUnsafe доступен:', !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe));
+        console.log('window.Telegram.WebApp.initDataUnsafe.user доступен:', !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user));
+        
+        if (window.Telegram && window.Telegram.WebApp) {
+          try {
+            console.log('initData:', window.Telegram.WebApp.initData);
+            console.log('initDataUnsafe полностью:', JSON.stringify(window.Telegram.WebApp.initDataUnsafe));
+          } catch (e) {
+            console.log('Не удалось вывести полные данные initDataUnsafe:', e.message);
+          }
+        }
+        
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
           const user = window.Telegram.WebApp.initDataUnsafe.user;
           console.log('Получены данные пользователя из Telegram WebApp:', user);
@@ -31,6 +46,8 @@
           window.TelegramUserData.last_name = user.last_name || null;
           window.TelegramUserData.username = user.username || null;
           window.TelegramUserData.isLoaded = true;
+          
+          console.log('Заполнен глобальный объект TelegramUserData:', window.TelegramUserData);
           
           // Сохраняем данные в localStorage для будущих сессий
           if (window.TelegramUserData.first_name) {
@@ -84,6 +101,37 @@
           }
         };
         checkTelegram();
+      }
+    });
+    
+    // Добавляем обработчик события DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOMContentLoaded: Страница загружена');
+      
+      // Проверяем, есть ли имя пользователя в localStorage
+      const savedName = localStorage.getItem('telegram_user_name');
+      if (savedName) {
+        console.log('DOMContentLoaded: Найдено имя пользователя в localStorage:', savedName);
+        
+        // Обновляем имя пользователя в модальном окне профиля
+        const userNameModal = document.getElementById('user-name-modal');
+        if (userNameModal) {
+          userNameModal.textContent = savedName;
+          console.log('DOMContentLoaded: Обновлено имя пользователя в модальном окне');
+        }
+      }
+      
+      // Проверяем, есть ли данные в глобальном объекте TelegramUserData
+      if (window.TelegramUserData && window.TelegramUserData.isLoaded && window.TelegramUserData.first_name) {
+        const fullName = `${window.TelegramUserData.first_name}${window.TelegramUserData.last_name ? ' ' + window.TelegramUserData.last_name : ''}`;
+        console.log('DOMContentLoaded: Найдены данные в TelegramUserData:', fullName);
+        
+        // Обновляем имя пользователя в модальном окне профиля
+        const userNameModal = document.getElementById('user-name-modal');
+        if (userNameModal) {
+          userNameModal.textContent = fullName;
+          console.log('DOMContentLoaded: Обновлено имя пользователя в модальном окне');
+        }
       }
     });
   </script>
