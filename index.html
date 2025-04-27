@@ -9,14 +9,61 @@
   <script>
 
 
+    // Глобальный объект для хранения данных пользователя
+    window.TelegramUserData = {
+      id: null,
+      first_name: null,
+      last_name: null,
+      username: null,
+      isLoaded: false
+    };
+    
+    // Функция для извлечения данных пользователя из Telegram WebApp
+    function extractTelegramUserData() {
+      try {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+          const user = window.Telegram.WebApp.initDataUnsafe.user;
+          console.log('Получены данные пользователя из Telegram WebApp:', user);
+          
+          // Заполняем глобальный объект
+          window.TelegramUserData.id = user.id?.toString() || null;
+          window.TelegramUserData.first_name = user.first_name || null;
+          window.TelegramUserData.last_name = user.last_name || null;
+          window.TelegramUserData.username = user.username || null;
+          window.TelegramUserData.isLoaded = true;
+          
+          // Сохраняем данные в localStorage для будущих сессий
+          if (window.TelegramUserData.first_name) {
+            const fullName = `${window.TelegramUserData.first_name}${window.TelegramUserData.last_name ? ' ' + window.TelegramUserData.last_name : ''}`;
+            localStorage.setItem('telegram_user_name', fullName);
+            console.log('Имя пользователя сохранено в localStorage:', fullName);
+          }
+          
+          if (window.TelegramUserData.id) {
+            localStorage.setItem('telegram_user_id', window.TelegramUserData.id);
+            console.log('ID пользователя сохранен в localStorage:', window.TelegramUserData.id);
+          }
+          
+          // Событие для оповещения других скриптов
+          document.dispatchEvent(new CustomEvent('telegram_user_loaded', { detail: window.TelegramUserData }));
+          return true;
+        } else {
+          console.warn('Telegram WebApp или данные пользователя недоступны');
+          return false;
+        }
+      } catch (error) {
+        console.error('Ошибка при получении данных пользователя Telegram:', error);
+        return false;
+      }
+    }
+    
     // Проверяем загрузку Telegram Web App
     window.TelegramWebAppLoaded = new Promise((resolve, reject) => {
       console.log('Начинаем проверку Telegram Web App...');
       
-
-
       if (window.Telegram?.WebApp) {
         console.log('WebApp найден сразу');
+        extractTelegramUserData();
         resolve(window.Telegram.WebApp);
       } else {
         let attempts = 0;
@@ -27,6 +74,7 @@
           
           if (window.Telegram?.WebApp) {
             console.log('WebApp найден!');
+            extractTelegramUserData();
             resolve(window.Telegram.WebApp);
           } else if (attempts >= maxAttempts) {
             console.error('WebApp не найден после всех попыток');
