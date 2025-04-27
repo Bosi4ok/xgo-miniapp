@@ -271,10 +271,16 @@ async function updateUser(telegramId, updates) {
 async function incrementXP(userId, amount) {
   userId = String(userId);
   console.log('Увеличение XP для пользователя:', userId, 'на', amount);
+  console.log('Конфигурация Supabase:', {
+    url: supabaseClient.supabaseUrl,
+    headers: supabaseClient.headers
+  });
   
   try {
     // Используем прямой запрос к таблице вместо RPC-функции
     console.log('Получаем текущие данные пользователя...');
+    console.log('URL запроса:', `${supabaseClient.supabaseUrl}/rest/v1/users?telegram_id=eq.${userId}&select=points`);
+    
     const { data: userData, error: userError } = await supabaseClient
       .from('users')
       .select('points')
@@ -510,6 +516,13 @@ async function createCheckin(userId, streak, xpEarned) {
 
   try {
     console.log('Отправляем запрос на создание чекина...');
+    console.log('URL Supabase:', supabaseClient.supabaseUrl);
+    console.log('Данные для вставки:', {
+      user_id: userId,
+      streak_count: streak,
+      xp_earned: xpEarned
+    });
+    
     const { data, error } = await supabaseClient
       .from('checkins')
       .insert({
