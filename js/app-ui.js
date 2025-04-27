@@ -490,6 +490,36 @@ async function claimDailyReward() {
   }
 }
 
+// Функция для получения имени пользователя из базы данных Supabase
+async function getUserNameFromDatabase(telegramId) {
+  try {
+    console.log('Получение имени пользователя из базы данных Supabase...');
+    
+    // Получаем данные пользователя из базы данных
+    const user = await getUser(telegramId);
+    console.log('Получены данные пользователя из базы данных:', user);
+    
+    // Проверяем, есть ли имя пользователя в базе данных
+    if (user && user.username) {
+      console.log('Найдено имя пользователя в базе данных:', user.username);
+      
+      // Сохраняем имя в localStorage для будущих сессий
+      localStorage.setItem('telegram_user_name', user.username);
+      
+      // Обновляем имя пользователя в UI
+      updateUserNameInUI(user.username);
+      
+      return user.username;
+    }
+    
+    console.log('Имя пользователя не найдено в базе данных');
+    return null;
+  } catch (error) {
+    console.error('Ошибка при получении имени пользователя из базы данных:', error);
+    return null;
+  }
+}
+
 // Функция для обновления данных в модальном окне профиля
 async function updateProfileModal() {
   try {
@@ -503,12 +533,12 @@ async function updateProfileModal() {
     const user = await getUser(telegramId);
     console.log('Данные пользователя для профиля:', user);
     
-    // Получаем реальное имя пользователя из Telegram
-    let userName = await getTelegramUserName();
-    console.log('Имя пользователя из Telegram:', userName);
+    // Проверяем, есть ли имя в localStorage
+    let userName = localStorage.getItem('telegram_user_name');
+    console.log('Имя пользователя из localStorage:', userName);
     
-    // Если имя не получено из Telegram, используем имя из базы данных
-    if (userName === 'Игрок' && user && user.username) {
+    // Если имя не найдено в localStorage, пытаемся получить его из базы данных
+    if (!userName && user && user.username) {
       userName = user.username;
       console.log('Используем имя из базы данных:', userName);
       
@@ -669,16 +699,25 @@ async function initializeApp() {
     // Генерируем реферальный код, если не существует
     await generateReferralCode();
     
-    // Получаем реальное имя пользователя из Telegram
-    let userName = await getTelegramUserName();
-    console.log('Имя пользователя из Telegram:', userName);
+    // Проверяем, есть ли имя в localStorage
+    let userName = localStorage.getItem('telegram_user_name');
+    console.log('Имя пользователя из localStorage:', userName);
     
-    // Если имя не получено из Telegram, используем имя из базы данных
-    if (userName === 'Игрок' && user && user.username) {
-      userName = user.username;
-      console.log('Используем имя из базы данных:', userName);
+    // Если имя не найдено в localStorage, пытаемся получить его из базы данных
+    if (!userName) {
+      userName = await getUserNameFromDatabase(telegramId);
+      console.log('Получено имя пользователя из базы данных:', userName);
+    }
+    
+    // Если имя все еще не получено, устанавливаем имя по умолчанию и сохраняем его в базе данных
+    if (!userName) {
+      userName = 'Player ' + telegramId.substring(0, 4);
+      console.log('Устанавливаем имя пользователя по умолчанию:', userName);
       
-      // Сохраняем имя в localStorage для будущих сессий
+      // Сохраняем имя в базе данных
+      await updateUser(telegramId, { username: userName });
+      
+      // Сохраняем имя в localStorage
       localStorage.setItem('telegram_user_name', userName);
     }
     

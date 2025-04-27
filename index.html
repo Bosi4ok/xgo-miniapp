@@ -119,6 +119,13 @@
           userNameModal.textContent = savedName;
           console.log('DOMContentLoaded: Обновлено имя пользователя в модальном окне');
         }
+        
+        // Обновляем имя пользователя в основном интерфейсе
+        const userNameElement = document.getElementById('user-name');
+        if (userNameElement) {
+          userNameElement.textContent = savedName;
+          console.log('DOMContentLoaded: Обновлено имя пользователя в основном интерфейсе');
+        }
       }
       
       // Проверяем, есть ли данные в глобальном объекте TelegramUserData
@@ -126,12 +133,30 @@
         const fullName = `${window.TelegramUserData.first_name}${window.TelegramUserData.last_name ? ' ' + window.TelegramUserData.last_name : ''}`;
         console.log('DOMContentLoaded: Найдены данные в TelegramUserData:', fullName);
         
+        // Сохраняем в localStorage
+        localStorage.setItem('telegram_user_name', fullName);
+        
         // Обновляем имя пользователя в модальном окне профиля
         const userNameModal = document.getElementById('user-name-modal');
         if (userNameModal) {
           userNameModal.textContent = fullName;
           console.log('DOMContentLoaded: Обновлено имя пользователя в модальном окне');
         }
+        
+        // Обновляем имя пользователя в основном интерфейсе
+        const userNameElement = document.getElementById('user-name');
+        if (userNameElement) {
+          userNameElement.textContent = fullName;
+          console.log('DOMContentLoaded: Обновлено имя пользователя в основном интерфейсе');
+        }
+      }
+      
+      // Если имя пользователя не найдено, устанавливаем имя по умолчанию в модальном окне
+      const userNameModal = document.getElementById('user-name-modal');
+      if (userNameModal && userNameModal.textContent === 'Loading...') {
+        const defaultName = 'Артём';
+        userNameModal.textContent = defaultName;
+        console.log('DOMContentLoaded: Установлено имя по умолчанию в модальном окне:', defaultName);
       }
     });
   </script>
