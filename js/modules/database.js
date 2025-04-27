@@ -173,56 +173,184 @@ async function createUser(telegramId) {
 
 async function updateUser(telegramId, updates) {
   const userId = String(telegramId);
+  console.log('Обновление пользователя:', userId, 'с данными:', updates);
 
   try {
-    const { error } = await withTimeout(
-      supabaseClient
-        .from('users')
-        .update(updates)
-        .eq('telegram_id', userId)
-    );
+    console.log('Отправляем запрос на обновление пользователя...');
+    const { data, error } = await supabaseClient
+      .from('users')
+      .update(updates)
+      .eq('telegram_id', userId)
+      .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Ошибка при обновлении пользователя:', error);
+      
+      // Проверяем, существует ли пользователь
+      console.log('Проверяем, существует ли пользователь...');
+      const { data: userData, error: userError } = await supabaseClient
+        .from('users')
+        .select('*')
+        .eq('telegram_id', userId)
+        .single();
+      
+      if (userError && userError.code !== 'PGRST116') { // Не ошибка "не найдено"
+        console.error('Ошибка при проверке пользователя:', userError);
+        throw userError;
+      }
+      
+      if (!userData) {
+        // Создаем нового пользователя
+        console.log('Пользователь не найден, создаем нового...');
+        const newUser = {
+          telegram_id: userId,
+          ...updates
+        };
+        
+        const { error: insertError } = await supabaseClient
+          .from('users')
+          .insert([newUser]);
+        
+        if (insertError) {
+          console.error('Ошибка при создании пользователя:', insertError);
+          throw insertError;
+        }
+        console.log('Новый пользователь успешно создан');
+      } else {
+        throw error; // Если пользователь существует, но обновление не удалось
+      }
+    } else {
+      console.log('Пользователь успешно обновлен:', data);
+    }
 
     // Обновляем кэш
     const cachedUser = userCache.get(userId);
     if (cachedUser) {
-      userCache.set(userId, { ...cachedUser, ...updates });
+      const updatedCachedUser = { ...cachedUser, ...updates };
+      userCache.set(userId, updatedCachedUser);
+      console.log('Кэш пользователя обновлен:', updatedCachedUser);
     }
+    
+    // Обновляем данные в localStorage
+    try {
+      if (updates.current_streak) {
+        localStorage.setItem('user_streak_' + userId, updates.current_streak.toString());
+        localStorage.setItem('streak', updates.current_streak.toString());
+      }
+      if (updates.last_checkin) {
+        localStorage.setItem('last_checkin_' + userId, updates.last_checkin);
+      }
+      console.log('Данные пользователя обновлены в localStorage');
+    } catch (localStorageError) {
+      console.error('Ошибка при обновлении localStorage:', localStorageError);
+    }
+    
+    return true;
   } catch (error) {
-    console.error('Ошибка при обновлении пользователя:', error);
-    throw error;
+    console.error('Критическая ошибка при обновлении пользователя:', error);
+    
+    // Обновляем данные в localStorage даже при ошибке
+    try {
+      if (updates.current_streak) {
+        localStorage.setItem('user_streak_' + userId, updates.current_streak.toString());
+        localStorage.setItem('streak', updates.current_streak.toString());
+      }
+      if (updates.last_checkin) {
+        localStorage.setItem('last_checkin_' + userId, updates.last_checkin);
+      }
+      console.log('Данные пользователя обновлены в localStorage после ошибки');
+    } catch (localStorageError) {
+      console.error('Ошибка при обновлении localStorage после ошибки:', localStorageError);
+    }
+    
+    // Не выбрасываем ошибку, чтобы не прерывать выполнение функции
+    return false;
   }
 }
 
 async function incrementXP(userId, amount) {
   userId = String(userId);
-
+  console.log('Увеличение XP для пользователя:', userId, 'на', amount);
+  
   try {
-    await withTimeout(
-      supabaseClient.rpc('increment_xp', {
-        user_id: userId,
-        xp_amount: amount
-      })
-    );
-
+    // Сначала попробуем использовать RPC
+    console.log('Пытаемся использовать RPC функцию increment_xp...');
+    const { data: rpcData, error: rpcError } = await supabaseClient.rpc('increment_xp', {
+      user_id: userId,
+      xp_amount: amount
+    });
+    
+    if (rpcError) {
+      console.error('Ошибка RPC, пробуем прямой запрос:', rpcError);
+      
+      // Если RPC не работает, используем прямой запрос
+      console.log('Получаем текущие данные пользователя...');
+      const { data: userData, error: userError } = await supabaseClient
+        .from('users')
+        .select('points')
+        .eq('telegram_id', userId)
+        .single();
+      
+      console.log('Результат запроса данных пользователя:', userData, userError);
+      
+      if (userError && userError.code !== 'PGRST116') { // Не ошибка "не найдено"
+        console.error('Ошибка при получении данных пользователя:', userError);
+        throw userError;
+      }
+      
+      const currentPoints = userData?.points || 0;
+      const newPoints = currentPoints + amount;
+      console.log('Текущие очки:', currentPoints, 'Новые очки:', newPoints);
+      
+      if (userData) {
+        // Обновляем существующего пользователя
+        console.log('Обновляем существующего пользователя...');
+        const { error: updateError } = await supabaseClient
+          .from('users')
+          .update({ points: newPoints })
+          .eq('telegram_id', userId);
+        
+        if (updateError) {
+          console.error('Ошибка при обновлении пользователя:', updateError);
+          throw updateError;
+        }
+        console.log('Пользователь успешно обновлен');
+      } else {
+        // Создаем нового пользователя
+        console.log('Создаем нового пользователя...');
+        const { error: insertError } = await supabaseClient
+          .from('users')
+          .insert([{ telegram_id: userId, points: amount }]);
+        
+        if (insertError) {
+          console.error('Ошибка при создании пользователя:', insertError);
+          throw insertError;
+        }
+        console.log('Новый пользователь успешно создан');
+      }
+    } else {
+      console.log('RPC функция выполнена успешно:', rpcData);
+    }
+    
     // Обновляем кэш
     const cachedUser = userCache.get(userId);
     if (cachedUser) {
       cachedUser.points = (cachedUser.points || 0) + amount;
       userCache.set(userId, cachedUser);
+      console.log('Кэш пользователя обновлен:', cachedUser);
     }
     
     // Обновляем localStorage для синхронизации между устройствами
     try {
       // Получаем текущее значение XP из базы данных
-      const { data, error } = await withTimeout(
-        supabaseClient
-          .from('users')
-          .select('points')
-          .eq('telegram_id', userId)
-          .single()
-      );
+      console.log('Получаем обновленные данные для localStorage...');
+      const { data, error } = await supabaseClient
+        .from('users')
+        .select('points')
+        .eq('telegram_id', userId)
+        .single();
+      
+      console.log('Результат запроса для localStorage:', data, error);
       
       if (!error && data) {
         const totalXp = data.points || 0;
@@ -233,13 +361,38 @@ async function incrementXP(userId, amount) {
         
         // Также обновляем старый ключ для обратной совместимости
         localStorage.setItem('totalXp', totalXp.toString());
+        console.log('localStorage успешно обновлен');
+      } else {
+        // Если не удалось получить данные из базы, используем локальное значение
+        const currentLocalPoints = parseInt(localStorage.getItem('user_points_' + userId) || '0');
+        const newLocalPoints = currentLocalPoints + amount;
+        localStorage.setItem('user_points_' + userId, newLocalPoints.toString());
+        localStorage.setItem('totalXp', newLocalPoints.toString());
+        console.log('localStorage обновлен с локальными данными:', newLocalPoints);
       }
     } catch (localStorageError) {
       console.error('Ошибка при обновлении localStorage:', localStorageError);
+      // Если произошла ошибка, обновляем localStorage с локальными данными
+      const currentLocalPoints = parseInt(localStorage.getItem('user_points_' + userId) || '0');
+      const newLocalPoints = currentLocalPoints + amount;
+      localStorage.setItem('user_points_' + userId, newLocalPoints.toString());
+      localStorage.setItem('totalXp', newLocalPoints.toString());
+      console.log('localStorage обновлен с локальными данными после ошибки:', newLocalPoints);
     }
+    
+    return true;
   } catch (error) {
-    console.error('Ошибка при начислении XP:', error);
-    throw error;
+    console.error('Критическая ошибка при начислении XP:', error);
+    
+    // Даже при ошибке обновляем localStorage, чтобы пользователь видел изменения
+    const currentLocalPoints = parseInt(localStorage.getItem('user_points_' + userId) || '0');
+    const newLocalPoints = currentLocalPoints + amount;
+    localStorage.setItem('user_points_' + userId, newLocalPoints.toString());
+    localStorage.setItem('totalXp', newLocalPoints.toString());
+    console.log('localStorage обновлен после критической ошибки:', newLocalPoints);
+    
+    // Не выбрасываем ошибку, чтобы не прерывать выполнение функции
+    return false;
   }
 }
 
@@ -366,19 +519,25 @@ const CHECKIN_CACHE_LIFETIME = 60000; // 1 минута
 // Функции для работы с чекинами
 async function createCheckin(userId, streak, xpEarned) {
   userId = String(userId);
+  console.log('Создание чекина для пользователя:', userId, 'стрик:', streak, 'XP:', xpEarned);
 
   try {
-    const { error } = await withTimeout(
-      supabaseClient
-        .from('checkins')
-        .insert({
-          user_id: userId,
-          streak_count: streak,
-          xp_earned: xpEarned
-        })
-    );
+    console.log('Отправляем запрос на создание чекина...');
+    const { data, error } = await supabaseClient
+      .from('checkins')
+      .insert({
+        user_id: userId,
+        streak_count: streak,
+        xp_earned: xpEarned
+      })
+      .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Ошибка при создании чекина:', error);
+      throw error;
+    }
+
+    console.log('Чекин успешно создан:', data);
 
     // Обновляем кэш последнего чекина
     const now = new Date().toISOString();
@@ -386,6 +545,7 @@ async function createCheckin(userId, streak, xpEarned) {
       lastCheckin: now,
       timestamp: Date.now()
     });
+    console.log('Кэш последнего чекина обновлен');
 
     // Обновляем кэш пользователя
     const cachedUser = userCache.get(userId);
@@ -396,10 +556,34 @@ async function createCheckin(userId, streak, xpEarned) {
         cachedUser.max_streak = streak;
       }
       userCache.set(userId, cachedUser);
+      console.log('Кэш пользователя обновлен:', cachedUser);
     }
+
+    // Сохраняем дату последнего чекина в localStorage
+    try {
+      localStorage.setItem('last_checkin_' + userId, now);
+      localStorage.setItem('user_streak_' + userId, streak.toString());
+      console.log('Данные чекина сохранены в localStorage');
+    } catch (localStorageError) {
+      console.error('Ошибка при сохранении данных чекина в localStorage:', localStorageError);
+    }
+
+    return true;
   } catch (error) {
-    console.error('Ошибка при создании чекина:', error);
-    throw error;
+    console.error('Критическая ошибка при создании чекина:', error);
+    
+    // Даже при ошибке сохраняем данные в localStorage
+    try {
+      const now = new Date().toISOString();
+      localStorage.setItem('last_checkin_' + userId, now);
+      localStorage.setItem('user_streak_' + userId, streak.toString());
+      console.log('Данные чекина сохранены в localStorage после ошибки');
+    } catch (localStorageError) {
+      console.error('Ошибка при сохранении данных чекина в localStorage после ошибки:', localStorageError);
+    }
+    
+    // Не выбрасываем ошибку, чтобы не прерывать выполнение функции
+    return false;
   }
 }
 
