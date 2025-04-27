@@ -91,6 +91,8 @@ async function getTelegramUserId() {
 // Функция для получения имени пользователя из Telegram
 async function getTelegramUserName() {
   try {
+    console.log('Начало получения имени пользователя из Telegram...');
+    
     // Проверяем, есть ли имя в localStorage
     const savedName = localStorage.getItem('telegram_user_name');
     if (savedName) {
@@ -98,18 +100,79 @@ async function getTelegramUserName() {
       return savedName;
     }
     
-    // Пытаемся получить имя из Telegram WebApp
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
-      const user = window.Telegram.WebApp.initDataUnsafe.user;
-      if (user.first_name) {
-        const userName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
-        console.log('Получено имя пользователя из Telegram:', userName);
-        localStorage.setItem('telegram_user_name', userName);
-        return userName;
+    // Проверяем доступность Telegram WebApp
+    console.log('Проверка доступности Telegram WebApp...');
+    console.log('window.Telegram доступен:', !!window.Telegram);
+    console.log('window.Telegram.WebApp доступен:', !!(window.Telegram && window.Telegram.WebApp));
+    
+    // Пытаемся получить данные пользователя из Telegram WebApp
+    if (window.Telegram && window.Telegram.WebApp) {
+      console.log('Telegram WebApp доступен, пытаемся получить данные пользователя...');
+      
+      // Выводим все доступные данные для отладки
+      try {
+        console.log('initDataUnsafe:', JSON.stringify(window.Telegram.WebApp.initDataUnsafe));
+      } catch (e) {
+        console.log('Не удалось вывести initDataUnsafe:', e.message);
+      }
+      
+      // Проверяем наличие объекта пользователя
+      const user = window.Telegram.WebApp.initDataUnsafe?.user;
+      console.log('Объект пользователя:', user);
+      
+      if (user) {
+        console.log('first_name:', user.first_name);
+        console.log('last_name:', user.last_name);
+        
+        if (user.first_name) {
+          const userName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
+          console.log('Получено имя пользователя из Telegram:', userName);
+          localStorage.setItem('telegram_user_name', userName);
+          return userName;
+        } else {
+          console.log('first_name отсутствует в объекте пользователя');
+        }
+      } else {
+        console.log('Объект пользователя отсутствует в initDataUnsafe');
+      }
+    } else {
+      console.log('Telegram WebApp недоступен');
+    }
+    
+    // Пробуем получить имя напрямую из Telegram.WebApp.initData
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+      console.log('Пробуем получить данные из initData...');
+      try {
+        const initData = window.Telegram.WebApp.initData;
+        console.log('initData:', initData);
+        
+        // Пробуем распарсить initData, если это строка
+        if (typeof initData === 'string' && initData.length > 0) {
+          const params = new URLSearchParams(initData);
+          const userParam = params.get('user');
+          if (userParam) {
+            try {
+              const userData = JSON.parse(userParam);
+              console.log('Распарсенные данные пользователя:', userData);
+              
+              if (userData.first_name) {
+                const userName = `${userData.first_name}${userData.last_name ? ' ' + userData.last_name : ''}`;
+                console.log('Получено имя пользователя из initData:', userName);
+                localStorage.setItem('telegram_user_name', userName);
+                return userName;
+              }
+            } catch (e) {
+              console.log('Ошибка при парсинге данных пользователя:', e.message);
+            }
+          }
+        }
+      } catch (e) {
+        console.log('Ошибка при работе с initData:', e.message);
       }
     }
     
     // Если не удалось получить имя, возвращаем значение по умолчанию
+    console.log('Не удалось получить имя пользователя, возвращаем значение по умолчанию');
     return 'Игрок';
   } catch (error) {
     console.error('Ошибка при получении имени пользователя:', error);
@@ -424,13 +487,22 @@ async function updateProfileModal() {
     const telegramId = await getTelegramUserId();
     console.log('Telegram ID для профиля:', telegramId);
     
-    // Получаем реальное имя пользователя из Telegram
-    const userName = await getTelegramUserName();
-    console.log('Имя пользователя для профиля:', userName);
-    
     // Получаем данные пользователя из базы данных
     const user = await getUser(telegramId);
     console.log('Данные пользователя для профиля:', user);
+    
+    // Получаем реальное имя пользователя из Telegram
+    let userName = await getTelegramUserName();
+    console.log('Имя пользователя из Telegram:', userName);
+    
+    // Если имя не получено из Telegram, используем имя из базы данных
+    if (userName === 'Игрок' && user && user.username) {
+      userName = user.username;
+      console.log('Используем имя из базы данных:', userName);
+      
+      // Сохраняем имя в localStorage для будущих сессий
+      localStorage.setItem('telegram_user_name', userName);
+    }
     
     // Получаем количество рефералов
     const referralsCount = await getReferralsCount(telegramId);
@@ -587,8 +659,17 @@ async function initializeApp() {
     await generateReferralCode();
     
     // Получаем реальное имя пользователя из Telegram
-    const userName = await getTelegramUserName();
-    console.log('Имя пользователя для главного интерфейса:', userName);
+    let userName = await getTelegramUserName();
+    console.log('Имя пользователя из Telegram:', userName);
+    
+    // Если имя не получено из Telegram, используем имя из базы данных
+    if (userName === 'Игрок' && user && user.username) {
+      userName = user.username;
+      console.log('Используем имя из базы данных:', userName);
+      
+      // Сохраняем имя в localStorage для будущих сессий
+      localStorage.setItem('telegram_user_name', userName);
+    }
     
     // Обновляем UI с данными из базы
     const userNameElement = document.getElementById('user-name');
@@ -597,7 +678,7 @@ async function initializeApp() {
     const checkinStreak = document.getElementById('checkin-streak');
     
     if (userNameElement) {
-      userNameElement.textContent = userName || user.username || 'Player';
+      userNameElement.textContent = userName || 'Player';
     }
     
     if (totalXp) {
