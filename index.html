@@ -162,6 +162,53 @@
   </script>
   <script type="module" src="js/index.js"></script>
   <script src="js/app-ui.js"></script>
+  
+  <!-- Скрипт для немедленной установки имени пользователя -->
+  <script>
+    // Функция для установки имени пользователя в интерфейсе
+    function setUserName() {
+      // Получаем элементы с именем пользователя
+      const userNameModal = document.getElementById('user-name-modal');
+      const userNameElement = document.getElementById('user-name');
+      
+      // Проверяем, есть ли имя в localStorage
+      const savedName = localStorage.getItem('telegram_user_name');
+      if (savedName) {
+        // Устанавливаем имя в модальном окне профиля
+        if (userNameModal) {
+          userNameModal.textContent = savedName;
+          console.log('Имя пользователя установлено в модальном окне из localStorage:', savedName);
+        }
+        
+        // Устанавливаем имя в основном интерфейсе
+        if (userNameElement) {
+          userNameElement.textContent = savedName;
+          console.log('Имя пользователя установлено в основном интерфейсе из localStorage:', savedName);
+        }
+      } else {
+        // Если имя не найдено в localStorage, устанавливаем имя по умолчанию
+        const defaultName = 'Артём';
+        
+        // Устанавливаем имя в модальном окне профиля
+        if (userNameModal) {
+          userNameModal.textContent = defaultName;
+          console.log('Имя пользователя установлено в модальном окне по умолчанию:', defaultName);
+        }
+        
+        // Устанавливаем имя в основном интерфейсе
+        if (userNameElement) {
+          userNameElement.textContent = defaultName;
+          console.log('Имя пользователя установлено в основном интерфейсе по умолчанию:', defaultName);
+        }
+        
+        // Сохраняем имя в localStorage для будущих сессий
+        localStorage.setItem('telegram_user_name', defaultName);
+      }
+    }
+    
+    // Вызываем функцию сразу после загрузки страницы
+    setUserName();
+  </script>
   <style>
     @font-face {
       font-family: 'Brinnan';
