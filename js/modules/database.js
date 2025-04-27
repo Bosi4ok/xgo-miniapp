@@ -273,63 +273,50 @@ async function incrementXP(userId, amount) {
   console.log('Увеличение XP для пользователя:', userId, 'на', amount);
   
   try {
-    // Сначала попробуем использовать RPC
-    console.log('Пытаемся использовать RPC функцию increment_xp...');
-    const { data: rpcData, error: rpcError } = await supabaseClient.rpc('increment_xp', {
-      user_id: userId,
-      xp_amount: amount
-    });
+    // Используем прямой запрос к таблице вместо RPC-функции
+    console.log('Получаем текущие данные пользователя...');
+    const { data: userData, error: userError } = await supabaseClient
+      .from('users')
+      .select('points')
+      .eq('telegram_id', userId)
+      .single();
     
-    if (rpcError) {
-      console.error('Ошибка RPC, пробуем прямой запрос:', rpcError);
-      
-      // Если RPC не работает, используем прямой запрос
-      console.log('Получаем текущие данные пользователя...');
-      const { data: userData, error: userError } = await supabaseClient
+    console.log('Результат запроса данных пользователя:', userData, userError);
+    
+    if (userError && userError.code !== 'PGRST116') { // Не ошибка "не найдено"
+      console.error('Ошибка при получении данных пользователя:', userError);
+      throw userError;
+    }
+    
+    const currentPoints = userData?.points || 0;
+    const newPoints = currentPoints + amount;
+    console.log('Текущие очки:', currentPoints, 'Новые очки:', newPoints);
+    
+    if (userData) {
+      // Обновляем существующего пользователя
+      console.log('Обновляем существующего пользователя...');
+      const { error: updateError } = await supabaseClient
         .from('users')
-        .select('points')
-        .eq('telegram_id', userId)
-        .single();
+        .update({ points: newPoints })
+        .eq('telegram_id', userId);
       
-      console.log('Результат запроса данных пользователя:', userData, userError);
-      
-      if (userError && userError.code !== 'PGRST116') { // Не ошибка "не найдено"
-        console.error('Ошибка при получении данных пользователя:', userError);
-        throw userError;
+      if (updateError) {
+        console.error('Ошибка при обновлении пользователя:', updateError);
+        throw updateError;
       }
-      
-      const currentPoints = userData?.points || 0;
-      const newPoints = currentPoints + amount;
-      console.log('Текущие очки:', currentPoints, 'Новые очки:', newPoints);
-      
-      if (userData) {
-        // Обновляем существующего пользователя
-        console.log('Обновляем существующего пользователя...');
-        const { error: updateError } = await supabaseClient
-          .from('users')
-          .update({ points: newPoints })
-          .eq('telegram_id', userId);
-        
-        if (updateError) {
-          console.error('Ошибка при обновлении пользователя:', updateError);
-          throw updateError;
-        }
-        console.log('Пользователь успешно обновлен');
-      } else {
-        // Создаем нового пользователя
-        console.log('Создаем нового пользователя...');
-        const { error: insertError } = await supabaseClient
-          .from('users')
-          .insert([{ telegram_id: userId, points: amount }]);
-        
-        if (insertError) {
-          console.error('Ошибка при создании пользователя:', insertError);
-          throw insertError;
-        }
-        console.log('Новый пользователь успешно создан');
-      }
+      console.log('Пользователь успешно обновлен');
     } else {
-      console.log('RPC функция выполнена успешно:', rpcData);
+      // Создаем нового пользователя
+      console.log('Создаем нового пользователя...');
+      const { error: insertError } = await supabaseClient
+        .from('users')
+        .insert([{ telegram_id: userId, points: amount }]);
+      
+      if (insertError) {
+        console.error('Ошибка при создании пользователя:', insertError);
+        throw insertError;
+      }
+      console.log('Новый пользователь успешно создан');
     }
     
     // Обновляем кэш
