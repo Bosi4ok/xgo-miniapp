@@ -146,10 +146,16 @@ async function getTelegramUserName() {
   try {
     console.log('Начало получения имени пользователя из Telegram...');
     
+    // Проверяем, есть ли сохраненное имя пользователя в localStorage
+    const savedName = localStorage.getItem('telegram_user_name');
+    if (savedName) {
+      console.log('Найдено имя пользователя в localStorage:', savedName);
+      return savedName;
+    }
+    
     // Проверяем доступность глобального объекта TelegramUserData
     console.log('window.TelegramUserData доступен:', !!window.TelegramUserData);
     console.log('window.TelegramUserData.isLoaded:', window.TelegramUserData?.isLoaded);
-    console.log('Полный объект TelegramUserData:', window.TelegramUserData);
     
     // Проверяем, есть ли данные в глобальном объекте TelegramUserData
     if (window.TelegramUserData && window.TelegramUserData.isLoaded) {
@@ -158,15 +164,9 @@ async function getTelegramUserName() {
       if (window.TelegramUserData.first_name) {
         const fullName = `${window.TelegramUserData.first_name}${window.TelegramUserData.last_name ? ' ' + window.TelegramUserData.last_name : ''}`;
         console.log('Получено имя пользователя из TelegramUserData:', fullName);
+        localStorage.setItem('telegram_user_name', fullName);
         return fullName;
       }
-    }
-    
-    // Проверяем, есть ли сохраненное имя пользователя в localStorage
-    const savedName = localStorage.getItem('telegram_user_name');
-    if (savedName) {
-      console.log('Найдено имя пользователя в localStorage:', savedName);
-      return savedName;
     }
     
     // Пытаемся получить имя из Telegram WebApp напрямую
@@ -183,12 +183,46 @@ async function getTelegramUserName() {
       }
     }
     
-    // Если не удалось получить имя, возвращаем значение по умолчанию
-    console.log('Не удалось получить имя пользователя, возвращаем значение по умолчанию');
-    return 'Player';
+    // Если не удалось получить имя из Telegram, пытаемся получить ID и создать имя на его основе
+    const telegramId = await getTelegramUserId();
+    if (telegramId) {
+      // Получаем пользователя из базы данных
+      const user = await getUser(telegramId);
+      if (user && user.username) {
+        console.log('Получено имя пользователя из базы данных:', user.username);
+        localStorage.setItem('telegram_user_name', user.username);
+        return user.username;
+      }
+      
+      // Создаем уникальное имя на основе ID
+      const generatedName = 'User_' + telegramId.substring(0, 4);
+      console.log('Сгенерировано имя пользователя на основе ID:', generatedName);
+      
+      // Сохраняем сгенерированное имя в localStorage и базе данных
+      localStorage.setItem('telegram_user_name', generatedName);
+      try {
+        await updateUser(telegramId, { username: generatedName });
+        console.log('Сгенерированное имя сохранено в базе данных');
+      } catch (dbError) {
+        console.error('Ошибка при сохранении имени в базе данных:', dbError);
+      }
+      
+      return generatedName;
+    }
+    
+    // Если все методы не сработали, генерируем случайное имя
+    const randomName = 'User_' + Math.floor(Math.random() * 10000).toString();
+    console.log('Сгенерировано случайное имя пользователя:', randomName);
+    localStorage.setItem('telegram_user_name', randomName);
+    return randomName;
   } catch (error) {
     console.error('Ошибка при получении имени пользователя:', error);
-    return 'Player';
+    
+    // В случае ошибки генерируем случайное имя
+    const fallbackName = 'User_' + Math.floor(Math.random() * 10000).toString();
+    console.log('Сгенерировано запасное имя пользователя:', fallbackName);
+    localStorage.setItem('telegram_user_name', fallbackName);
+    return fallbackName;
   }
 }
 
@@ -532,84 +566,38 @@ async function updateProfileModal() {
       return;
     }
     
-    // Проверяем, есть ли имя в localStorage
-    let userName = localStorage.getItem('telegram_user_name');
-    console.log('Имя пользователя из localStorage:', userName);
+    // Получаем ID пользователя
+    const telegramId = await getTelegramUserId();
+    console.log('Telegram ID для профиля:', telegramId);
     
-    // Если имя найдено в localStorage, используем его
-    if (userName) {
-      userNameModalElement.textContent = userName;
-      console.log('Имя пользователя установлено из localStorage:', userName);
-      return;
-    }
+    // Получаем имя пользователя с помощью обновленной функции
+    const userName = await getTelegramUserName();
+    console.log('Получено имя пользователя для профиля:', userName);
     
-    // Если имя не найдено в localStorage, пытаемся получить его из базы данных
-    try {
-      // Получаем ID пользователя
-      const telegramId = await getTelegramUserId();
-      console.log('Telegram ID для профиля:', telegramId);
-      
-      // Получаем данные пользователя из базы данных
-      const user = await getUser(telegramId);
-      console.log('Данные пользователя для профиля:', user);
-      
-      if (user && user.username) {
-        userName = user.username;
-        console.log('Найдено имя пользователя в базе данных:', userName);
-        
-        // Обновляем имя пользователя в UI
-        userNameModalElement.textContent = userName;
-        console.log('Имя пользователя обновлено в модальном окне:', userName);
-        
-        // Сохраняем имя в localStorage для будущих сессий
-        localStorage.setItem('telegram_user_name', userName);
-        return;
-      }
-    } catch (error) {
-      console.error('Ошибка при получении данных пользователя:', error);
-    }
-    
-    // Если имя не найдено ни в localStorage, ни в базе данных, устанавливаем имя по умолчанию
-    userName = 'Артём';
-    console.log('Устанавливаем имя пользователя по умолчанию:', userName);
-    
-    // Обновляем имя пользователя в UI
+    // Обновляем имя пользователя в модальном окне
     userNameModalElement.textContent = userName;
     console.log('Имя пользователя обновлено в модальном окне:', userName);
     
-    // Сохраняем имя в localStorage для будущих сессий
-    localStorage.setItem('telegram_user_name', userName);
-    
-    // Пытаемся сохранить имя в базе данных
-    try {
-      const telegramId = await getTelegramUserId();
-      if (telegramId) {
-        await updateUser(telegramId, { username: userName });
-        console.log('Имя пользователя сохранено в базе данных:', userName);
-      }
-    } catch (error) {
-      console.error('Ошибка при сохранении имени пользователя в базе данных:', error);
-    }
+    // Получаем данные пользователя из базы данных
+    const user = await getUser(telegramId);
+    console.log('Данные пользователя для профиля:', user);
     
     // Получаем количество рефералов
     const referralsCount = await getReferralsCount(telegramId);
     console.log('Количество рефералов:', referralsCount);
     
-    // Получаем элементы UI
-    const userNameModal = document.getElementById('user-name-modal');
-    const totalXpModal = document.getElementById('total-xp-modal');
+    // Обновляем количество рефералов в модальном окне
     const referralsCountModal = document.getElementById('referrals-count-modal');
-    
-    // Обновляем UI
-    // Обновляем имя пользователя с помощью функции updateUserNameInUI
-    updateUserNameInUI(userName || user.username || 'Player');
-    
-    if (totalXpModal) {
-      totalXpModal.textContent = (user.points || 0).toString();
-    }
-    
     if (referralsCountModal) {
       referralsCountModal.textContent = referralsCount.toString();
+      console.log('Количество рефералов обновлено в модальном окне:', referralsCount);
+    }
+    
+    // Обновляем XP в модальном окне
+    const totalXpModal = document.getElementById('total-xp-modal');
+    if (totalXpModal && user) {
+      totalXpModal.textContent = (user.points || 0).toString();
+      console.log('XP обновлено в модальном окне:', user.points || 0);
     }
     
     // Сохраняем данные пользователя в глобальную переменную для быстрого доступа
@@ -619,7 +607,19 @@ async function updateProfileModal() {
   } catch (error) {
     console.error('Ошибка при обновлении профиля:', error);
     
-    // В случае ошибки показываем сообщение об ошибке
+    // В случае ошибки пытаемся хотя бы отобразить имя пользователя из localStorage
+    try {
+      const savedName = localStorage.getItem('telegram_user_name');
+      if (savedName) {
+        const userNameModalElement = document.getElementById('user-name-modal');
+        if (userNameModalElement) {
+          userNameModalElement.textContent = savedName;
+          console.log('Имя пользователя установлено из localStorage (в случае ошибки):', savedName);
+        }
+      }
+    } catch (localStorageError) {
+      console.error('Ошибка при получении имени из localStorage:', localStorageError);
+    }
     const userNameModal = document.getElementById('user-name-modal');
     if (userNameModal) {
       userNameModal.textContent = 'Error loading profile';
@@ -744,26 +744,17 @@ async function initializeApp() {
     // Генерируем реферальный код, если не существует
     await generateReferralCode();
     
-    // Используем имя пользователя из базы данных, если оно есть
-    let userName = null;
+    // Получаем имя пользователя с помощью обновленной функции getTelegramUserName
+    const userName = await getTelegramUserName();
+    console.log('Получено имя пользователя для основного интерфейса:', userName);
     
-    if (user && user.username) {
-      userName = user.username;
-      console.log('Используем имя пользователя из базы данных:', userName);
-      
-      // Сохраняем имя в localStorage для будущих сессий
-      localStorage.setItem('telegram_user_name', userName);
-    } else {
-      // Если имя не найдено в базе данных, создаем имя по умолчанию
-      userName = 'Player_' + telegramId.substring(0, 4);
-      console.log('Создаем имя пользователя по умолчанию:', userName);
-      
-      // Сохраняем имя в базе данных
+    // Сохраняем имя в localStorage для будущих сессий
+    localStorage.setItem('telegram_user_name', userName);
+    
+    // Обновляем имя пользователя в базе данных, если оно отличается
+    if (user && user.username !== userName) {
+      console.log('Обновляем имя пользователя в базе данных:', userName);
       await updateUser(telegramId, { username: userName });
-      console.log('Имя пользователя сохранено в базе данных:', userName);
-      
-      // Сохраняем имя в localStorage для будущих сессий
-      localStorage.setItem('telegram_user_name', userName);
     }
     
     // Обновляем UI с данными из базы
