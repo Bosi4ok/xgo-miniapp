@@ -1997,40 +1997,100 @@
     }
     
     // Function to claim daily reward
-    function claimDailyReward() {
-      const button = document.getElementById('checkin-button');
-      const streakElement = document.getElementById('checkin-streak');
-      const xpAmount = document.getElementById('xp-amount');
-      
-      // Get current streak or initialize to 0
-      let currentStreak = parseInt(localStorage.getItem('streak') || '0');
-      let totalXp = parseInt(localStorage.getItem('totalXp') || '0');
-      
-      // Increase streak and XP
-      currentStreak += 1;
-      totalXp += 10;
-      
-      // Update localStorage
-      localStorage.setItem('streak', currentStreak.toString());
-      localStorage.setItem('totalXp', totalXp.toString());
-      
-      // Update UI
-      if (streakElement) {
-        streakElement.textContent = currentStreak.toString();
+    async function claimDailyReward() {
+      try {
+        const button = document.getElementById('checkin-button');
+        const streakElement = document.getElementById('checkin-streak');
+        const xpAmount = document.getElementById('xp-amount');
+        
+        // Получаем ID пользователя Telegram
+        let telegramId = '';
+        try {
+          if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+            telegramId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
+            console.log('Получен Telegram ID для чекина:', telegramId);
+          }
+        } catch (error) {
+          console.error('Ошибка при получении Telegram ID:', error);
+        }
+        
+        // Если ID получен, используем его для хранения данных
+        if (telegramId) {
+          // Вызываем функцию из app-ui.js для обработки чекина в базе данных
+          if (typeof window.claimDailyRewardInDb === 'function') {
+            await window.claimDailyRewardInDb();
+            console.log('Чекин обработан через базу данных');
+            
+            // Disable button after claiming
+            if (button) {
+              button.disabled = true;
+              button.textContent = 'CLAIMED';
+            }
+            
+            return; // Выходим из функции, так как чекин уже обработан
+          }
+          
+          // Если функция из app-ui.js недоступна, используем локальную логику с ID пользователя
+          // Get current streak or initialize to 0
+          let currentStreak = parseInt(localStorage.getItem('user_streak_' + telegramId) || '0');
+          let totalXp = parseInt(localStorage.getItem('user_points_' + telegramId) || '0');
+          
+          // Increase streak and XP
+          currentStreak += 1;
+          totalXp += 10;
+          
+          // Update localStorage with user ID
+          localStorage.setItem('user_streak_' + telegramId, currentStreak.toString());
+          localStorage.setItem('user_points_' + telegramId, totalXp.toString());
+          
+          // Also update old keys for backward compatibility
+          localStorage.setItem('streak', currentStreak.toString());
+          localStorage.setItem('totalXp', totalXp.toString());
+          
+          console.log('Данные чекина сохранены в localStorage по ID:', telegramId);
+        } else {
+          // Если ID не получен, используем старую логику
+          // Get current streak or initialize to 0
+          let currentStreak = parseInt(localStorage.getItem('streak') || '0');
+          let totalXp = parseInt(localStorage.getItem('totalXp') || '0');
+          
+          // Increase streak and XP
+          currentStreak += 1;
+          totalXp += 10;
+          
+          // Update localStorage
+          localStorage.setItem('streak', currentStreak.toString());
+          localStorage.setItem('totalXp', totalXp.toString());
+          
+          console.log('Данные чекина сохранены в общем localStorage');
+        }
+        
+        // Update UI
+        if (streakElement) {
+          const streak = telegramId ? 
+            localStorage.getItem('user_streak_' + telegramId) || '0' : 
+            localStorage.getItem('streak') || '0';
+          streakElement.textContent = streak;
+        }
+        
+        if (xpAmount) {
+          const xp = telegramId ? 
+            localStorage.getItem('user_points_' + telegramId) || '0' : 
+            localStorage.getItem('totalXp') || '0';
+          xpAmount.textContent = xp;
+        }
+        
+        // Disable button after claiming
+        if (button) {
+          button.disabled = true;
+          button.textContent = 'CLAIMED';
+        }
+        
+        // Update profile data
+        updateProfileModal();
+      } catch (error) {
+        console.error('Ошибка при получении ежедневной награды:', error);
       }
-      
-      if (xpAmount) {
-        xpAmount.textContent = totalXp.toString();
-      }
-      
-      // Disable button after claiming
-      if (button) {
-        button.disabled = true;
-        button.textContent = 'CLAIMED';
-      }
-      
-      // Update profile data
-      updateProfileModal();
     }
     
     // Function to update data in the profile modal window

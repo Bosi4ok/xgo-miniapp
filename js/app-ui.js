@@ -567,6 +567,10 @@ async function claimDailyReward() {
       last_checkin: new Date().toISOString()
     });
     
+    // Получаем обновленные данные пользователя из базы данных
+    const updatedUser = await getUser(telegramId);
+    console.log('Обновленные данные пользователя после чекина:', updatedUser);
+    
     // Обновляем UI
     const streakElement = document.getElementById('streak-count');
     const xpElement = document.getElementById('xp-amount');
@@ -577,7 +581,14 @@ async function claimDailyReward() {
     }
     
     if (xpElement) {
-      xpElement.textContent = (user.points + xpEarned).toString();
+      // Используем значение из базы данных
+      xpElement.textContent = (updatedUser.points || 0).toString();
+      
+      // Сохраняем значение в localStorage с использованием ID пользователя
+      localStorage.setItem('user_points_' + telegramId, (updatedUser.points || 0).toString());
+      
+      // Также обновляем старый ключ для обратной совместимости
+      localStorage.setItem('totalXp', (updatedUser.points || 0).toString());
     }
     
     if (checkinStreakElement) {
@@ -702,12 +713,22 @@ async function updateProfileModal() {
       console.log('Количество рефералов обновлено в модальном окне:', referralsCount);
     }
     
-    // Обновляем XP в модальном окне
+    // Получаем элемент с количеством XP в модальном окне
     const totalXpModal = document.getElementById('total-xp-modal');
     if (totalXpModal && user) {
-      totalXpModal.textContent = (user.points || 0).toString();
-      console.log('XP обновлено в модальном окне:', user.points || 0);
+      const userPoints = user.points || 0;
+      totalXpModal.textContent = userPoints.toString();
+      
+      // Сохраняем значение в localStorage с использованием ID пользователя
+      if (telegramId) {
+        localStorage.setItem('user_points_' + telegramId, userPoints.toString());
+        
+        // Также обновляем старый ключ для обратной совместимости
+        localStorage.setItem('totalXp', userPoints.toString());
+        console.log('Обновлены значения XP в localStorage по ID:', telegramId, userPoints);
+      }
     }
+    console.log('XP обновлено в модальном окне:', user.points || 0);
     
     // Сохраняем данные пользователя в глобальную переменную для быстрого доступа
     currentUser = user;
@@ -867,8 +888,18 @@ async function initializeApp() {
       console.log('Имя пользователя обновлено в модальном окне:', userName);
     }
     
+    // Обновляем XP в интерфейсе и синхронизируем с localStorage
     if (totalXp) {
-      totalXp.textContent = (user.points || 0).toString();
+      const userPoints = user.points || 0;
+      totalXp.textContent = userPoints.toString();
+      console.log('XP обновлено в основном интерфейсе:', userPoints);
+      
+      // Сохраняем значение в localStorage с использованием ID пользователя
+      localStorage.setItem('user_points_' + telegramId, userPoints.toString());
+      
+      // Также обновляем старый ключ для обратной совместимости
+      localStorage.setItem('totalXp', userPoints.toString());
+      console.log('Обновлены значения XP в localStorage по ID:', telegramId, userPoints);
     }
     
     // Обновляем модальное окно профиля
@@ -1051,6 +1082,92 @@ function homeButtonClick() {
   }
 }
 
+// Функция для получения ежедневной награды, доступная из HTML
+window.claimDailyRewardInDb = async function() {
+  try {
+    // Получаем ID пользователя
+    const telegramId = await getTelegramUserId();
+    if (!telegramId) {
+      console.error('Не удалось получить Telegram ID для чекина');
+      return false;
+    }
+    
+    // Получаем данные пользователя из базы данных
+    const user = await getUser(telegramId);
+    
+    // Получаем дату последнего чекина
+    const lastCheckin = user.last_checkin;
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+    
+    // Проверяем, был ли уже чекин сегодня
+    if (lastCheckin && new Date(lastCheckin) >= new Date(todayStart)) {
+      // Если уже был чекин сегодня, показываем сообщение
+      showNotification('You have already claimed your daily reward today!', 'error');
+      return false;
+    }
+    
+    // Рассчитываем награду
+    let currentStreak = (user.current_streak || 0) + 1;
+    const xpEarned = 10 * currentStreak; // XP зависит от длины стрика
+    
+    // Создаем запись о чекине в базе данных
+    await createCheckin(telegramId, currentStreak, xpEarned);
+    
+    // Увеличиваем XP пользователя
+    await incrementXP(telegramId, xpEarned);
+    
+    // Обновляем данные пользователя
+    await updateUser(telegramId, {
+      current_streak: currentStreak,
+      max_streak: Math.max(currentStreak, user.max_streak || 0),
+      last_checkin: new Date().toISOString()
+    });
+    
+    // Получаем обновленные данные пользователя из базы данных
+    const updatedUser = await getUser(telegramId);
+    console.log('Обновленные данные пользователя после чекина:', updatedUser);
+    
+    // Обновляем UI
+    const streakElement = document.getElementById('streak-count');
+    const xpElement = document.getElementById('xp-amount');
+    const checkinStreakElement = document.getElementById('checkin-streak');
+    
+    if (streakElement) {
+      streakElement.textContent = currentStreak.toString();
+    }
+    
+    if (xpElement) {
+      // Используем значение из базы данных
+      xpElement.textContent = (updatedUser.points || 0).toString();
+      
+      // Сохраняем значение в localStorage с использованием ID пользователя
+      localStorage.setItem('user_points_' + telegramId, (updatedUser.points || 0).toString());
+      localStorage.setItem('user_streak_' + telegramId, currentStreak.toString());
+      
+      // Также обновляем старый ключ для обратной совместимости
+      localStorage.setItem('totalXp', (updatedUser.points || 0).toString());
+      localStorage.setItem('streak', currentStreak.toString());
+    }
+    
+    if (checkinStreakElement) {
+      checkinStreakElement.textContent = currentStreak.toString();
+    }
+    
+    // Обновляем кнопку чекина
+    await updateCheckinButton();
+    
+    // Показываем уведомление об успешном чекине
+    showNotification(`Daily reward claimed! +${xpEarned} XP, Streak: ${currentStreak}`, 'success');
+    
+    return true;
+  } catch (error) {
+    console.error('Ошибка при получении ежедневной награды:', error);
+    showNotification('Error claiming daily reward. Please try again later.', 'error');
+    return false;
+  }
+};
+
 // Экспортируем функции в глобальную область видимости
 window.switchScreen = switchScreen;
 window.activateNavItem = activateNavItem;
@@ -1061,3 +1178,4 @@ window.handleCopy = handleCopy;
 window.claimDailyReward = claimDailyReward;
 window.updateProfileModal = updateProfileModal;
 window.homeButtonClick = homeButtonClick;
+window.claimDailyRewardInDb = claimDailyRewardInDb;

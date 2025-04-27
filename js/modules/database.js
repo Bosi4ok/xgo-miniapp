@@ -212,6 +212,31 @@ async function incrementXP(userId, amount) {
       cachedUser.points = (cachedUser.points || 0) + amount;
       userCache.set(userId, cachedUser);
     }
+    
+    // Обновляем localStorage для синхронизации между устройствами
+    try {
+      // Получаем текущее значение XP из базы данных
+      const { data, error } = await withTimeout(
+        supabaseClient
+          .from('users')
+          .select('points')
+          .eq('telegram_id', userId)
+          .single()
+      );
+      
+      if (!error && data) {
+        const totalXp = data.points || 0;
+        console.log('Обновление totalXp в localStorage по ID:', userId, totalXp);
+        
+        // Сохраняем значение в localStorage с использованием ID пользователя
+        localStorage.setItem('user_points_' + userId, totalXp.toString());
+        
+        // Также обновляем старый ключ для обратной совместимости
+        localStorage.setItem('totalXp', totalXp.toString());
+      }
+    } catch (localStorageError) {
+      console.error('Ошибка при обновлении localStorage:', localStorageError);
+    }
   } catch (error) {
     console.error('Ошибка при начислении XP:', error);
     throw error;
