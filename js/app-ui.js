@@ -1,5 +1,5 @@
 // app-ui.js - Единый файл для управления UI приложения
-import { getUser, updateUser, incrementXP, getReferralCode, createCheckin, getLastCheckin } from './modules/database.js';
+import { getUser, updateUser, incrementXP, getReferralCode, createCheckin, getLastCheckin, getReferralsCount } from './modules/database.js';
 
 // Глобальная переменная для хранения данных текущего пользователя
 let currentUser = null;
@@ -29,11 +29,18 @@ async function getTelegramUserId() {
         console.log('Не удалось вывести initDataUnsafe:', e.message);
       }
       
-      // Пытаемся получить ID пользователя из Telegram Web App API
+      // Пытаемся получить данные пользователя из Telegram Web App API
       const user = window.Telegram.WebApp.initDataUnsafe?.user;
       if (user && user.id) {
         const telegramId = user.id.toString();
         console.log('Получен Telegram ID из WebApp:', telegramId);
+        
+        // Сохраняем имя пользователя, если оно есть
+        if (user.first_name) {
+          const userName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
+          console.log('Получено имя пользователя из Telegram:', userName);
+          localStorage.setItem('telegram_user_name', userName);
+        }
         
         // Сравниваем с сохраненным ID для выявления несоответствий
         // Это помогает обнаружить проблемы с синхронизацией между устройствами
@@ -78,6 +85,35 @@ async function getTelegramUserId() {
     const FIXED_TEST_ID = '12345678';
     localStorage.setItem('telegram_user_id', FIXED_TEST_ID);
     return FIXED_TEST_ID;
+  }
+}
+
+// Функция для получения имени пользователя из Telegram
+async function getTelegramUserName() {
+  try {
+    // Проверяем, есть ли имя в localStorage
+    const savedName = localStorage.getItem('telegram_user_name');
+    if (savedName) {
+      console.log('Найдено имя пользователя в localStorage:', savedName);
+      return savedName;
+    }
+    
+    // Пытаемся получить имя из Telegram WebApp
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+      const user = window.Telegram.WebApp.initDataUnsafe.user;
+      if (user.first_name) {
+        const userName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
+        console.log('Получено имя пользователя из Telegram:', userName);
+        localStorage.setItem('telegram_user_name', userName);
+        return userName;
+      }
+    }
+    
+    // Если не удалось получить имя, возвращаем значение по умолчанию
+    return 'Игрок';
+  } catch (error) {
+    console.error('Ошибка при получении имени пользователя:', error);
+    return 'Игрок';
   }
 }
 
@@ -388,6 +424,10 @@ async function updateProfileModal() {
     const telegramId = await getTelegramUserId();
     console.log('Telegram ID для профиля:', telegramId);
     
+    // Получаем реальное имя пользователя из Telegram
+    const userName = await getTelegramUserName();
+    console.log('Имя пользователя для профиля:', userName);
+    
     // Получаем данные пользователя из базы данных
     const user = await getUser(telegramId);
     console.log('Данные пользователя для профиля:', user);
@@ -403,7 +443,7 @@ async function updateProfileModal() {
     
     // Обновляем UI
     if (userNameModal) {
-      userNameModal.textContent = user.username || 'Player';
+      userNameModal.textContent = userName || user.username || 'Player';
     }
     
     if (totalXpModal) {
@@ -546,14 +586,18 @@ async function initializeApp() {
     // Генерируем реферальный код, если не существует
     await generateReferralCode();
     
+    // Получаем реальное имя пользователя из Telegram
+    const userName = await getTelegramUserName();
+    console.log('Имя пользователя для главного интерфейса:', userName);
+    
     // Обновляем UI с данными из базы
-    const userName = document.getElementById('user-name');
+    const userNameElement = document.getElementById('user-name');
     const totalXp = document.getElementById('xp-amount');
     const streakCount = document.getElementById('streak-count');
     const checkinStreak = document.getElementById('checkin-streak');
     
-    if (userName) {
-      userName.textContent = user.username || 'Player';
+    if (userNameElement) {
+      userNameElement.textContent = userName || user.username || 'Player';
     }
     
     if (totalXp) {
