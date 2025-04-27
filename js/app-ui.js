@@ -18,6 +18,27 @@ async function getTelegramUserId() {
       console.log('Найден сохраненный Telegram ID в localStorage:', savedId);
     }
     
+    // Проверяем глобальный объект TelegramUserData
+    if (window.TelegramUserData && window.TelegramUserData.isLoaded && window.TelegramUserData.id) {
+      const telegramId = window.TelegramUserData.id.toString();
+      console.log('Получен Telegram ID из глобального объекта TelegramUserData:', telegramId);
+      
+      // Сохраняем ID в localStorage
+      localStorage.setItem('telegram_user_id', telegramId);
+      
+      // Если есть имя пользователя, сохраняем его
+      if (window.TelegramUserData.first_name) {
+        const fullName = `${window.TelegramUserData.first_name}${window.TelegramUserData.last_name ? ' ' + window.TelegramUserData.last_name : ''}`;
+        console.log('Получено имя пользователя из TelegramUserData:', fullName);
+        localStorage.setItem('telegram_user_name', fullName);
+        
+        // Обновляем имя пользователя в UI
+        updateUserNameInUI(fullName);
+      }
+      
+      return telegramId;
+    }
+    
     // Пытаемся получить ID из Telegram WebApp - самый надежный источник
     if (window.Telegram && window.Telegram.WebApp) {
       console.log('Telegram WebApp доступен');
@@ -40,6 +61,12 @@ async function getTelegramUserId() {
           const userName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
           console.log('Получено имя пользователя из Telegram:', userName);
           localStorage.setItem('telegram_user_name', userName);
+          
+          // Обновляем имя пользователя в UI
+          updateUserNameInUI(userName);
+          
+          // Обновляем имя пользователя в базе данных
+          updateUser(telegramId, { username: userName });
         }
         
         // Сравниваем с сохраненным ID для выявления несоответствий
@@ -85,6 +112,32 @@ async function getTelegramUserId() {
     const FIXED_TEST_ID = '12345678';
     localStorage.setItem('telegram_user_id', FIXED_TEST_ID);
     return FIXED_TEST_ID;
+  }
+}
+
+// Функция для обновления имени пользователя во всех местах интерфейса
+function updateUserNameInUI(userName) {
+  try {
+    console.log('Обновление имени пользователя в UI:', userName);
+    
+    // Обновляем имя в модальном окне профиля
+    const userNameModal = document.getElementById('user-name-modal');
+    if (userNameModal) {
+      userNameModal.textContent = userName;
+      console.log('Имя пользователя обновлено в модальном окне');
+    }
+    
+    // Обновляем имя в основном интерфейсе
+    const userNameElement = document.getElementById('user-name');
+    if (userNameElement) {
+      userNameElement.textContent = userName;
+      console.log('Имя пользователя обновлено в основном интерфейсе');
+    }
+    
+    // Сохраняем имя в localStorage для будущих сессий
+    localStorage.setItem('telegram_user_name', userName);
+  } catch (error) {
+    console.error('Ошибка при обновлении имени пользователя в UI:', error);
   }
 }
 
@@ -473,9 +526,8 @@ async function updateProfileModal() {
     const referralsCountModal = document.getElementById('referrals-count-modal');
     
     // Обновляем UI
-    if (userNameModal) {
-      userNameModal.textContent = userName || user.username || 'Player';
-    }
+    // Обновляем имя пользователя с помощью функции updateUserNameInUI
+    updateUserNameInUI(userName || user.username || 'Player');
     
     if (totalXpModal) {
       totalXpModal.textContent = (user.points || 0).toString();
@@ -631,14 +683,12 @@ async function initializeApp() {
     }
     
     // Обновляем UI с данными из базы
-    const userNameElement = document.getElementById('user-name');
     const totalXp = document.getElementById('xp-amount');
     const streakCount = document.getElementById('streak-count');
     const checkinStreak = document.getElementById('checkin-streak');
     
-    if (userNameElement) {
-      userNameElement.textContent = userName || user.username || 'Player';
-    }
+    // Обновляем имя пользователя с помощью функции updateUserNameInUI
+    updateUserNameInUI(userName || user.username || 'Player');
     
     if (totalXp) {
       totalXp.textContent = (user.points || 0).toString();
@@ -690,6 +740,26 @@ async function initializeTelegramWebApp() {
         const user = window.Telegram.WebApp.initDataUnsafe?.user;
         if (user) {
           console.log('Пользователь Telegram:', user.id, user.username || 'без имени');
+          
+          // Сохраняем имя пользователя в localStorage
+          if (user.first_name) {
+            const fullName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
+            localStorage.setItem('telegram_user_name', fullName);
+            console.log('Имя пользователя сохранено в localStorage:', fullName);
+            
+            // Обновляем имя пользователя в UI
+            const userNameModal = document.getElementById('user-name-modal');
+            if (userNameModal) {
+              userNameModal.textContent = fullName;
+              console.log('Имя пользователя обновлено в модальном окне:', fullName);
+            }
+            
+            const userNameElement = document.getElementById('user-name');
+            if (userNameElement) {
+              userNameElement.textContent = fullName;
+              console.log('Имя пользователя обновлено в основном интерфейсе:', fullName);
+            }
+          }
         } else {
           console.warn('Данные пользователя Telegram не найдены');
         }
