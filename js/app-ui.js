@@ -5,36 +5,79 @@ import { getUser, updateUser, incrementXP, getReferralCode, createCheckin, getLa
 let currentUser = null;
 
 // Функция для получения Telegram ID пользователя
+// Улучшенная версия с поддержкой синхронизации между устройствами
+// Приоритет получения ID: 1) Telegram WebApp, 2) localStorage, 3) фиксированный ID
 async function getTelegramUserId() {
   try {
-    // Для отладки: выводим все данные Telegram WebApp
+    console.log('Начало получения Telegram ID...');
+    
+    // Сначала проверяем, сохранен ли ID в localStorage
+    // Это позволяет сохранять консистентность между сессиями
+    const savedId = localStorage.getItem('telegram_user_id');
+    if (savedId) {
+      console.log('Найден сохраненный Telegram ID в localStorage:', savedId);
+    }
+    
+    // Пытаемся получить ID из Telegram WebApp - самый надежный источник
     if (window.Telegram && window.Telegram.WebApp) {
       console.log('Telegram WebApp доступен');
-      console.log('initData:', window.Telegram.WebApp.initData);
-      console.log('initDataUnsafe:', JSON.stringify(window.Telegram.WebApp.initDataUnsafe));
+      
+      try {
+        // Логируем данные для отладки
+        console.log('initDataUnsafe:', JSON.stringify(window.Telegram.WebApp.initDataUnsafe));
+      } catch (e) {
+        console.log('Не удалось вывести initDataUnsafe:', e.message);
+      }
       
       // Пытаемся получить ID пользователя из Telegram Web App API
       const user = window.Telegram.WebApp.initDataUnsafe?.user;
       if (user && user.id) {
-        console.log('Получен Telegram ID:', user.id);
-        // Сохраняем ID в localStorage для использования на других устройствах
-        localStorage.setItem('telegram_user_id', user.id.toString());
-        return user.id.toString();
+        const telegramId = user.id.toString();
+        console.log('Получен Telegram ID из WebApp:', telegramId);
+        
+        // Сравниваем с сохраненным ID для выявления несоответствий
+        // Это помогает обнаружить проблемы с синхронизацией между устройствами
+        if (savedId && savedId !== telegramId) {
+          console.warn('Обнаружено несоответствие ID! Сохраненный:', savedId, 'Текущий:', telegramId);
+        }
+        
+        // Сохраняем ID в localStorage для использования в будущих сессиях
+        localStorage.setItem('telegram_user_id', telegramId);
+        return telegramId;
+      } else {
+        console.warn('Не удалось получить ID пользователя из Telegram WebApp');
       }
     } else {
       console.warn('Telegram WebApp недоступен');
     }
     
-    // Используем фиксированный ID для тестирования
-    // Это гарантирует, что все устройства будут использовать один и тот же ID
+    // Если ID был сохранен ранее, используем его как запасной вариант
+    // Это обеспечивает консистентность между сессиями, даже если Telegram WebApp недоступен
+    if (savedId) {
+      console.log('Используем сохраненный Telegram ID:', savedId);
+      return savedId;
+    }
+    
+    // В крайнем случае используем фиксированный ID для тестирования
+    // Это нужно только для отладки и тестирования
     const FIXED_TEST_ID = '12345678';
     console.log('Используем фиксированный ID для тестирования:', FIXED_TEST_ID);
+    localStorage.setItem('telegram_user_id', FIXED_TEST_ID);
     return FIXED_TEST_ID;
   } catch (error) {
     console.error('Ошибка при получении Telegram ID:', error);
     
-    // В случае ошибки возвращаем фиксированный ID
-    return '12345678';
+    // Проверяем, есть ли сохраненный ID в случае ошибки
+    const savedId = localStorage.getItem('telegram_user_id');
+    if (savedId) {
+      console.log('Используем сохраненный Telegram ID после ошибки:', savedId);
+      return savedId;
+    }
+    
+    // В случае ошибки возвращаем фиксированный ID как последнее средство
+    const FIXED_TEST_ID = '12345678';
+    localStorage.setItem('telegram_user_id', FIXED_TEST_ID);
+    return FIXED_TEST_ID;
   }
 }
 
@@ -339,25 +382,40 @@ async function claimDailyReward() {
 // Функция для обновления данных в модальном окне профиля
 async function updateProfileModal() {
   try {
+    console.log('Обновление модального окна профиля...');
+    
     // Получаем ID пользователя
     const telegramId = await getTelegramUserId();
+    console.log('Telegram ID для профиля:', telegramId);
     
     // Получаем данные пользователя из базы данных
     const user = await getUser(telegramId);
+    console.log('Данные пользователя для профиля:', user);
     
     // Получаем реферальный код
     const referralCode = await getReferralCode(telegramId);
     
     // Получаем элементы UI
     const userNameModal = document.getElementById('user-name-modal');
+    const userIdModal = document.getElementById('user-id-modal');
+    const telegramIdModal = document.getElementById('telegram-id-modal');
     const totalXpModal = document.getElementById('total-xp-modal');
     const currentStreakModal = document.getElementById('current-streak-modal');
     const maxStreakModal = document.getElementById('max-streak-modal');
+    const lastCheckinModal = document.getElementById('last-checkin-modal');
     const referralCodeElement = document.getElementById('profile-referral-code');
     
     // Обновляем UI
     if (userNameModal) {
       userNameModal.textContent = user.username || 'Player';
+    }
+    
+    if (userIdModal) {
+      userIdModal.textContent = user.id || 'Unknown';
+    }
+    
+    if (telegramIdModal) {
+      telegramIdModal.textContent = user.telegram_id || 'Unknown';
     }
     
     if (totalXpModal) {
@@ -372,14 +430,32 @@ async function updateProfileModal() {
       maxStreakModal.textContent = (user.max_streak || 0).toString();
     }
     
+    if (lastCheckinModal) {
+      if (user.last_checkin) {
+        // Форматируем дату последнего чекина
+        const date = new Date(user.last_checkin);
+        lastCheckinModal.textContent = date.toLocaleString();
+      } else {
+        lastCheckinModal.textContent = 'Never';
+      }
+    }
+    
     if (referralCodeElement) {
       referralCodeElement.textContent = referralCode || 'NONE';
     }
     
     // Сохраняем данные пользователя в глобальную переменную для быстрого доступа
     currentUser = user;
+    
+    console.log('Модальное окно профиля успешно обновлено');
   } catch (error) {
     console.error('Ошибка при обновлении профиля:', error);
+    
+    // В случае ошибки показываем сообщение об ошибке
+    const userNameModal = document.getElementById('user-name-modal');
+    if (userNameModal) {
+      userNameModal.textContent = 'Error loading profile';
+    }
   }
 }
 
@@ -400,6 +476,59 @@ function handleCopy(text) {
     });
 }
 
+// Функция для сброса данных пользователя
+async function resetUserData() {
+  try {
+    console.log('Сброс данных пользователя...');
+    
+    // Удаляем сохраненный Telegram ID из localStorage
+    localStorage.removeItem('telegram_user_id');
+    console.log('Удален Telegram ID из localStorage');
+    
+    // Показываем уведомление
+    showNotification('User data reset successfully. Reloading...', 'success');
+    
+    // Перезагружаем страницу через 2 секунды
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+  } catch (error) {
+    console.error('Ошибка при сбросе данных пользователя:', error);
+    showNotification('Error resetting user data. Please try again.', 'error');
+  }
+}
+
+// Функция для обновления данных пользователя
+async function refreshUserData() {
+  try {
+    console.log('Обновление данных пользователя...');
+    
+    // Получаем текущий Telegram ID
+    const telegramId = await getTelegramUserId();
+    console.log('Текущий Telegram ID:', telegramId);
+    
+    // Очищаем кэш и получаем свежие данные из базы
+    localStorage.removeItem(`user:${telegramId}`);
+    console.log('Очищен кэш пользователя');
+    
+    // Получаем свежие данные пользователя
+    const user = await getUser(telegramId);
+    console.log('Получены свежие данные пользователя:', user);
+    
+    // Обновляем глобальную переменную
+    currentUser = user;
+    
+    // Обновляем модальное окно профиля
+    await updateProfileModal();
+    
+    // Показываем уведомление
+    showNotification('User data refreshed successfully', 'success');
+  } catch (error) {
+    console.error('Ошибка при обновлении данных пользователя:', error);
+    showNotification('Error refreshing user data. Please try again.', 'error');
+  }
+}
+
 // Функция для отображения информации о пользователе в консоли
 function logUserInfo(user, telegramId) {
   console.group('Информация о пользователе:');
@@ -417,6 +546,8 @@ function logUserInfo(user, telegramId) {
 // Функция для инициализации приложения
 async function initializeApp() {
   try {
+    console.log('Начало инициализации приложения...');
+    
     // Получаем ID пользователя
     const telegramId = await getTelegramUserId();
     console.log('Получен Telegram ID:', telegramId);
@@ -425,6 +556,16 @@ async function initializeApp() {
     console.log('Запрашиваем данные пользователя из базы данных...');
     const user = await getUser(telegramId);
     console.log('Получены данные пользователя:', user);
+    
+    // Проверяем, что данные пользователя содержат правильный Telegram ID
+    if (user.telegram_id !== String(telegramId)) {
+      console.warn('Несоответствие Telegram ID! В базе:', user.telegram_id, 'Текущий:', telegramId);
+      // Обновляем Telegram ID в базе данных
+      await updateUser(telegramId, { telegram_id: String(telegramId) });
+      console.log('Telegram ID обновлен в базе данных');
+      // Получаем обновленные данные пользователя
+      user = await getUser(telegramId);
+    }
     
     // Выводим подробную информацию о пользователе
     logUserInfo(user, telegramId);
@@ -448,6 +589,9 @@ async function initializeApp() {
     if (totalXp) {
       totalXp.textContent = (user.points || 0).toString();
     }
+    
+    // Обновляем модальное окно профиля
+    await updateProfileModal();
     
     if (streakCount) {
       streakCount.textContent = (user.current_streak || 0).toString();
@@ -523,10 +667,32 @@ window.addEventListener('load', async function() {
     // Затем инициализируем основное приложение
     await initializeApp();
     
+    // Обновляем кнопку чекина
+    await updateCheckinButton();
+    
+    // Добавляем обработчики событий для кнопок в модальном окне профиля
+    const resetUserDataButton = document.getElementById('reset-user-data');
+    if (resetUserDataButton) {
+      resetUserDataButton.addEventListener('click', resetUserData);
+    }
+    
+    const refreshUserDataButton = document.getElementById('refresh-user-data');
+    if (refreshUserDataButton) {
+      refreshUserDataButton.addEventListener('click', refreshUserData);
+    }
+    
     // Скрываем индикатор загрузки
     if (loadingIndicator) {
       loadingIndicator.style.display = 'none';
     }
+    
+    // Показываем контент
+    const appContent = document.getElementById('app-content');
+    if (appContent) {
+      appContent.style.display = 'block';
+    }
+    
+    console.log('Приложение успешно инициализировано');
     
     // Добавляем обработчик клика на оверлей для закрытия модальных окон
     const overlay = document.getElementById('modal-overlay');
