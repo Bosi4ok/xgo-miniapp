@@ -146,75 +146,133 @@ async function getTelegramUserName() {
   try {
     console.log('Начало получения имени пользователя из Telegram...');
     
-    // Проверяем, есть ли сохраненное имя пользователя в localStorage
-    const savedName = localStorage.getItem('telegram_user_name');
-    if (savedName) {
-      console.log('Найдено имя пользователя в localStorage:', savedName);
-      return savedName;
-    }
-    
-    // Проверяем доступность глобального объекта TelegramUserData
-    console.log('window.TelegramUserData доступен:', !!window.TelegramUserData);
-    console.log('window.TelegramUserData.isLoaded:', window.TelegramUserData?.isLoaded);
-    
-    // Проверяем, есть ли данные в глобальном объекте TelegramUserData
-    if (window.TelegramUserData && window.TelegramUserData.isLoaded) {
-      console.log('Используем данные из глобального объекта TelegramUserData');
-      
-      if (window.TelegramUserData.first_name) {
-        const fullName = `${window.TelegramUserData.first_name}${window.TelegramUserData.last_name ? ' ' + window.TelegramUserData.last_name : ''}`;
-        console.log('Получено имя пользователя из TelegramUserData:', fullName);
-        localStorage.setItem('telegram_user_name', fullName);
-        return fullName;
-      }
-    }
-    
-    // Пытаемся получить имя из Telegram WebApp напрямую
-    console.log('Пробуем получить имя напрямую из Telegram WebApp');
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
-      const user = window.Telegram.WebApp.initDataUnsafe.user;
-      console.log('Получен объект пользователя из Telegram WebApp:', user);
-      
-      if (user.first_name) {
-        const userName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
-        console.log('Получено имя пользователя из Telegram WebApp:', userName);
-        localStorage.setItem('telegram_user_name', userName);
-        return userName;
-      }
-    }
-    
-    // Если не удалось получить имя из Telegram, пытаемся получить ID и создать имя на его основе
+    // Сначала пытаемся получить ID пользователя Telegram
     const telegramId = await getTelegramUserId();
+    console.log('Получен Telegram ID для получения имени:', telegramId);
+    
+    // Если ID получен, пытаемся получить данные из базы данных (приоритет #1)
     if (telegramId) {
       // Получаем пользователя из базы данных
       const user = await getUser(telegramId);
       if (user && user.username) {
         console.log('Получено имя пользователя из базы данных:', user.username);
-        localStorage.setItem('telegram_user_name', user.username);
+        // Обновляем имя в localStorage для быстрого доступа на этом устройстве
+        localStorage.setItem('telegram_user_name_' + telegramId, user.username);
         return user.username;
       }
       
+      // Проверяем, есть ли сохраненное имя пользователя в localStorage для этого ID (приоритет #2)
+      const savedName = localStorage.getItem('telegram_user_name_' + telegramId);
+      if (savedName) {
+        console.log('Найдено имя пользователя в localStorage для ID ' + telegramId + ':', savedName);
+        
+        // Сохраняем имя из localStorage в базу данных для синхронизации между устройствами
+        try {
+          await updateUser(telegramId, { username: savedName });
+          console.log('Имя из localStorage сохранено в базу данных для синхронизации:', savedName);
+        } catch (dbError) {
+          console.error('Ошибка при сохранении имени в базе данных:', dbError);
+        }
+        
+        return savedName;
+      }
+      
+      // Пытаемся получить имя из Telegram WebApp напрямую (приоритет #3)
+      console.log('Пробуем получить имя напрямую из Telegram WebApp');
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+        const user = window.Telegram.WebApp.initDataUnsafe.user;
+        console.log('Получен объект пользователя из Telegram WebApp:', user);
+        
+        if (user.first_name) {
+          const userName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
+          console.log('Получено имя пользователя из Telegram WebApp:', userName);
+          
+          // Сохраняем имя в localStorage и базе данных для синхронизации
+          localStorage.setItem('telegram_user_name_' + telegramId, userName);
+          
+          try {
+            await updateUser(telegramId, { username: userName });
+            console.log('Имя из Telegram WebApp сохранено в базу данных для синхронизации:', userName);
+          } catch (dbError) {
+            console.error('Ошибка при сохранении имени в базе данных:', dbError);
+          }
+          
+          return userName;
+        }
+      }
+      
+      // Проверяем доступность глобального объекта TelegramUserData (приоритет #4)
+      console.log('window.TelegramUserData доступен:', !!window.TelegramUserData);
+      console.log('window.TelegramUserData.isLoaded:', window.TelegramUserData?.isLoaded);
+      
+      if (window.TelegramUserData && window.TelegramUserData.isLoaded) {
+        console.log('Используем данные из глобального объекта TelegramUserData');
+        
+        if (window.TelegramUserData.first_name) {
+          const fullName = `${window.TelegramUserData.first_name}${window.TelegramUserData.last_name ? ' ' + window.TelegramUserData.last_name : ''}`;
+          console.log('Получено имя пользователя из TelegramUserData:', fullName);
+          
+          // Сохраняем имя в localStorage и базе данных для синхронизации
+          localStorage.setItem('telegram_user_name_' + telegramId, fullName);
+          
+          try {
+            await updateUser(telegramId, { username: fullName });
+            console.log('Имя из TelegramUserData сохранено в базу данных для синхронизации:', fullName);
+          } catch (dbError) {
+            console.error('Ошибка при сохранении имени в базе данных:', dbError);
+          }
+          
+          return fullName;
+        }
+      }
+      
+      // Если не удалось получить имя из всех источников, создаем имя на основе ID (приоритет #5)
       // Создаем уникальное имя на основе ID
       const generatedName = 'User_' + telegramId.substring(0, 4);
       console.log('Сгенерировано имя пользователя на основе ID:', generatedName);
       
       // Сохраняем сгенерированное имя в localStorage и базе данных
-      localStorage.setItem('telegram_user_name', generatedName);
+      localStorage.setItem('telegram_user_name_' + telegramId, generatedName);
+      
       try {
         await updateUser(telegramId, { username: generatedName });
-        console.log('Сгенерированное имя сохранено в базе данных');
+        console.log('Сгенерированное имя сохранено в базе данных для синхронизации');
       } catch (dbError) {
         console.error('Ошибка при сохранении имени в базе данных:', dbError);
       }
       
       return generatedName;
+    } else {
+      // Если не удалось получить ID, используем старый подход с общим ключом localStorage
+      console.warn('Не удалось получить Telegram ID, используем общий ключ localStorage');
+      
+      // Проверяем, есть ли сохраненное имя пользователя в общем localStorage
+      const savedName = localStorage.getItem('telegram_user_name');
+      if (savedName) {
+        console.log('Найдено имя пользователя в общем localStorage:', savedName);
+        return savedName;
+      }
+      
+      // Пытаемся получить имя из Telegram WebApp напрямую
+      console.log('Пробуем получить имя напрямую из Telegram WebApp (без ID)');
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+        const user = window.Telegram.WebApp.initDataUnsafe.user;
+        console.log('Получен объект пользователя из Telegram WebApp:', user);
+        
+        if (user.first_name) {
+          const userName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
+          console.log('Получено имя пользователя из Telegram WebApp:', userName);
+          localStorage.setItem('telegram_user_name', userName);
+          return userName;
+        }
+      }
+      
+      // Если все методы не сработали, генерируем случайное имя
+      const randomName = 'User_' + Math.floor(Math.random() * 10000).toString();
+      console.log('Сгенерировано случайное имя пользователя:', randomName);
+      localStorage.setItem('telegram_user_name', randomName);
+      return randomName;
     }
-    
-    // Если все методы не сработали, генерируем случайное имя
-    const randomName = 'User_' + Math.floor(Math.random() * 10000).toString();
-    console.log('Сгенерировано случайное имя пользователя:', randomName);
-    localStorage.setItem('telegram_user_name', randomName);
-    return randomName;
   } catch (error) {
     console.error('Ошибка при получении имени пользователя:', error);
     
@@ -579,21 +637,6 @@ async function updateProfileModal() {
       return;
     }
     
-    // Проверяем, есть ли имя в localStorage
-    const savedName = localStorage.getItem('telegram_user_name');
-    if (savedName) {
-      userNameModalElement.textContent = savedName;
-      console.log('Имя пользователя установлено из localStorage:', savedName);
-    } else {
-      // Если имя не найдено в localStorage, используем имя по умолчанию
-      const defaultName = 'Артём';
-      userNameModalElement.textContent = defaultName;
-      console.log('Имя пользователя установлено по умолчанию:', defaultName);
-      
-      // Сохраняем имя в localStorage для будущих сессий
-      localStorage.setItem('telegram_user_name', defaultName);
-    }
-    
     // Получаем ID пользователя
     const telegramId = await getTelegramUserId();
     console.log('Telegram ID для профиля:', telegramId);
@@ -601,6 +644,52 @@ async function updateProfileModal() {
     // Получаем данные пользователя из базы данных
     const user = await getUser(telegramId);
     console.log('Данные пользователя для профиля:', user);
+    
+    // Используем данные из базы данных, которые идентифицируются по ID пользователя
+    if (user) {
+      // Отображаем имя пользователя из базы данных
+      if (user.username) {
+        userNameModalElement.textContent = user.username;
+        console.log('Имя пользователя установлено из базы данных:', user.username);
+        
+        // Сохраняем имя в localStorage для быстрого доступа на этом устройстве
+        localStorage.setItem('telegram_user_name_' + telegramId, user.username);
+      } else {
+        // Если имя не найдено в базе данных, создаем имя по умолчанию
+        const defaultName = 'User_' + telegramId.substring(0, 4);
+        userNameModalElement.textContent = defaultName;
+        console.log('Имя пользователя установлено по умолчанию:', defaultName);
+        
+        // Сохраняем имя в базу данных для синхронизации между устройствами
+        await updateUser(telegramId, { username: defaultName });
+        console.log('Имя пользователя по умолчанию сохранено в базу данных:', defaultName);
+        
+        // Сохраняем имя в localStorage для быстрого доступа на этом устройстве
+        localStorage.setItem('telegram_user_name_' + telegramId, defaultName);
+      }
+      
+      // Также сохраняем очки (XP) и количество рефералов для синхронизации между устройствами
+      if (user.points !== undefined) {
+        localStorage.setItem('user_points_' + telegramId, user.points);
+      }
+    } else {
+      console.error('Не удалось получить данные пользователя из базы данных');
+      
+      // Проверяем, есть ли сохраненное имя в localStorage для этого ID
+      const savedName = localStorage.getItem('telegram_user_name_' + telegramId);
+      if (savedName) {
+        userNameModalElement.textContent = savedName;
+        console.log('Имя пользователя установлено из localStorage:', savedName);
+      } else {
+        // Если имя не найдено нигде, используем имя по умолчанию
+        const defaultName = 'User_' + telegramId.substring(0, 4);
+        userNameModalElement.textContent = defaultName;
+        console.log('Имя пользователя установлено по умолчанию (резервный вариант):', defaultName);
+        
+        // Сохраняем имя в localStorage для быстрого доступа на этом устройстве
+        localStorage.setItem('telegram_user_name_' + telegramId, defaultName);
+      }
+    }
     
     // Получаем количество рефералов
     const referralsCount = await getReferralsCount(telegramId);

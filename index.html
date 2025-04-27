@@ -162,29 +162,62 @@
   </script>
   <script type="module" src="js/index.js"></script>
   <script src="js/app-ui.js"></script>
-  <script src="js/update-profile-name.js"></script>
+  <script src="js/update-profile-name-new.js"></script>
   
   <!-- Скрипт для немедленной установки имени пользователя -->
   <script>
     // Функция для установки имени пользователя в интерфейсе
-    function setUserName() {
+    async function setUserName() {
       // Получаем элементы с именем пользователя
       const userNameModal = document.getElementById('user-name-modal');
       const userNameElement = document.getElementById('user-name');
       
-      // Проверяем, есть ли имя в localStorage
-      const savedName = localStorage.getItem('telegram_user_name');
-      if (savedName) {
-        // Устанавливаем имя в модальном окне профиля
-        if (userNameModal) {
-          userNameModal.textContent = savedName;
-          console.log('Имя пользователя установлено в модальном окне из localStorage:', savedName);
+      // Получаем ID пользователя Telegram
+      let telegramId = '';
+      try {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+          telegramId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
+          console.log('Получен Telegram ID для установки имени:', telegramId);
         }
-        
-        // Устанавливаем имя в основном интерфейсе
-        if (userNameElement) {
-          userNameElement.textContent = savedName;
-          console.log('Имя пользователя установлено в основном интерфейсе из localStorage:', savedName);
+      } catch (error) {
+        console.error('Ошибка при получении Telegram ID:', error);
+      }
+      
+      // Если ID получен, используем его для получения имени из localStorage
+      if (telegramId) {
+        const savedName = localStorage.getItem('telegram_user_name_' + telegramId);
+        if (savedName) {
+          // Устанавливаем имя в модальном окне профиля
+          if (userNameModal) {
+            userNameModal.textContent = savedName;
+            console.log('Имя пользователя установлено в модальном окне из localStorage по ID:', savedName);
+          }
+          
+          // Устанавливаем имя в основном интерфейсе
+          if (userNameElement) {
+            userNameElement.textContent = savedName;
+            console.log('Имя пользователя установлено в основном интерфейсе из localStorage по ID:', savedName);
+          }
+          
+          return; // Выходим из функции, так как имя уже установлено
+        }
+      } else {
+        // Если ID не получен, используем общий ключ localStorage
+        const savedName = localStorage.getItem('telegram_user_name');
+        if (savedName) {
+          // Устанавливаем имя в модальном окне профиля
+          if (userNameModal) {
+            userNameModal.textContent = savedName;
+            console.log('Имя пользователя установлено в модальном окне из общего localStorage:', savedName);
+          }
+          
+          // Устанавливаем имя в основном интерфейсе
+          if (userNameElement) {
+            userNameElement.textContent = savedName;
+            console.log('Имя пользователя установлено в основном интерфейсе из общего localStorage:', savedName);
+          }
+          
+          return; // Выходим из функции, так как имя уже установлено
         }
       }
       
@@ -193,6 +226,9 @@
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
           const user = window.Telegram.WebApp.initDataUnsafe.user;
           console.log('Получен объект пользователя из Telegram WebApp:', user);
+          
+          // Получаем ID пользователя и имя
+          const userId = user.id.toString();
           
           if (user.first_name) {
             const userName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
@@ -210,8 +246,23 @@
               console.log('Имя пользователя обновлено в основном интерфейсе из Telegram WebApp:', userName);
             }
             
-            // Сохраняем имя в localStorage для будущих сессий
+            // Сохраняем имя в localStorage для будущих сессий, используя ID пользователя
+            localStorage.setItem('telegram_user_name_' + userId, userName);
+            console.log('Имя пользователя сохранено в localStorage по ID:', userId);
+            
+            // Также сохраняем в общем ключе для обратной совместимости
             localStorage.setItem('telegram_user_name', userName);
+            
+            // Пытаемся сохранить имя в базе данных для синхронизации между устройствами
+            try {
+              // Если функция updateUser доступна, используем её
+              if (typeof updateUser === 'function') {
+                await updateUser(userId, { username: userName });
+                console.log('Имя пользователя сохранено в базе данных через updateUser');
+              }
+            } catch (dbError) {
+              console.error('Ошибка при сохранении имени в базе данных:', dbError);
+            }
           }
         }
       } catch (error) {
