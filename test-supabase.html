@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест Supabase API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест подключения к Supabase</h1>
+    
+    <div>
+        <button id="testConnection">Проверить подключение</button>
+        <button id="checkTables">Проверить таблицы</button>
+        <button id="createUser">Создать тестового пользователя</button>
+        <button id="getUser">Получить пользователя</button>
+        <button id="incrementXP">Увеличить XP</button>
+        <button id="createCheckin">Создать чекин</button>
+    </div>
+    
+    <div class="result" id="result">Результаты будут отображаться здесь</div>
+    
+    <script type="module">
+        import { testSupabaseConnection, createUser, getUser, incrementUserXP, createCheckin, checkTables } from './js/supabase-api.js';
+        import { supabase } from './supabase-config.js';
+        
+        // Тестовый ID пользователя
+        const testUserId = '12345678';
+        
+        // Расширенное логирование для отслеживания ошибок
+        console.log('Supabase URL:', supabase.supabaseUrl);
+        console.log('Supabase Key установлен:', !!supabase.supabaseKey);
+        
+        // Функция для отображения результатов
+        function showResult(title, data, isError = false) {
+            const resultElement = document.getElementById('result');
+            resultElement.innerHTML = `<strong>${title}</strong><br>`;
+            resultElement.innerHTML += isError ? 
+                `<span class="error">${JSON.stringify(data, null, 2)}</span>` : 
+                `<span class="success">${JSON.stringify(data, null, 2)}</span>`;
+            
+            console.log(title, data);
+        }
+        
+        // Проверка подключения
+        document.getElementById('testConnection').addEventListener('click', async () => {
+            try {
+                const result = await testSupabaseConnection();
+                showResult('Результат проверки подключения:', result, !result.success);
+            } catch (error) {
+                showResult('Ошибка при проверке подключения:', error, true);
+            }
+        });
+        
+        // Создание пользователя
+        document.getElementById('createUser').addEventListener('click', async () => {
+            try {
+                const userData = {
+                    telegram_id: testUserId,
+                    username: 'test_user',
+                    first_name: 'Test',
+                    last_name: 'User',
+                    points: 0,
+                    current_streak: 0,
+                    max_streak: 0
+                };
+                
+                const result = await createUser(userData);
+                showResult('Результат создания пользователя:', result || 'Ошибка создания пользователя', !result);
+            } catch (error) {
+                showResult('Ошибка при создании пользователя:', error, true);
+            }
+        });
+        
+        // Получение пользователя
+        document.getElementById('getUser').addEventListener('click', async () => {
+            try {
+                const result = await getUser(testUserId);
+                showResult('Результат получения пользователя:', result || 'Пользователь не найден', !result);
+            } catch (error) {
+                showResult('Ошибка при получении пользователя:', error, true);
+            }
+        });
+        
+        // Увеличение XP
+        document.getElementById('incrementXP').addEventListener('click', async () => {
+            try {
+                const result = await incrementUserXP(testUserId, 10);
+                showResult('Результат увеличения XP:', result || 'Ошибка увеличения XP', !result);
+            } catch (error) {
+                showResult('Ошибка при увеличении XP:', error, true);
+            }
+        });
+        
+        // Создание чекина
+        document.getElementById('createCheckin').addEventListener('click', async () => {
+            try {
+                const result = await createCheckin(testUserId, 1, 20);
+                showResult('Результат создания чекина:', result || 'Ошибка создания чекина', !result);
+            } catch (error) {
+                showResult('Ошибка при создании чекина:', error, true);
+            }
+        });
+        
+        // Проверка таблиц
+        document.getElementById('checkTables').addEventListener('click', async () => {
+            try {
+                const result = await checkTables();
+                showResult('Результат проверки таблиц:', result, !result.success);
+            } catch (error) {
+                showResult('Ошибка при проверке таблиц:', error, true);
+            }
+        });
+    </script>
+</body>
+</html>
