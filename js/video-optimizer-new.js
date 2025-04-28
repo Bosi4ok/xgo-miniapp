@@ -76,6 +76,15 @@ class VideoOptimizer {
       this.video.appendChild(source);
     }
     
+    // Добавляем обработчик события окончания видео
+    this.video.addEventListener('ended', () => {
+      console.log('VideoOptimizer: Видео завершилось, останавливаем на последнем кадре');
+      // Устанавливаем currentTime на последний кадр (чуть меньше длительности)
+      this.video.currentTime = Math.max(0, this.video.duration - 0.01);
+      // Останавливаем видео
+      this.video.pause();
+    });
+    
     // Проверяем, есть ли постер
     if (this.options.posterSource) {
       this.video.poster = this.options.posterSource;
