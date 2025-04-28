@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XGO - Анимированный фон</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    
+    #animation-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    .controls {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 5px;
+      color: white;
+    }
+    
+    button {
+      background: #ff3333;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    
+    button:hover {
+      background: #ff0000;
+    }
+    
+    .title {
+      position: fixed;
+      top: 20px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      color: #e0a868;
+      font-size: 32px;
+      font-weight: bold;
+      text-transform: uppercase;
+      z-index: 10;
+      text-shadow: 0 0 10px rgba(224, 168, 104, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <div class="title">XTREME GAINS ONLY</div>
+  <div id="animation-container"></div>
+  
+  <div class="controls">
+    <button id="toggle-animation">Пауза</button>
+    <button id="toggle-speed">Ускорить</button>
+  </div>
+  
+  <script type="module">
+    import AnimatedBackground from './assets/animated-background.js';
+    
+    // Инициализируем анимированный фон
+    const background = new AnimatedBackground('animation-container', 'assets/xgo-character.png');
+    
+    // Обработчик кнопки паузы
+    let isAnimationPaused = false;
+    document.getElementById('toggle-animation').addEventListener('click', function() {
+      if (isAnimationPaused) {
+        background.startAnimation();
+        this.textContent = 'Пауза';
+      } else {
+        background.stopAnimation();
+        this.textContent = 'Продолжить';
+      }
+      isAnimationPaused = !isAnimationPaused;
+    });
+    
+    // Обработчик кнопки ускорения
+    let isSpeedIncreased = false;
+    document.getElementById('toggle-speed').addEventListener('click', function() {
+      if (isSpeedIncreased) {
+        // Возвращаем нормальную скорость
+        background.speedLines.forEach(line => {
+          line.speed /= 2;
+        });
+        this.textContent = 'Ускорить';
+      } else {
+        // Увеличиваем скорость
+        background.speedLines.forEach(line => {
+          line.speed *= 2;
+        });
+        this.textContent = 'Замедлить';
+      }
+      isSpeedIncreased = !isSpeedIncreased;
+    });
+  </script>
+</body>
+</html>

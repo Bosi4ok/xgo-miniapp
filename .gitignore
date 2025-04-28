@@ -27,3 +27,10 @@ build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Large media files
+assets/*.mp4
+assets/*.mov
+assets/*.avi
+assets/*.webm
+assets/*.mkv

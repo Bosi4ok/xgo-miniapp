@@ -1,11 +1,58 @@
 /**
  * Скрипт для оптимизации загрузки видео
+ * Универсальный класс для работы с любым видео
  */
 
-document.addEventListener('DOMContentLoaded', function() {
-  // Оптимизация видео стиль1.mp4
-  optimizeBackgroundVideo();
-});
+class VideoOptimizer {
+  /**
+   * Создает экземпляр оптимизатора видео
+   * @param {Object} options - Настройки оптимизатора
+   * @param {string} options.videoElement - ID элемента видео
+   * @param {string} options.videoSource - Путь к видео файлу
+   * @param {string} [options.posterSource] - Путь к постеру (если есть)
+   * @param {string} [options.loadingPriority='auto'] - Приоритет загрузки ('high', 'auto', 'low')
+   * @param {Function} [options.onReady] - Функция обратного вызова при готовности видео
+   */
+  constructor(options) {
+    this.options = Object.assign({
+      videoElement: null,
+      videoSource: null,
+      posterSource: null,
+      loadingPriority: 'auto',
+      onReady: null
+    }, options);
+    
+    // Проверяем обязательные параметры
+    if (!this.options.videoElement || !this.options.videoSource) {
+      console.error('VideoOptimizer: Не указаны обязательные параметры videoElement или videoSource');
+      return;
+    }
+    
+    this.video = document.getElementById(this.options.videoElement);
+    if (!this.video) {
+      console.error(`VideoOptimizer: Элемент с ID ${this.options.videoElement} не найден`);
+      return;
+    }
+    
+    // Начинаем предварительную загрузку видео
+    this.preloadVideo();
+    
+    // Инициализируем оптимизацию при загрузке DOM
+    document.addEventListener('DOMContentLoaded', () => this.initialize());
+    
+    // Финальная оптимизация при полной загрузке страницы
+    window.addEventListener('load', () => this.finalOptimization());
+  }
+  
+  /**
+   * Предварительная загрузка видео до загрузки DOM
+   */
+  preloadVideo() {
+    // Используем Image для предварительной загрузки видео как бинарных данных
+    const videoPreloader = new Image();
+    videoPreloader.src = this.options.videoSource;
+    console.log(`VideoOptimizer: Начата предварительная загрузка видео ${this.options.videoSource}`);
+  }
 
 /**
  * Оптимизирует загрузку фонового видео
@@ -130,4 +177,72 @@ function createFallbackPoster(video, canvas, context) {
   // Устанавливаем Data URL как постер для видео
   video.setAttribute('poster', dataURL);
   console.log('Создан запасной постер с градиентом');
+}
+
+/**
+ * Финальная оптимизация видео после полной загрузки страницы
+ */
+function finalOptimization() {
+  const video = document.getElementById('start-bg');
+  if (!video) return;
+  
+  console.log('Запуск финальной оптимизации видео');
+  
+  // Проверяем состояние видео
+  if (video.paused && video.readyState >= 3) { // HAVE_FUTURE_DATA или выше
+    // Если видео загружено, но не воспроизводится, запускаем его
+    console.log('Видео загружено, но не воспроизводится. Запускаем...');
+    video.play().catch(e => console.error('Ошибка при запуске видео:', e));
+  }
+  
+  // Оптимизация производительности
+  optimizePerformance(video);
+  
+  // Отложенная загрузка других видео
+  setTimeout(() => {
+    const otherVideos = document.querySelectorAll('video:not(#start-bg)');
+    console.log(`Начинаем загрузку ${otherVideos.length} других видео`);
+    
+    otherVideos.forEach((otherVideo, index) => {
+      // Загружаем другие видео с задержкой
+      setTimeout(() => {
+        otherVideo.setAttribute('preload', 'metadata');
+        console.log(`Начата загрузка метаданных для видео #${index + 1}`);
+      }, index * 1000); // Загружаем каждое следующее видео с задержкой в 1 секунду
+    });
+  }, 3000); // Задержка в 3 секунды перед загрузкой других видео
+}
+
+/**
+ * Оптимизирует производительность видео
+ * @param {HTMLVideoElement} video - Элемент видео
+ */
+function optimizePerformance(video) {
+  // Устанавливаем низкое качество воспроизведения для экономии ресурсов
+  if ('playbackQuality' in video) {
+    video.playbackQuality = 'low';
+  }
+  
+  // Уменьшаем частоту обновления для экономии ресурсов
+  if ('requestVideoFrameCallback' in video) {
+    let lastFrameTime = 0;
+    const frameInterval = 50; // Минимальный интервал между обработкой кадров (мс)
+    
+    const frameCallback = (now, metadata) => {
+      if (now - lastFrameTime > frameInterval) {
+        lastFrameTime = now;
+        // Обработка кадра видео
+      }
+      video.requestVideoFrameCallback(frameCallback);
+    };
+    
+    video.requestVideoFrameCallback(frameCallback);
+  }
+  
+  // Устанавливаем низкий приоритет для видео после загрузки страницы
+  if ('fetchPriority' in video) {
+    video.fetchPriority = 'low';
+  }
+  
+  console.log('Производительность видео оптимизирована');
 }

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XGO - Видео фон</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    
+    .video-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+    }
+    
+    #background-video {
+      position: absolute;
+      min-width: 100%;
+      min-height: 100%;
+      width: auto;
+      height: auto;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
+    }
+    
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 1;
+    }
+    
+    .content {
+      position: relative;
+      z-index: 2;
+      color: white;
+      text-align: center;
+      padding-top: 20vh;
+    }
+    
+    .title {
+      font-size: 48px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #e0a868;
+      text-shadow: 0 0 10px rgba(224, 168, 104, 0.7);
+    }
+    
+    .subtitle {
+      font-size: 24px;
+      margin-bottom: 40px;
+      color: #ffffff;
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    }
+    
+    .controls {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 5px;
+      color: white;
+    }
+    
+    button {
+      background: #ff3333;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    
+    button:hover {
+      background: #ff0000;
+    }
+    
+    .character {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      max-height: 50vh;
+      filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.8));
+      animation: pulse 2s infinite alternate;
+    }
+    
+    @keyframes pulse {
+      0% {
+        filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.5));
+      }
+      100% {
+        filter: drop-shadow(0 0 20px rgba(255, 0, 0, 1));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="video-container">
+    <div class="overlay"></div>
+    <video id="background-video" autoplay loop muted playsinline preload="auto">
+      <!-- Видео будет добавлено через JavaScript для оптимизации загрузки -->
+    </video>
+  </div>
+  
+  <div class="content">
+    <h1 class="title">XTREME GAINS ONLY</h1>
+    <p class="subtitle">Достигай своих целей с XGO</p>
+  </div>
+  
+  <img src="assets/xgo-character.png" alt="XGO Character" class="character">
+  
+  <div class="controls">
+    <button id="toggle-video">Пауза</button>
+    <button id="toggle-effects">Эффекты</button>
+  </div>
+  
+  <script src="js/video-optimizer-new.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Инициализация оптимизатора видео
+      const videoOptimizer = new VideoOptimizer({
+        videoElement: 'background-video',
+        videoSource: 'assets/background.mp4',
+        posterSource: 'assets/video-poster.jpg', // Будет создан автоматически, если не существует
+        loadingPriority: 'high',
+        onReady: function() {
+          console.log('Видео готово к воспроизведению');
+        }
+      });
+      
+      // Обработчик кнопки паузы
+      let isVideoPaused = false;
+      document.getElementById('toggle-video').addEventListener('click', function() {
+        const video = document.getElementById('background-video');
+        if (isVideoPaused) {
+          video.play();
+          this.textContent = 'Пауза';
+        } else {
+          video.pause();
+          this.textContent = 'Продолжить';
+        }
+        isVideoPaused = !isVideoPaused;
+      });
+      
+      // Обработчик кнопки эффектов
+      let effectsEnabled = true;
+      document.getElementById('toggle-effects').addEventListener('click', function() {
+        const character = document.querySelector('.character');
+        if (effectsEnabled) {
+          character.style.animation = 'none';
+          character.style.filter = 'none';
+          this.textContent = 'Включить эффекты';
+        } else {
+          character.style.animation = 'pulse 2s infinite alternate';
+          character.style.filter = 'drop-shadow(0 0 10px rgba(255, 0, 0, 0.8))';
+          this.textContent = 'Эффекты';
+        }
+        effectsEnabled = !effectsEnabled;
+      });
+    });
+  </script>
+</body>
+</html>

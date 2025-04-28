@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>XGO Mini App (Update: 23:40)</title>
+  <title>XGO Mini App (Update: 28.04.2025)</title>
   <!-- Предварительная загрузка видео -->
-  <link rel="preload" href="assets/стиль1.mp4" as="video" type="video/mp4" fetchpriority="high" />
+  <link rel="preload" href="assets/background.mp4" as="video" type="video/mp4" fetchpriority="high" />
   
   <!-- Основные скрипты -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -1666,11 +1666,8 @@
     <div class="loading-text">Loading data...</div>
   </div>
   <!-- Оптимизированные видео -->
-  <video muted loop playsinline autoplay class="background-video" id="start-bg" preload="auto" poster="assets/poster-style1.jpg" loading="eager" fetchpriority="high" disablePictureInPicture disableRemotePlayback>
-    <source src="assets/стиль1.mp4" type="video/mp4" />
-  </video>
-  <video muted loop playsinline class="background-video" id="checkin-bg" style="display: none;" preload="none">
-    <source src="assets/chek-in.mp4" type="video/mp4" />
+  <video muted loop playsinline autoplay class="background-video" id="start-bg" preload="auto" loading="eager" fetchpriority="high" disablePictureInPicture disableRemotePlayback>
+    <source src="assets/background.mp4" type="video/mp4" />
   </video>
 
   <!-- Основной контент -->
@@ -2226,7 +2223,7 @@
   <script type="module" src="js/initialize-database.js"></script>
   
   <!-- Скрипты для оптимизации загрузки видео -->
-  <script type="module" src="js/video-optimizer.js"></script>
-  <script type="module" src="js/video-compressor.js"></script>
+  <script type="module" src="js/video-optimizer-new.js"></script>
+  <script type="module" src="js/init-video-background.js"></script>
 </body>
 </html>
