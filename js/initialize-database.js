@@ -1,23 +1,21 @@
 // Скрипт для инициализации базы данных
 
-import { supabaseClient } from './modules/database.js';
+import { supabaseClient } from '../supabase-config.js'; // Правильный импорт
 
 // Функция для инициализации базы данных
 async function initializeDatabase() {
   console.log('Проверяем инициализацию базы данных...');
 
-  // !! Важно !!
-  // Код для создания таблиц и функций был удален.
-  // Предполагается, что структура БД (таблицы users, checkins, referrals)
-  // и функция increment_xp уже существуют в Supabase.
-  // Управление схемой БД должно производиться через Supabase Dashboard или миграции.
+  if (!supabaseClient) {
+    console.error('Клиент Supabase не инициализирован!');
+    return false;
+  }
 
   try {
-    // Простая проверка соединения/доступности таблицы users
-    const { error } = await supabaseClient
+    console.log('Пытаюсь получить доступ к таблице users...');
+    const { data, error, count } = await supabaseClient
       .from('users')
-      .select('id')
-      .limit(1);
+      .select('id', { count: 'exact', head: true }); // Просто проверяем доступ, head:true не загружает данные
 
     if (error) {
       console.error('Ошибка при проверке доступа к таблице users:', error);
@@ -35,19 +33,5 @@ async function initializeDatabase() {
   }
 }
 
-// Экспортируем функцию для использования в других модулях
-window.initializeDatabase = initializeDatabase;
-
-// Запускаем проверку инициализации базы данных при загрузке скрипта
-initializeDatabase().then(success => {
-  if (success) {
-    console.log('Проверка инициализации базы данных завершена успешно.');
-    // Можно добавить логику, которая должна выполниться после успешной проверки
-    // Например, запуск основного UI приложения
-  } else {
-    console.error('Ошибка при проверке инициализации базы данных.');
-    // Можно добавить обработку ошибки, например, показать сообщение пользователю
-  }
-}).catch(error => {
-  console.error('Критическая ошибка при запуске проверки инициализации базы данных:', error);
-});
+// Экспортируем функцию явно, если она будет импортироваться в других модулях
+export { initializeDatabase };

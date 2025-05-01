@@ -522,26 +522,25 @@ const checkinCache = new Map();
 const CHECKIN_CACHE_LIFETIME = 60000; // 1 минута
 
 // Функции для работы с чекинами
-async function createCheckin(userId, streak, xpEarned) {
-  userId = String(userId);
-  console.log('Создание чекина для пользователя:', userId, 'стрик:', streak, 'XP:', xpEarned);
-
+async function createCheckin(userId, streakCount, xpEarned) {
+  console.log(`Создание чекина для пользователя: ${userId} стриk: ${streakCount}, XP: ${xpEarned}`);
+  if (!userId) {
+      console.error('createCheckin: userId не предоставлен.');
+      return { success: false, error: 'User ID is required' };
+  }
+  const checkinData = {
+    user_id: userId, // Убедимся, что используем именно ID
+    streak_count: streakCount,
+    xp_earned: xpEarned
+  };
   try {
     console.log('Отправляем запрос на создание чекина...');
     console.log('URL Supabase:', supabaseClient.supabaseUrl);
-    console.log('Данные для вставки:', {
-      user_id: userId,
-      streak_count: streak,
-      xp_earned: xpEarned
-    });
+    console.log('Данные для вставки:', checkinData);
     
     const { data, error } = await supabaseClient
       .from('checkins')
-      .insert({
-        user_id: userId,
-        streak_count: streak,
-        xp_earned: xpEarned
-      })
+      .insert([checkinData])
       .select();
 
     if (error) {
@@ -564,9 +563,9 @@ async function createCheckin(userId, streak, xpEarned) {
     const cachedUser = CacheManager.get(cacheKey);
     if (cachedUser) {
       cachedUser.last_checkin = now;
-      cachedUser.current_streak = streak;
-      if ((cachedUser.max_streak || 0) < streak) {
-        cachedUser.max_streak = streak;
+      cachedUser.current_streak = streakCount;
+      if ((cachedUser.max_streak || 0) < streakCount) {
+        cachedUser.max_streak = streakCount;
       }
       CacheManager.set(cacheKey, cachedUser);
       console.log('Кэш пользователя обновлен:', cachedUser);
@@ -575,7 +574,7 @@ async function createCheckin(userId, streak, xpEarned) {
     // Сохраняем дату последнего чекина в localStorage
     try {
       localStorage.setItem('last_checkin_' + userId, now);
-      localStorage.setItem('user_streak_' + userId, streak.toString());
+      localStorage.setItem('user_streak_' + userId, streakCount.toString());
       console.log('Данные чекина сохранены в localStorage');
     } catch (localStorageError) {
       console.error('Ошибка при сохранении данных чекина в localStorage:', localStorageError);
@@ -589,7 +588,7 @@ async function createCheckin(userId, streak, xpEarned) {
     try {
       const now = new Date().toISOString();
       localStorage.setItem('last_checkin_' + userId, now);
-      localStorage.setItem('user_streak_' + userId, streak.toString());
+      localStorage.setItem('user_streak_' + userId, streakCount.toString());
       console.log('Данные чекина сохранены в localStorage после ошибки');
     } catch (localStorageError) {
       console.error('Ошибка при сохранении данных чекина в localStorage после ошибки:', localStorageError);
@@ -642,4 +641,98 @@ async function getLastCheckin(userId) {
     
     throw error;
   }
+}
+
+async function performCheckin(userData) {
+  console.log('Попытка выполнить чекин для пользователя:', userData);
+  if (!userData || !userData.telegram_id) {
+    console.error('performCheckin: Недостаточно данных пользователя для чекина.', userData);
+    return { success: false, message: 'Недостаточно данных пользователя.' };
+  }
+
+  const userId = userData.telegram_id; // Извлекаем ID
+  const now = new Date();
+  const lastCheckinDate = userData.last_checkin ? new Date(userData.last_checkin) : null;
+
+  // Проверяем, прошел ли день с последнего чекина
+  if (lastCheckinDate && isSameDay(lastCheckinDate, now)) {
+    console.log('Чекин уже выполнен сегодня.');
+    return { success: false, message: 'Чекин уже выполнен сегодня.' };
+  }
+
+  // Проверяем, есть ли у пользователя реферальный код
+  const referralCode = userData.referral_code;
+  if (referralCode) {
+    console.log('Пользователь имеет реферальный код:', referralCode);
+    // Проверяем, активен ли реферальный код
+    const referralData = await checkReferralCode(referralCode);
+    if (referralData) {
+      console.log('Реферальный код активен:', referralData);
+      // Обновляем данные пользователя
+      const updatedUserData = await updateUser(userId, {
+        referral_code: null // Сбрасываем реферальный код
+      });
+      if (!updatedUserData) {
+        console.error('Ошибка при обновлении данных пользователя:', updatedUserData);
+        return { success: false, message: 'Ошибка при обновлении данных пользователя.' };
+      }
+    } else {
+      console.log('Реферальный код не найден или не активен.');
+    }
+  }
+
+  // Выполняем чекин
+  const streakCount = userData.current_streak + 1;
+  const xpEarned = calculateXpEarned(streakCount);
+  console.log('Выполняем чекин для пользователя:', userId, 'стрик:', streakCount, 'XP:', xpEarned);
+
+  // Создаем новую запись о чекине
+  try {
+    // Передаем ID пользователя, а не весь объект
+    const checkinResult = await createCheckin(userId, streakCount, xpEarned);
+    if (checkinResult.success) {
+      console.log(`Чекин успешен для пользователя ${userId}. Стрик: ${streakCount}, XP: ${xpEarned}`);
+
+      // Обновляем данные пользователя
+      const updatedUserData = await updateUser(userId, {
+        current_streak: streakCount,
+        max_streak: Math.max(userData.max_streak, streakCount),
+        last_checkin: now.toISOString()
+      });
+      if (!updatedUserData) {
+        console.error('Ошибка при обновлении данных пользователя:', updatedUserData);
+        return { success: false, message: 'Ошибка при обновлении данных пользователя.' };
+      }
+
+      // Начисляем XP
+      const xpResult = await incrementXP(userId, xpEarned);
+      if (!xpResult) {
+        console.error('Ошибка при начислении XP:', xpResult);
+        return { success: false, message: 'Ошибка при начислении XP.' };
+      }
+
+      return { success: true, message: 'Чекин успешен.', user: updatedUserData };
+    } else {
+      // Ошибка при создании чекина в БД, но данные в localStorage обновлены
+      console.error(`Ошибка при создании записи чекина в БД для пользователя ${userId}, но localStorage обновлен.`);
+      // Возвращаем успех, так как локальные данные обновлены, но с предупреждением
+      return { success: true, message: 'Локальные данные обновлены, но ошибка синхронизации с БД.', user: updatedUserData };
+    }
+  } catch (error) {
+    console.error(`Критическая ошибка в performCheckin при вызове createCheckin для пользователя ${userId}:`, error);
+    // Даже если запись чекина не удалась, localStorage уже обновлен выше.
+    // Возвращаем успех, так как локальные данные обновлены, но с предупреждением
+    return { success: true, message: 'Локальные данные обновлены, но критическая ошибка синхронизации с БД.', user: updatedUserData };
+  }
+}
+
+function isSameDay(date1, date2) {
+  return date1.getFullYear() === date2.getFullYear() &&
+         date1.getMonth() === date2.getMonth() &&
+         date1.getDate() === date2.getDate();
+}
+
+function calculateXpEarned(streakCount) {
+  // Формула начисления XP
+  return streakCount * 10;
 }
