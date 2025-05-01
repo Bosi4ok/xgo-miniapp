@@ -164,7 +164,7 @@
     });
   </script>
   <script type="module" src="js/index.js"></script>
-  <script src="js/app-ui.js"></script>
+  <script type="module" src="js/app-ui.js"></script>
   <script src="js/update-profile-name-new.js"></script>
   
   <!-- Скрипт для немедленной установки имени пользователя -->
@@ -724,10 +724,6 @@
       height: 24px;
       margin-bottom: 4px;
       transition: transform 0.3s;
-    }
-
-    .nav-item:hover .nav-icon {
-      transform: scale(1.1);
     }
 
     .nav-icon svg {
@@ -1291,7 +1287,7 @@
     .referral-section p {
       color: rgba(255, 255, 255, 0.9);
       margin-bottom: 15px;
-      line-height: 1.4;
+      font-size: 0.9em;
     }
 
     .modal-overlay {

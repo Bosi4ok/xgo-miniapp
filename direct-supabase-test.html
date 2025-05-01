@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>u041fu0440u044fu043cu043eu0439 u0442u0435u0441u0442 Supabase</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    pre { background: #eee; padding: 10px; border: 1px solid #ccc; }
+    .success { color: green; }
+    .error { color: red; }
+    button { margin: 5px; padding: 8px 15px; }
+  </style>
+</head>
+<body>
+  <h1>u041fu0440u044fu043cu043eu0439 u0442u0435u0441u0442 Supabase</h1>
+  
+  <div id="status">u0421u0442u0430u0442u0443u0441: u043eu0436u0438u0434u0430u043du0438u0435...</div>
+  <button id="test-insert">u0422u0435u0441u0442 INSERT</button>
+  <button id="test-select">u0422u0435u0441u0442 SELECT</button>
+  <button id="test-update">u0422u0435u0441u0442 UPDATE</button>
+  <button id="test-rpc">u0422u0435u0441u0442 RPC increment_xp</button>
+  
+  <h2>u041bu043eu0433u0438:</h2>
+  <pre id="logs"></pre>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+
+    const SUPABASE_URL = 'https://msstnczyshmnhjcnzjlg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zc3RuY3p5c2htbmhqY256amxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMjI0MjUsImV4cCI6MjA2MDg5ODQyNX0.9Oa_ghFyX9qVquxokvLMSNRfQq7FzA6mQEvlsM2ZyRc';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const statusDiv = document.getElementById('status');
+    const logsPre = document.getElementById('logs');
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toISOString();
+      logsPre.textContent += `[${timestamp}] [${type.toUpperCase()}] ${message}\n`;
+      console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+
+    function updateStatus(message, isSuccess = true) {
+      statusDiv.textContent = `u0421u0442u0430u0442u0443u0441: ${message}`;
+      statusDiv.className = isSuccess ? 'success' : 'error';
+    }
+
+    log('u041au043bu0438u0435u043du0442 Supabase u0438u043du0438u0446u0438u0430u043bu0438u0437u0438u0440u043eu0432u0430u043d.');
+
+    // u0422u0435u0441u0442 INSERT
+    document.getElementById('test-insert').addEventListener('click', async () => {
+      updateStatus('u0412u044bu043fu043eu043bu043du044fu0435u0442u0441u044f u0442u0435u0441u0442 INSERT...');
+      const testId = 'direct_test_' + Date.now();
+      log(`u041fu043eu043fu044bu0442u043au0430 u0432u0441u0442u0430u0432u0438u0442u044c u0437u0430u043fu0438u0441u044c u0441 telegram_id: ${testId}`);
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .insert({ 
+            telegram_id: testId, 
+            username: 'Direct Test User',
+            points: 1 
+          })
+          .select();
+
+        if (error) {
+          log(`u041eu0448u0438u0431u043au0430 INSERT: ${error.message}`, 'error');
+          updateStatus(`u041eu0448u0438u0431u043au0430 INSERT: ${error.message}`, false);
+        } else {
+          log(`INSERT u0443u0441u043fu0435u0448u043du043e. u0414u0430u043du043du044bu0435: ${JSON.stringify(data)}`, 'success');
+          updateStatus('INSERT u0443u0441u043fu0435u0448u043du043e', true);
+        }
+      } catch (err) {
+        log(`u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430 INSERT: ${err.message}`, 'error');
+        updateStatus(`u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430 INSERT: ${err.message}`, false);
+      }
+    });
+
+    // u0422u0435u0441u0442 SELECT
+    document.getElementById('test-select').addEventListener('click', async () => {
+      updateStatus('u0412u044bu043fu043eu043bu043du044fu0435u0442u0441u044f u0442u0435u0441u0442 SELECT...');
+      log('u041fu043eu043fu044bu0442u043au0430 u0432u044bu0431u0440u0430u0442u044c u0437u0430u043fu0438u0441u0438 u0438u0437 users (limit 5)');
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .limit(5);
+
+        if (error) {
+          log(`u041eu0448u0438u0431u043au0430 SELECT: ${error.message}`, 'error');
+          updateStatus(`u041eu0448u0438u0431u043au0430 SELECT: ${error.message}`, false);
+        } else {
+          log(`SELECT u0443u0441u043fu0435u0448u043du043e. u041fu043eu043bu0443u0447u0435u043du043e ${data.length} u0437u0430u043fu0438u0441u0435u0439.`, 'success');
+          log(`u0414u0430u043du043du044bu0435: ${JSON.stringify(data)}`);
+          updateStatus(`SELECT u0443u0441u043fu0435u0448u043du043e. u041fu043eu043bu0443u0447u0435u043du043e ${data.length} u0437u0430u043fu0438u0441u0435u0439.`, true);
+        }
+      } catch (err) {
+        log(`u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430 SELECT: ${err.message}`, 'error');
+        updateStatus(`u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430 SELECT: ${err.message}`, false);
+      }
+    });
+
+    // u0422u0435u0441u0442 UPDATE
+    document.getElementById('test-update').addEventListener('click', async () => {
+      updateStatus('u0412u044bu043fu043eu043bu043du044fu0435u0442u0441u044f u0442u0435u0441u0442 UPDATE...');
+      log('u041fu043eu043fu044bu0442u043au0430 u043eu0431u043du043eu0432u0438u0442u044c u043fu043eu0441u043bu0435u0434u043du044eu044e u0442u0435u0441u0442u043eu0432u0443u044e u0437u0430u043fu0438u0441u044c...');
+      try {
+        // u041du0430u0445u043eu0434u0438u043c u043fu043eu0441u043bu0435u0434u043du044eu044e u0442u0435u0441u0442u043eu0432u0443u044e u0437u0430u043fu0438u0441u044c
+        const { data: users, error: findError } = await supabase
+          .from('users')
+          .select('telegram_id, points')
+          .like('telegram_id', 'direct_test_%')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (findError) {
+          log(`u041eu0448u0438u0431u043au0430 u043fu043eu0438u0441u043au0430 u0442u0435u0441u0442u043eu0432u043eu0439 u0437u0430u043fu0438u0441u0438: ${findError.message}`, 'error');
+          updateStatus(`u041eu0448u0438u0431u043au0430 u043fu043eu0438u0441u043au0430 u0442u0435u0441u0442u043eu0432u043eu0439 u0437u0430u043fu0438u0441u0438: ${findError.message}`, false);
+          return;
+        }
+
+        if (!users || users.length === 0) {
+          log('u0422u0435u0441u0442u043eu0432u044bu0435 u0437u0430u043fu0438u0441u0438 u0434u043bu044f u043eu0431u043du043eu0432u043bu0435u043du0438u044f u043du0435 u043du0430u0439u0434u0435u043du044b.', 'warn');
+          updateStatus('u0422u0435u0441u0442u043eu0432u044bu0435 u0437u0430u043fu0438u0441u0438 u0434u043bu044f u043eu0431u043du043eu0432u043bu0435u043du0438u044f u043du0435 u043du0430u0439u0434u0435u043du044b.', false);
+          return;
+        }
+
+        const userToUpdate = users[0];
+        const newPoints = (userToUpdate.points || 0) + 1;
+        log(`u041eu0431u043du043eu0432u043bu044fu0435u043c u043fu043eu043bu044cu0437u043eu0432u0430u0442u0435u043bu044f ${userToUpdate.telegram_id}, u0443u0441u0442u0430u043du0430u0432u043bu0438u0432u0430u0435u043c points = ${newPoints}`);
+
+        const { data, error } = await supabase
+          .from('users')
+          .update({ points: newPoints })
+          .eq('telegram_id', userToUpdate.telegram_id)
+          .select();
+
+        if (error) {
+          log(`u041eu0448u0438u0431u043au0430 UPDATE: ${error.message}`, 'error');
+          updateStatus(`u041eu0448u0438u0431u043au0430 UPDATE: ${error.message}`, false);
+        } else {
+          log(`UPDATE u0443u0441u043fu0435u0448u043du043e. u0414u0430u043du043du044bu0435: ${JSON.stringify(data)}`, 'success');
+          updateStatus('UPDATE u0443u0441u043fu0435u0448u043du043e', true);
+        }
+      } catch (err) {
+        log(`u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430 UPDATE: ${err.message}`, 'error');
+        updateStatus(`u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430 UPDATE: ${err.message}`, false);
+      }
+    });
+
+    // u0422u0435u0441u0442 RPC
+    document.getElementById('test-rpc').addEventListener('click', async () => {
+        updateStatus('u0412u044bu043fu043eu043bu043du044fu0435u0442u0441u044f u0442u0435u0441u0442 RPC...');
+        const testId = 'direct_test_rpc_' + Date.now();
+        log(`u041fu043eu043fu044bu0442u043au0430 u0432u044bu0437u0432u0430u0442u044c RPC increment_xp u0434u043bu044f user_id: ${testId}`);
+        try {
+            const { data, error } = await supabase.rpc('increment_xp', {
+                user_id: testId,
+                xp_amount: 5
+            });
+
+            if (error) {
+                log(`u041eu0448u0438u0431u043au0430 RPC: ${error.message}`, 'error');
+                updateStatus(`u041eu0448u0438u0431u043au0430 RPC: ${error.message}`, false);
+            } else {
+                log(`RPC increment_xp u0443u0441u043fu0435u0448u043du043e u0432u044bu0437u0432u0430u043d. u0420u0435u0437u0443u043bu044cu0442u0430u0442: ${JSON.stringify(data)}`, 'success');
+                updateStatus('RPC increment_xp u0443u0441u043fu0435u0448u043du043e u0432u044bu0437u0432u0430u043d', true);
+            }
+        } catch (err) {
+            log(`u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430 RPC: ${err.message}`, 'error');
+            updateStatus(`u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430 RPC: ${err.message}`, false);
+        }
+    });
+
+  </script>
+</body>
+</html>
