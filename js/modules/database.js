@@ -118,7 +118,6 @@ async function withTimeout(promise, cacheKey = null, ms = 5000) {
 }
 
 // Функции для работы с пользователями
-const userCache = new Map();
 
 async function createUser(userData) {
   const userId = String(userData.id); // Убедимся, что ID - строка
