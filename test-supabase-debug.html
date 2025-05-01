@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тестирование Supabase</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    pre {
+      background-color: #f8f8f8;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      overflow-x: auto;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Диагностика Supabase</h1>
+  
+  <div class="card">
+    <h2>Информация о подключении</h2>
+    <div id="connection-info"></div>
+    <button id="test-connection">Проверить подключение</button>
+  </div>
+
+  <div class="card">
+    <h2>Проверка таблиц</h2>
+    <div id="tables-info"></div>
+    <button id="check-tables">Проверить таблицы</button>
+  </div>
+
+  <div class="card">
+    <h2>Проверка RLS политик</h2>
+    <div id="rls-info"></div>
+    <button id="check-rls">Проверить RLS политики</button>
+  </div>
+
+  <div class="card">
+    <h2>Тестирование операций</h2>
+    <button id="test-insert">Тест INSERT</button>
+    <button id="test-select">Тест SELECT</button>
+    <button id="test-update">Тест UPDATE</button>
+    <div id="operations-result"></div>
+  </div>
+
+  <div class="card">
+    <h2>Логи</h2>
+    <pre id="log-output"></pre>
+    <button id="clear-logs">Очистить логи</button>
+  </div>
+
+  <script type="module">
+    import { supabase } from './supabase-config.js';
+
+    // Функция для логирования
+    function log(message, type = 'info') {
+      const logOutput = document.getElementById('log-output');
+      const timestamp = new Date().toISOString();
+      const logMessage = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+      logOutput.textContent += logMessage + '\n';
+      console.log(logMessage);
+    }
+
+    // Функция для отображения результата
+    function displayResult(elementId, result, isSuccess = true) {
+      const element = document.getElementById(elementId);
+      element.innerHTML = `<div class="${isSuccess ? 'success' : 'error'}">${result}</div>`;
+    }
+
+    // Проверка подключения
+    document.getElementById('test-connection').addEventListener('click', async () => {
+      log('Проверка подключения к Supabase...');
+      try {
+        const connectionInfo = document.getElementById('connection-info');
+        connectionInfo.innerHTML = `
+          <p>URL: ${supabase.supabaseUrl}</p>
+          <p>API Key: ${supabase.supabaseKey ? '✓ Установлен' : '✗ Не установлен'}</p>
+        `;
+
+        // Проверка соединения простым запросом
+        const { data, error } = await supabase.from('users').select('count(*)', { count: 'exact', head: true });
+        
+        if (error) {
+          log(`Ошибка подключения: ${error.message}`, 'error');
+          displayResult('connection-info', `Ошибка подключения: ${error.message}`, false);
+        } else {
+          log('Подключение успешно установлено');
+          displayResult('connection-info', 'Подключение успешно установлено ✓');
+        }
+      } catch (error) {
+        log(`Критическая ошибка: ${error.message}`, 'error');
+        displayResult('connection-info', `Критическая ошибка: ${error.message}`, false);
+      }
+    });
+
+    // Проверка таблиц
+    document.getElementById('check-tables').addEventListener('click', async () => {
+      log('Проверка таблиц в базе данных...');
+      try {
+        const tablesInfo = document.getElementById('tables-info');
+        let tablesHtml = '<ul>';
+        
+        // Проверка таблицы users
+        const usersResult = await supabase.from('users').select('count(*)', { count: 'exact', head: true });
+        tablesHtml += `<li>Таблица users: ${usersResult.error ? `<span class="error">Ошибка: ${usersResult.error.message}</span>` : `<span class="success">Доступна</span>`}</li>`;
+        log(usersResult.error ? `Ошибка таблицы users: ${usersResult.error.message}` : 'Таблица users доступна');
+        
+        // Проверка таблицы checkins
+        const checkinsResult = await supabase.from('checkins').select('count(*)', { count: 'exact', head: true });
+        tablesHtml += `<li>Таблица checkins: ${checkinsResult.error ? `<span class="error">Ошибка: ${checkinsResult.error.message}</span>` : `<span class="success">Доступна</span>`}</li>`;
+        log(checkinsResult.error ? `Ошибка таблицы checkins: ${checkinsResult.error.message}` : 'Таблица checkins доступна');
+        
+        // Проверка таблицы referrals
+        const referralsResult = await supabase.from('referrals').select('count(*)', { count: 'exact', head: true });
+        tablesHtml += `<li>Таблица referrals: ${referralsResult.error ? `<span class="error">Ошибка: ${referralsResult.error.message}</span>` : `<span class="success">Доступна</span>`}</li>`;
+        log(referralsResult.error ? `Ошибка таблицы referrals: ${referralsResult.error.message}` : 'Таблица referrals доступна');
+        
+        // Проверка функции increment_xp
+        try {
+          const rpcResult = await supabase.rpc('increment_xp', { user_id: 'test_user', xp_amount: 1 });
+          tablesHtml += `<li>Функция increment_xp: ${rpcResult.error ? `<span class="error">Ошибка: ${rpcResult.error.message}</span>` : `<span class="success">Доступна</span>`}</li>`;
+          log(rpcResult.error ? `Ошибка функции increment_xp: ${rpcResult.error.message}` : 'Функция increment_xp доступна');
+        } catch (e) {
+          tablesHtml += `<li>Функция increment_xp: <span class="error">Ошибка: ${e.message}</span></li>`;
+          log(`Ошибка функции increment_xp: ${e.message}`, 'error');
+        }
+        
+        tablesHtml += '</ul>';
+        tablesInfo.innerHTML = tablesHtml;
+      } catch (error) {
+        log(`Критическая ошибка при проверке таблиц: ${error.message}`, 'error');
+        displayResult('tables-info', `Критическая ошибка: ${error.message}`, false);
+      }
+    });
+
+    // Проверка RLS политик
+    document.getElementById('check-rls').addEventListener('click', async () => {
+      log('Проверка RLS политик...');
+      try {
+        const rlsInfo = document.getElementById('rls-info');
+        let rlsHtml = '<ul>';
+        
+        // Тест INSERT для проверки RLS
+        const testUserId = 'test_rls_' + Date.now();
+        const insertResult = await supabase.from('users').insert({
+          telegram_id: testUserId,
+          username: 'RLS Test User',
+          points: 10
+        }).select();
+        
+        rlsHtml += `<li>INSERT в users: ${insertResult.error ? `<span class="error">Ошибка: ${insertResult.error.message}</span>` : `<span class="success">Успешно</span>`}</li>`;
+        log(insertResult.error ? `Ошибка INSERT в users: ${insertResult.error.message}` : 'INSERT в users успешен');
+        
+        // Тест SELECT для проверки RLS
+        const selectResult = await supabase.from('users').select('*').eq('telegram_id', testUserId);
+        rlsHtml += `<li>SELECT из users: ${selectResult.error ? `<span class="error">Ошибка: ${selectResult.error.message}</span>` : `<span class="success">Успешно</span>`}</li>`;
+        log(selectResult.error ? `Ошибка SELECT из users: ${selectResult.error.message}` : 'SELECT из users успешен');
+        
+        // Тест UPDATE для проверки RLS
+        const updateResult = await supabase.from('users').update({ points: 20 }).eq('telegram_id', testUserId).select();
+        rlsHtml += `<li>UPDATE в users: ${updateResult.error ? `<span class="error">Ошибка: ${updateResult.error.message}</span>` : `<span class="success">Успешно</span>`}</li>`;
+        log(updateResult.error ? `Ошибка UPDATE в users: ${updateResult.error.message}` : 'UPDATE в users успешен');
+        
+        // Тест INSERT в checkins
+        const insertCheckinResult = await supabase.from('checkins').insert({
+          user_id: testUserId,
+          streak_count: 1,
+          xp_earned: 10
+        }).select();
+        
+        rlsHtml += `<li>INSERT в checkins: ${insertCheckinResult.error ? `<span class="error">Ошибка: ${insertCheckinResult.error.message}</span>` : `<span class="success">Успешно</span>`}</li>`;
+        log(insertCheckinResult.error ? `Ошибка INSERT в checkins: ${insertCheckinResult.error.message}` : 'INSERT в checkins успешен');
+        
+        rlsHtml += '</ul>';
+        rlsInfo.innerHTML = rlsHtml;
+      } catch (error) {
+        log(`Критическая ошибка при проверке RLS: ${error.message}`, 'error');
+        displayResult('rls-info', `Критическая ошибка: ${error.message}`, false);
+      }
+    });
+
+    // Тестирование операций
+    document.getElementById('test-insert').addEventListener('click', async () => {
+      log('Тестирование операции INSERT...');
+      try {
+        const testUserId = 'test_insert_' + Date.now();
+        const { data, error } = await supabase.from('users').insert({
+          telegram_id: testUserId,
+          username: 'Test Insert User',
+          points: 5
+        }).select();
+        
+        if (error) {
+          log(`Ошибка INSERT: ${error.message}`, 'error');
+          displayResult('operations-result', `Ошибка INSERT: ${error.message}`, false);
+        } else {
+          log(`INSERT успешно выполнен. Создан пользователь с ID: ${testUserId}`);
+          displayResult('operations-result', `INSERT успешно выполнен. Создан пользователь с ID: ${testUserId}`);
+        }
+      } catch (error) {
+        log(`Критическая ошибка при INSERT: ${error.message}`, 'error');
+        displayResult('operations-result', `Критическая ошибка при INSERT: ${error.message}`, false);
+      }
+    });
+
+    document.getElementById('test-select').addEventListener('click', async () => {
+      log('Тестирование операции SELECT...');
+      try {
+        const { data, error } = await supabase.from('users').select('*').limit(5);
+        
+        if (error) {
+          log(`Ошибка SELECT: ${error.message}`, 'error');
+          displayResult('operations-result', `Ошибка SELECT: ${error.message}`, false);
+        } else {
+          log(`SELECT успешно выполнен. Получено ${data.length} записей`);
+          displayResult('operations-result', `SELECT успешно выполнен. Получено ${data.length} записей`);
+          log(`Данные: ${JSON.stringify(data)}`);
+        }
+      } catch (error) {
+        log(`Критическая ошибка при SELECT: ${error.message}`, 'error');
+        displayResult('operations-result', `Критическая ошибка при SELECT: ${error.message}`, false);
+      }
+    });
+
+    document.getElementById('test-update').addEventListener('click', async () => {
+      log('Тестирование операции UPDATE...');
+      try {
+        // Сначала получаем последнего тестового пользователя
+        const { data: users } = await supabase.from('users').select('*').ilike('telegram_id', 'test_%').order('created_at', { ascending: false }).limit(1);
+        
+        if (users && users.length > 0) {
+          const testUser = users[0];
+          const { data, error } = await supabase.from('users').update({ points: (testUser.points || 0) + 1 }).eq('telegram_id', testUser.telegram_id).select();
+          
+          if (error) {
+            log(`Ошибка UPDATE: ${error.message}`, 'error');
+            displayResult('operations-result', `Ошибка UPDATE: ${error.message}`, false);
+          } else {
+            log(`UPDATE успешно выполнен. Обновлен пользователь с ID: ${testUser.telegram_id}`);
+            displayResult('operations-result', `UPDATE успешно выполнен. Обновлен пользователь с ID: ${testUser.telegram_id}`);
+          }
+        } else {
+          log('Не найдено тестовых пользователей для обновления', 'warning');
+          displayResult('operations-result', 'Не найдено тестовых пользователей для обновления', false);
+        }
+      } catch (error) {
+        log(`Критическая ошибка при UPDATE: ${error.message}`, 'error');
+        displayResult('operations-result', `Критическая ошибка при UPDATE: ${error.message}`, false);
+      }
+    });
+
+    // Очистка логов
+    document.getElementById('clear-logs').addEventListener('click', () => {
+      document.getElementById('log-output').textContent = '';
+      log('Логи очищены');
+    });
+
+    // Инициализация
+    log('Страница диагностики Supabase загружена');
+  </script>
+</body>
+</html>

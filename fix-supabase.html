@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>u0418u0441u043fu0440u0430u0432u043bu0435u043du0438u0435 Supabase</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    pre {
+      background-color: #f8f8f8;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      overflow-x: auto;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>u0418u0441u043fu0440u0430u0432u043bu0435u043du0438u0435 u043fu0440u043eu0431u043bu0435u043c u0441 Supabase</h1>
+  
+  <div class="card">
+    <h2>u0410u0432u0442u043eu043cu0430u0442u0438u0447u0435u0441u043au043eu0435 u0438u0441u043fu0440u0430u0432u043bu0435u043du0438u0435</h2>
+    <p>u041du0430u0436u043cu0438u0442u0435 u043au043du043eu043fu043au0443 u043du0438u0436u0435, u0447u0442u043eu0431u044b u0430u0432u0442u043eu043cu0430u0442u0438u0447u0435u0441u043au0438 u0438u0441u043fu0440u0430u0432u0438u0442u044c u0432u0441u0435 u043fu0440u043eu0431u043bu0435u043cu044b u0441 Supabase:</p>
+    <button id="fix-all">u0418u0441u043fu0440u0430u0432u0438u0442u044c u0432u0441u0435 u043fu0440u043eu0431u043bu0435u043cu044b</button>
+    <div id="fix-result"></div>
+  </div>
+
+  <div class="card">
+    <h2>u041bu043eu0433u0438</h2>
+    <pre id="log-output"></pre>
+  </div>
+
+  <script type="module">
+    import { fixAllSupabaseIssues } from './js/fix-supabase-issues.js';
+
+    // u0424u0443u043du043au0446u0438u044f u0434u043bu044f u043bu043eu0433u0438u0440u043eu0432u0430u043du0438u044f
+    function log(message, type = 'info') {
+      const logOutput = document.getElementById('log-output');
+      const timestamp = new Date().toISOString();
+      const logMessage = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+      logOutput.textContent += logMessage + '\n';
+      console.log(logMessage);
+    }
+
+    // u0424u0443u043du043au0446u0438u044f u0434u043bu044f u043eu0442u043eu0431u0440u0430u0436u0435u043du0438u044f u0440u0435u0437u0443u043bu044cu0442u0430u0442u0430
+    function displayResult(result, isSuccess = true) {
+      const resultElement = document.getElementById('fix-result');
+      resultElement.innerHTML = `<div class="${isSuccess ? 'success' : 'error'}">${result}</div>`;
+    }
+
+    // u041eu0431u0440u0430u0431u043eu0442u0447u0438u043a u043au043du043eu043fu043au0438 u0438u0441u043fu0440u0430u0432u043bu0435u043du0438u044f
+    document.getElementById('fix-all').addEventListener('click', async () => {
+      log('u041du0430u0447u0438u043du0430u0435u043c u0438u0441u043fu0440u0430u0432u043bu0435u043du0438u0435 u0432u0441u0435u0445 u043fu0440u043eu0431u043bu0435u043c u0441 Supabase...');
+      
+      try {
+        const result = await fixAllSupabaseIssues();
+        
+        if (result.success) {
+          log('u0412u0441u0435 u043fu0440u043eu0431u043bu0435u043cu044b u0443u0441u043fu0435u0448u043du043e u0438u0441u043fu0440u0430u0432u043bu0435u043du044b!', 'success');
+          displayResult('u0412u0441u0435 u043fu0440u043eu0431u043bu0435u043cu044b u0443u0441u043fu0435u0448u043du043e u0438u0441u043fu0440u0430u0432u043bu0435u043du044b! u0422u0435u043fu0435u0440u044c u0434u0430u043du043du044bu0435 u0434u043eu043bu0436u043du044b u0441u043eu0445u0440u0430u043du044fu0442u044cu0441u044f u0432 Supabase.', true);
+        } else {
+          log(`u041eu0448u0438u0431u043au0430 u043fu0440u0438 u0438u0441u043fu0440u0430u0432u043bu0435u043du0438u0438: ${result.message}`, 'error');
+          displayResult(`u041eu0448u0438u0431u043au0430 u043fu0440u0438 u0438u0441u043fu0440u0430u0432u043bu0435u043du0438u0438: ${result.message}`, false);
+        }
+      } catch (error) {
+        log(`u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430: ${error.message}`, 'error');
+        displayResult(`u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430: ${error.message}`, false);
+      }
+    });
+
+    // u0418u043du0438u0446u0438u0430u043bu0438u0437u0430u0446u0438u044f
+    log('u0421u0442u0440u0430u043du0438u0446u0430 u0438u0441u043fu0440u0430u0432u043bu0435u043du0438u044f Supabase u0437u0430u0433u0440u0443u0436u0435u043du0430');
+  </script>
+</body>
+</html>

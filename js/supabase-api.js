@@ -4,14 +4,21 @@ import { supabase } from '../supabase-config.js';
 export async function getUser(telegramId) {
   console.log('Получение пользователя с ID:', telegramId);
   try {
+    // Всегда преобразуем telegramId в строку
+    const telegramIdStr = String(telegramId);
+    console.log('Запрос пользователя с telegram_id (строка):', telegramIdStr);
+    
     const { data, error } = await supabase
       .from('users')
       .select('*')
-      .eq('telegram_id', String(telegramId))
+      .eq('telegram_id', telegramIdStr)
       .single();
     
     if (error) {
       console.error('Ошибка при получении пользователя:', error);
+      console.error('Код ошибки:', error.code);
+      console.error('Сообщение ошибки:', error.message);
+      console.error('Детали ошибки:', error.details);
       return null;
     }
     
@@ -32,6 +39,8 @@ export async function createUser(userData) {
       telegram_id: String(userData.telegram_id)
     };
     
+    console.log('Отправка данных для создания пользователя (с telegram_id как строкой):', userDataWithStringId);
+    
     const { data, error } = await supabase
       .from('users')
       .insert([userDataWithStringId])
@@ -39,6 +48,9 @@ export async function createUser(userData) {
     
     if (error) {
       console.error('Ошибка при создании пользователя:', error);
+      console.error('Код ошибки:', error.code);
+      console.error('Сообщение ошибки:', error.message);
+      console.error('Детали ошибки:', error.details);
       return null;
     }
     
@@ -53,14 +65,29 @@ export async function createUser(userData) {
 export async function updateUser(telegramId, updates) {
   console.log('Обновление пользователя с ID:', telegramId, 'Обновления:', updates);
   try {
+    // Всегда преобразуем telegramId в строку
+    const telegramIdStr = String(telegramId);
+    console.log('Обновление пользователя с telegram_id (строка):', telegramIdStr);
+    
+    // Проверяем, есть ли в обновлениях telegram_id, и если есть, преобразуем его в строку
+    const updatesWithStringId = { ...updates };
+    if (updatesWithStringId.telegram_id !== undefined) {
+      updatesWithStringId.telegram_id = String(updatesWithStringId.telegram_id);
+    }
+    
+    console.log('Отправка данных для обновления пользователя:', updatesWithStringId);
+    
     const { data, error } = await supabase
       .from('users')
-      .update(updates)
-      .eq('telegram_id', String(telegramId))
+      .update(updatesWithStringId)
+      .eq('telegram_id', telegramIdStr)
       .select();
     
     if (error) {
       console.error('Ошибка при обновлении пользователя:', error);
+      console.error('Код ошибки:', error.code);
+      console.error('Сообщение ошибки:', error.message);
+      console.error('Детали ошибки:', error.details);
       return null;
     }
     
@@ -103,17 +130,52 @@ export async function incrementUserXP(telegramId, amount) {
 export async function createCheckin(userId, streak, xpEarned) {
   console.log('Создание чекина для пользователя:', userId, 'стрик:', streak, 'XP:', xpEarned);
   try {
+    // Всегда преобразуем userId в строку
+    const userIdStr = String(userId);
+    console.log('Создание чекина для пользователя (строка):', userIdStr);
+    
+    // Убедимся, что streak и xpEarned являются числами
+    const streakNum = Number(streak);
+    const xpEarnedNum = Number(xpEarned);
+    
+    console.log('Отправка данных для создания чекина:', {
+      user_id: userIdStr,
+      streak_count: streakNum,
+      xp_earned: xpEarnedNum
+    });
+    
     const { data, error } = await supabase
       .from('checkins')
       .insert({
-        user_id: String(userId),
-        streak_count: streak,
-        xp_earned: xpEarned
+        user_id: userIdStr,
+        streak_count: streakNum,
+        xp_earned: xpEarnedNum
       })
       .select();
     
     if (error) {
       console.error('Ошибка при создании чекина:', error);
+      console.error('Код ошибки:', error.code);
+      console.error('Сообщение ошибки:', error.message);
+      console.error('Детали ошибки:', error.details);
+      
+      // Пробуем использовать RPC вместо прямого INSERT
+      console.log('Попытка использовать RPC для создания чекина...');
+      try {
+        const { error: rpcError } = await supabase.rpc('create_checkin', {
+          p_user_id: userIdStr,
+          p_streak_count: streakNum,
+          p_xp_earned: xpEarnedNum
+        });
+        
+        if (rpcError) {
+          console.error('Ошибка RPC при создании чекина:', rpcError);
+          return null;
+        }
+      } catch (rpcError) {
+        console.error('Критическая ошибка RPC при создании чекина:', rpcError);
+      }
+      
       return null;
     }
     
@@ -122,12 +184,36 @@ export async function createCheckin(userId, streak, xpEarned) {
     // Обновляем данные пользователя
     const now = new Date().toISOString();
     // Получаем текущие данные пользователя
-    const user = await getUser(userId);
-    await updateUser(userId, {
+    const user = await getUser(userIdStr);
+    
+    // Также обновляем XP пользователя
+    console.log('Обновление данных пользователя после чекина...');
+    
+    // Сначала пробуем использовать RPC для увеличения XP
+    try {
+      console.log('Вызов RPC increment_xp...');
+      const { error: xpError } = await supabase.rpc('increment_xp', {
+        user_id: userIdStr,
+        xp_amount: xpEarnedNum
+      });
+      
+      if (xpError) {
+        console.error('Ошибка RPC при увеличении XP:', xpError);
+      } else {
+        console.log('XP успешно увеличен через RPC');
+      }
+    } catch (xpError) {
+      console.error('Критическая ошибка RPC при увеличении XP:', xpError);
+    }
+    
+    // Обновляем остальные данные пользователя
+    const updateResult = await updateUser(userIdStr, {
       last_checkin: now,
-      current_streak: streak,
-      max_streak: Math.max(streak, user?.max_streak || 0)
+      current_streak: streakNum,
+      max_streak: Math.max(streakNum, user?.max_streak || 0)
     });
+    
+    console.log('Результат обновления пользователя:', updateResult);
     
     return data[0];
   } catch (error) {
