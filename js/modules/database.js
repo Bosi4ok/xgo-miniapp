@@ -1,4 +1,4 @@
-import { supabaseClient } from '../supabase-config.js';
+import { supabaseClient } from '../../supabase-config.js';
 import { userCache } from './cache.js';
 
 // Функция для получения данных пользователя из базы данных или кэша
