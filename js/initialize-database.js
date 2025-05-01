@@ -1,136 +1,53 @@
-// u0421u043au0440u0438u043fu0442 u0434u043bu044f u0438u043du0438u0446u0438u0430u043bu0438u0437u0430u0446u0438u0438 u0431u0430u0437u044b u0434u0430u043du043du044bu0445
+// Скрипт для инициализации базы данных
 
 import { supabaseClient } from './modules/database.js';
 
-// u0424u0443u043du043au0446u0438u044f u0434u043bu044f u0432u044bu043fu043eu043bu043du0435u043du0438u044f SQL-u0437u0430u043fu0440u043eu0441u0430
-async function executeSql(sql) {
-  try {
-    const { error } = await supabaseClient.rpc('exec_sql', { sql });
-    if (error) {
-      console.error('u041eu0448u0438u0431u043au0430 u043fu0440u0438 u0432u044bu043fu043eu043bu043du0435u043du0438u0438 SQL:', error);
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error('u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430 u043fu0440u0438 u0432u044bu043fu043eu043bu043du0435u043du0438u0438 SQL:', error);
-    return false;
-  }
-}
-
-// u0424u0443u043du043au0446u0438u044f u0434u043bu044f u0438u043du0438u0446u0438u0430u043bu0438u0437u0430u0446u0438u0438 u0431u0430u0437u044b u0434u0430u043du043du044bu0445
+// Функция для инициализации базы данных
 async function initializeDatabase() {
-  console.log('u041du0430u0447u0438u043du0430u0435u043c u0438u043du0438u0446u0438u0430u043bu0438u0437u0430u0446u0438u044e u0431u0430u0437u044b u0434u0430u043du043du044bu0445...');
-  
-  // u0421u043eu0437u0434u0430u0435u043c u0445u0440u0430u043du0438u043cu0443u044e u043fu0440u043eu0446u0435u0434u0443u0440u0443 u0434u043bu044f u0432u044bu043fu043eu043bu043du0435u043du0438u044f SQL
-  const createExecSqlFunction = `
-    CREATE OR REPLACE FUNCTION exec_sql(sql TEXT)
-    RETURNS VOID AS $$
-    BEGIN
-      EXECUTE sql;
-    END;
-    $$ LANGUAGE plpgsql SECURITY DEFINER;
-  `;
-  
-  // u0421u043eu0437u0434u0430u0435u043c u0444u0443u043du043au0446u0438u044e u0434u043bu044f u0432u044bu043fu043eu043bu043du0435u043du0438u044f SQL
+  console.log('Проверяем инициализацию базы данных...');
+
+  // !! Важно !!
+  // Код для создания таблиц и функций был удален.
+  // Предполагается, что структура БД (таблицы users, checkins, referrals)
+  // и функция increment_xp уже существуют в Supabase.
+  // Управление схемой БД должно производиться через Supabase Dashboard или миграции.
+
   try {
-    const { error } = await supabaseClient.rpc('exec_sql', { sql: createExecSqlFunction });
+    // Простая проверка соединения/доступности таблицы users
+    const { error } = await supabaseClient
+      .from('users')
+      .select('id')
+      .limit(1);
+
     if (error) {
-      // u0415u0441u043bu0438 u0444u0443u043du043au0446u0438u044f u0435u0449u0435 u043du0435 u0441u0443u0449u0435u0441u0442u0432u0443u0435u0442, u0441u043eu0437u0434u0430u0435u043c u0435u0435 u0447u0435u0440u0435u0437 SQL-u0437u0430u043fu0440u043eu0441
-      const { error: sqlError } = await supabaseClient.from('_rpc').select('*').limit(1);
-      if (sqlError) {
-        console.error('u041eu0448u0438u0431u043au0430 u043fu0440u0438 u0441u043eu0437u0434u0430u043du0438u0438 u0444u0443u043du043au0446u0438u0438 exec_sql:', sqlError);
-        return false;
-      }
+      console.error('Ошибка при проверке доступа к таблице users:', error);
+      // Можно добавить обработку, если таблица недоступна
+      // Например, показать сообщение пользователю
+      return false; // Обозначаем, что инициализация (проверка) не удалась
+    } else {
+      console.log('База данных доступна (таблица users найдена).');
+      return true; // Инициализация (проверка) успешна
     }
-  } catch (error) {
-    console.error('u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430 u043fu0440u0438 u0441u043eu0437u0434u0430u043du0438u0438 u0444u0443u043du043au0446u0438u0438 exec_sql:', error);
-    return false;
-  }
-  
-  // u0421u043eu0437u0434u0430u0435u043c u0442u0430u0431u043bu0438u0446u044b
-  console.log('u0421u043eu0437u0434u0430u0435u043c u0442u0430u0431u043bu0438u0446u044b...');
-  const createTablesSql = `
-    -- u041fu0435u0440u0435u0441u043eu0437u0434u0430u0435u043c u0442u0430u0431u043bu0438u0446u0443 users u0441 u043fu0440u0430u0432u0438u043bu044cu043du043eu0439 u0441u0442u0440u0443u043au0442u0443u0440u043eu0439
-    DROP TABLE IF EXISTS users CASCADE;
-    CREATE TABLE users (
-        id BIGSERIAL PRIMARY KEY,
-        telegram_id TEXT NOT NULL UNIQUE,
-        username TEXT,
-        first_name TEXT,
-        last_name TEXT,
-        points INTEGER DEFAULT 0,
-        referral_code TEXT UNIQUE,
-        referred_by BIGINT REFERENCES users(id),
-        current_streak INTEGER DEFAULT 0,
-        max_streak INTEGER DEFAULT 0,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-        last_checkin TIMESTAMP WITH TIME ZONE
-    );
 
-    -- u0421u043eu0437u0434u0430u0435u043c u0442u0430u0431u043bu0438u0446u0443 u0434u043bu044f u0447u0435u043au0438u043du043eu0432
-    DROP TABLE IF EXISTS checkins CASCADE;
-    CREATE TABLE checkins (
-        id BIGSERIAL PRIMARY KEY,
-        user_id TEXT NOT NULL, -- u0418u0441u043fu043eu043bu044cu0437u0443u0435u043c telegram_id u0432u043cu0435u0441u0442u043e u0441u0441u044bu043bu043au0438 u043du0430 id
-        streak_count INTEGER NOT NULL,
-        xp_earned INTEGER NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
-    );
-
-    -- u0421u043eu0437u0434u0430u0435u043c u0442u0430u0431u043bu0438u0446u0443 u0434u043bu044f u0440u0435u0444u0435u0440u0430u043bu043eu0432
-    DROP TABLE IF EXISTS referrals CASCADE;
-    CREATE TABLE referrals (
-        id BIGSERIAL PRIMARY KEY,
-        referrer_id TEXT NOT NULL, -- Telegram ID u0440u0435u0444u0435u0440u0435u0440u0430
-        referred_id TEXT NOT NULL, -- Telegram ID u043fu0440u0438u0433u043bu0430u0448u0435u043du043du043eu0433u043e u043fu043eu043bu044cu0437u043eu0432u0430u0442u0435u043bu044f
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
-    );
-  `;
-  
-  if (!await executeSql(createTablesSql)) {
-    console.error('u041eu0448u0438u0431u043au0430 u043fu0440u0438 u0441u043eu0437u0434u0430u043du0438u0438 u0442u0430u0431u043bu0438u0446');
+  } catch (catchError) {
+    console.error('Критическая ошибка при проверке инициализации базы данных:', catchError);
     return false;
   }
-  
-  // u0421u043eu0437u0434u0430u0435u043c u0445u0440u0430u043du0438u043cu0443u044e u043fu0440u043eu0446u0435u0434u0443u0440u0443 u0434u043bu044f u0443u0432u0435u043bu0438u0447u0435u043du0438u044f XP
-  console.log('u0421u043eu0437u0434u0430u0435u043c u0445u0440u0430u043du0438u043cu0443u044e u043fu0440u043eu0446u0435u0434u0443u0440u0443 u0434u043bu044f u0443u0432u0435u043bu0438u0447u0435u043du0438u044f XP...');
-  const incrementXpSql = `
-    CREATE OR REPLACE FUNCTION increment_xp(user_id TEXT, xp_amount INTEGER)
-    RETURNS VOID AS $$
-    BEGIN
-      -- u041eu0431u043du043eu0432u043bu044fu0435u043c u043au043eu043bu0438u0447u0435u0441u0442u0432u043e XP u043fu043eu043bu044cu0437u043eu0432u0430u0442u0435u043bu044f
-      UPDATE users
-      SET points = COALESCE(points, 0) + xp_amount
-      WHERE telegram_id = user_id;
-      
-      -- u0415u0441u043bu0438 u043fu043eu043bu044cu0437u043eu0432u0430u0442u0435u043bu044c u043du0435 u043du0430u0439u0434u0435u043d, u0441u043eu0437u0434u0430u0435u043c u043du043eu0432u043eu0433u043e
-      IF NOT FOUND THEN
-        INSERT INTO users (telegram_id, points)
-        VALUES (user_id, xp_amount);
-      END IF;
-    END;
-    $$ LANGUAGE plpgsql;
-  `;
-  
-  if (!await executeSql(incrementXpSql)) {
-    console.error('u041eu0448u0438u0431u043au0430 u043fu0440u0438 u0441u043eu0437u0434u0430u043du0438u0438 u0445u0440u0430u043du0438u043cu043eu0439 u043fu0440u043eu0446u0435u0434u0443u0440u044b increment_xp');
-    return false;
-  }
-  
-  console.log('u0411u0430u0437u0430 u0434u0430u043du043du044bu0445 u0443u0441u043fu0435u0448u043du043e u0438u043du0438u0446u0438u0430u043bu0438u0437u0438u0440u043eu0432u0430u043du0430!');
-  return true;
 }
 
-// u042du043au0441u043fu043eu0440u0442u0438u0440u0443u0435u043c u0444u0443u043du043au0446u0438u044e u0434u043bu044f u0438u0441u043fu043eu043bu044cu0437u043eu0432u0430u043du0438u044f u0432 u0434u0440u0443u0433u0438u0445 u043cu043eu0434u0443u043bu044fu0445
+// Экспортируем функцию для использования в других модулях
 window.initializeDatabase = initializeDatabase;
 
-// u0417u0430u043fu0443u0441u043au0430u0435u043c u0438u043du0438u0446u0438u0430u043bu0438u0437u0430u0446u0438u044e u0431u0430u0437u044b u0434u0430u043du043du044bu0445 u043fu0440u0438 u0437u0430u0433u0440u0443u0437u043au0435 u0441u043au0440u0438u043fu0442u0430
+// Запускаем проверку инициализации базы данных при загрузке скрипта
 initializeDatabase().then(success => {
   if (success) {
-    console.log('u0418u043du0438u0446u0438u0430u043bu0438u0437u0430u0446u0438u044f u0431u0430u0437u044b u0434u0430u043du043du044bu0445 u0437u0430u0432u0435u0440u0448u0435u043du0430, u043cu043eu0436u043du043e u043fu0435u0440u0435u0437u0430u0433u0440u0443u0437u0438u0442u044c u0441u0442u0440u0430u043du0438u0446u0443');
+    console.log('Проверка инициализации базы данных завершена успешно.');
+    // Можно добавить логику, которая должна выполниться после успешной проверки
+    // Например, запуск основного UI приложения
   } else {
-    console.error('u041eu0448u0438u0431u043au0430 u043fu0440u0438 u0438u043du0438u0446u0438u0430u043bu0438u0437u0430u0446u0438u0438 u0431u0430u0437u044b u0434u0430u043du043du044bu0445');
+    console.error('Ошибка при проверке инициализации базы данных.');
+    // Можно добавить обработку ошибки, например, показать сообщение пользователю
   }
 }).catch(error => {
-  console.error('u041au0440u0438u0442u0438u0447u0435u0441u043au0430u044f u043eu0448u0438u0431u043au0430 u043fu0440u0438 u0438u043du0438u0446u0438u0430u043bu0438u0437u0430u0446u0438u0438 u0431u0430u0437u044b u0434u0430u043du043du044bu0445:', error);
+  console.error('Критическая ошибка при запуске проверки инициализации базы данных:', error);
 });

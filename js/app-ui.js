@@ -175,7 +175,7 @@ async function getTelegramUserName() {
     // Если ID получен, пытаемся получить данные из базы данных (приоритет #1)
     if (telegramId) {
       // Получаем пользователя из базы данных
-      const user = await getUser(telegramId);
+      const user = await getUser({ id: telegramId });
       if (user && user.username) {
         console.log('Получено имя пользователя из базы данных:', user.username);
         // Обновляем имя в localStorage для быстрого доступа на этом устройстве
@@ -190,8 +190,8 @@ async function getTelegramUserName() {
         
         // Сохраняем имя из localStorage в базу данных для синхронизации между устройствами
         try {
-          await updateUser(telegramId, { username: savedName });
-          console.log('Имя из localStorage сохранено в базу данных для синхронизации:', savedName);
+          await updateUser({ id: telegramId }, { username: savedName });
+          console.log('Имя из localStorage сохранено в базе данных для синхронизации:', savedName);
         } catch (dbError) {
           console.error('Ошибка при сохранении имени в базе данных:', dbError);
         }
@@ -213,7 +213,7 @@ async function getTelegramUserName() {
           localStorage.setItem('telegram_user_name_' + telegramId, userName);
           
           try {
-            await updateUser(telegramId, { username: userName });
+            await updateUser({ id: telegramId }, { username: userName });
             console.log('Имя из Telegram WebApp сохранено в базу данных для синхронизации:', userName);
           } catch (dbError) {
             console.error('Ошибка при сохранении имени в базе данных:', dbError);
@@ -238,7 +238,7 @@ async function getTelegramUserName() {
           localStorage.setItem('telegram_user_name_' + telegramId, fullName);
           
           try {
-            await updateUser(telegramId, { username: fullName });
+            await updateUser({ id: telegramId }, { username: fullName });
             console.log('Имя из TelegramUserData сохранено в базу данных для синхронизации:', fullName);
           } catch (dbError) {
             console.error('Ошибка при сохранении имени в базе данных:', dbError);
@@ -257,7 +257,7 @@ async function getTelegramUserName() {
       localStorage.setItem('telegram_user_name_' + telegramId, generatedName);
       
       try {
-        await updateUser(telegramId, { username: generatedName });
+        await updateUser({ id: telegramId }, { username: generatedName });
         console.log('Сгенерированное имя сохранено в базе данных для синхронизации');
       } catch (dbError) {
         console.error('Ошибка при сохранении имени в базе данных:', dbError);
@@ -480,7 +480,7 @@ async function generateReferralCode() {
     const telegramId = await getTelegramUserId();
     
     // Получаем реферальный код из базы данных
-    let referralCode = await getReferralCode(telegramId);
+    let referralCode = await getReferralCode({ id: telegramId });
     
     // Если кода нет, генерируем новый и сохраняем в базе данных
     if (!referralCode) {
@@ -494,7 +494,7 @@ async function generateReferralCode() {
       }
       
       // Сохраняем в базе данных
-      await updateUser(telegramId, { referral_code: referralCode });
+      await updateUser({ id: telegramId }, { referral_code: referralCode });
       console.log('Создан новый реферальный код:', referralCode);
     }
     
@@ -524,7 +524,7 @@ async function updateCheckinButton() {
       const telegramId = await getTelegramUserId();
       
       // Получаем дату последнего чекина из базы данных
-      const lastCheckin = await getLastCheckin(telegramId);
+      const lastCheckin = await getLastCheckin({ id: telegramId });
       const today = new Date();
       const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
       
@@ -558,7 +558,7 @@ async function claimDailyReward() {
     const telegramId = await getTelegramUserId();
     
     // Получаем данные пользователя из базы данных
-    const user = await getUser(telegramId);
+    const user = await getUser({ id: telegramId });
     
     // Получаем дату последнего чекина
     const lastCheckin = user.last_checkin;
@@ -577,20 +577,20 @@ async function claimDailyReward() {
     const xpEarned = 10 * currentStreak; // XP зависит от длины стрика
     
     // Создаем запись о чекине в базе данных
-    await createCheckin(telegramId, currentStreak, xpEarned);
+    await createCheckin({ id: telegramId }, currentStreak, xpEarned);
     
     // Увеличиваем XP пользователя
-    await incrementXP(telegramId, xpEarned);
+    await incrementXP({ id: telegramId }, xpEarned);
     
     // Обновляем данные пользователя
-    await updateUser(telegramId, {
+    await updateUser({ id: telegramId }, {
       current_streak: currentStreak,
       max_streak: Math.max(currentStreak, user.max_streak || 0),
       last_checkin: new Date().toISOString()
     });
     
     // Получаем обновленные данные пользователя из базы данных
-    const updatedUser = await getUser(telegramId);
+    const updatedUser = await getUser({ id: telegramId });
     console.log('Обновленные данные пользователя после чекина:', updatedUser);
     
     // Обновляем UI
@@ -634,7 +634,7 @@ async function getUserNameFromDatabase(telegramId) {
     console.log('Получение имени пользователя из базы данных Supabase...');
     
     // Получаем данные пользователя из базы данных
-    const user = await getUser(telegramId);
+    const user = await getUser({ id: telegramId });
     console.log('Получены данные пользователя из базы данных:', user);
     
     // Проверяем, есть ли имя пользователя в базе данных
@@ -675,7 +675,7 @@ async function updateProfileModal() {
     console.log('Telegram ID для профиля:', telegramId);
     
     // Получаем данные пользователя из базы данных
-    const user = await getUser(telegramId);
+    const user = await getUser({ id: telegramId });
     console.log('Данные пользователя для профиля:', user);
     
     // Используем данные из базы данных, которые идентифицируются по ID пользователя
@@ -694,7 +694,7 @@ async function updateProfileModal() {
         console.log('Имя пользователя установлено по умолчанию:', defaultName);
         
         // Сохраняем имя в базу данных для синхронизации между устройствами
-        await updateUser(telegramId, { username: defaultName });
+        await updateUser({ id: telegramId }, { username: defaultName });
         console.log('Имя пользователя по умолчанию сохранено в базу данных:', defaultName);
         
         // Сохраняем имя в localStorage для быстрого доступа на этом устройстве
@@ -725,7 +725,7 @@ async function updateProfileModal() {
     }
     
     // Получаем количество рефералов
-    const referralsCount = await getReferralsCount(telegramId);
+    const referralsCount = await getReferralsCount({ id: telegramId });
     console.log('Количество рефералов:', referralsCount);
     
     // Обновляем количество рефералов в модальном окне
@@ -742,13 +742,11 @@ async function updateProfileModal() {
       totalXpModal.textContent = userPoints.toString();
       
       // Сохраняем значение в localStorage с использованием ID пользователя
-      if (telegramId) {
-        localStorage.setItem('user_points_' + telegramId, userPoints.toString());
-        
-        // Также обновляем старый ключ для обратной совместимости
-        localStorage.setItem('totalXp', userPoints.toString());
-        console.log('Обновлены значения XP в localStorage по ID:', telegramId, userPoints);
-      }
+      localStorage.setItem('user_points_' + telegramId, userPoints.toString());
+      
+      // Также обновляем старый ключ для обратной совместимости
+      localStorage.setItem('totalXp', userPoints.toString());
+      console.log('Обновлены значения XP в localStorage по ID:', telegramId, userPoints);
     }
     console.log('XP обновлено в модальном окне:', user.points || 0);
     
@@ -814,7 +812,7 @@ async function refreshUserData() {
     console.log('Очищен кэш пользователя');
     
     // Получаем свежие данные пользователя
-    const user = await getUser(telegramId);
+    const user = await getUser({ id: telegramId });
     console.log('Получены свежие данные пользователя:', user);
     
     // Обновляем глобальную переменную
@@ -856,17 +854,17 @@ async function initializeApp() {
     
     // Получаем данные пользователя из базы данных или создаем нового пользователя
     console.log('Запрашиваем данные пользователя из базы данных...');
-    const user = await getUser(telegramId);
+    const user = await getUser({ id: telegramId });
     console.log('Получены данные пользователя:', user);
     
     // Проверяем, что данные пользователя содержат правильный Telegram ID
     if (user.telegram_id !== String(telegramId)) {
       console.warn('Несоответствие Telegram ID! В базе:', user.telegram_id, 'Текущий:', telegramId);
       // Обновляем Telegram ID в базе данных
-      await updateUser(telegramId, { telegram_id: String(telegramId) });
+      await updateUser({ id: telegramId }, { telegram_id: String(telegramId) });
       console.log('Telegram ID обновлен в базе данных');
       // Получаем обновленные данные пользователя
-      user = await getUser(telegramId);
+      user = await getUser({ id: telegramId });
     }
     
     // Выводим подробную информацию о пользователе
@@ -888,7 +886,7 @@ async function initializeApp() {
     // Обновляем имя пользователя в базе данных, если оно отличается
     if (user && user.username !== userName) {
       console.log('Обновляем имя пользователя в базе данных:', userName);
-      await updateUser(telegramId, { username: userName });
+      await updateUser({ id: telegramId }, { username: userName });
     }
     
     // Обновляем UI с данными из базы
@@ -1067,7 +1065,7 @@ window.addEventListener('load', async function() {
     }
     
     // Показываем уведомление об ошибке
-    showNotification('Error loading application. Please try again later.', 'error');
+    showNotification('Error loading application. Please try again.', 'error');
   }
 });
 
@@ -1115,7 +1113,7 @@ window.claimDailyRewardInDb = async function() {
     }
     
     // Получаем данные пользователя из базы данных
-    const user = await getUser(telegramId);
+    const user = await getUser({ id: telegramId });
     
     // Получаем дату последнего чекина
     const lastCheckin = user.last_checkin;
@@ -1134,20 +1132,20 @@ window.claimDailyRewardInDb = async function() {
     const xpEarned = 10 * currentStreak; // XP зависит от длины стрика
     
     // Создаем запись о чекине в базе данных
-    await createCheckin(telegramId, currentStreak, xpEarned);
+    await createCheckin({ id: telegramId }, currentStreak, xpEarned);
     
     // Увеличиваем XP пользователя
-    await incrementXP(telegramId, xpEarned);
+    await incrementXP({ id: telegramId }, xpEarned);
     
     // Обновляем данные пользователя
-    await updateUser(telegramId, {
+    await updateUser({ id: telegramId }, {
       current_streak: currentStreak,
       max_streak: Math.max(currentStreak, user.max_streak || 0),
       last_checkin: new Date().toISOString()
     });
     
     // Получаем обновленные данные пользователя из базы данных
-    const updatedUser = await getUser(telegramId);
+    const updatedUser = await getUser({ id: telegramId });
     console.log('Обновленные данные пользователя после чекина:', updatedUser);
     
     // Обновляем UI
