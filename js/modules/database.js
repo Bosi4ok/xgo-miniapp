@@ -1,5 +1,5 @@
 import { supabaseClient } from '../../supabase-config.js';
-import { userCache } from './cache.js';
+import { CacheManager } from './cache.js';
 
 // Функция для получения данных пользователя из базы данных или кэша
 // Принимает объект userData из Telegram.WebApp.initDataUnsafe.user
@@ -14,7 +14,7 @@ async function getUser(userData) {
   console.log(`Запрос пользователя из базы данных по Telegram ID: ${userId}`);
 
   // Проверяем локальный кэш сначала
-  const cachedUser = userCache.get(userId);
+  const cachedUser = CacheManager.get(cacheKey);
   if (cachedUser) {
     console.log('Найден пользователь в кэше:', cachedUser);
     return cachedUser;
@@ -38,7 +38,7 @@ async function getUser(userData) {
 
     if (data) {
       console.log('Пользователь найден в Supabase:', data);
-      userCache.set(userId, data); // Сохраняем в кэш
+      CacheManager.set(cacheKey, data); // Сохраняем в кэш
       return data;
     } else {
       // Пользователь не найден в Supabase, создаем нового
@@ -124,6 +124,7 @@ async function createUser(userData) {
   const username = userData.username || `Player_${userId.substring(0, 4)}`; // Используем username или генерируем запасной вариант
   const firstName = userData.first_name || 'Unknown';
   const lastName = userData.last_name || '';
+  const cacheKey = `user:${userId}`;
 
   console.log(`Создание нового пользователя: ID=${userId}, Username=${username}, Name=${firstName} ${lastName}`);
 
@@ -156,7 +157,7 @@ async function createUser(userData) {
     }
 
     console.log('Пользователь успешно создан в Supabase:', data);
-    userCache.set(userId, data); // Добавляем нового пользователя в кэш
+    CacheManager.set(cacheKey, data); // Добавляем нового пользователя в кэш
     return data;
 
   } catch (error) {
@@ -233,10 +234,11 @@ async function updateUser(telegramId, updates) {
     }
 
     // Обновляем кэш
-    const cachedUser = userCache.get(userId);
+    const cacheKey = `user:${userId}`;
+    const cachedUser = CacheManager.get(cacheKey);
     if (cachedUser) {
       const updatedCachedUser = { ...cachedUser, ...updates };
-      userCache.set(userId, updatedCachedUser);
+      CacheManager.set(cacheKey, updatedCachedUser);
       console.log('Кэш пользователя обновлен:', updatedCachedUser);
     }
     
@@ -335,10 +337,11 @@ async function incrementXP(userId, amount) {
     }
     
     // Обновляем кэш
-    const cachedUser = userCache.get(userId);
+    const cacheKey = `user:${userId}`;
+    const cachedUser = CacheManager.get(cacheKey);
     if (cachedUser) {
       cachedUser.points = (cachedUser.points || 0) + amount;
-      userCache.set(userId, cachedUser);
+      CacheManager.set(cacheKey, cachedUser);
       console.log('Кэш пользователя обновлен:', cachedUser);
     }
     
@@ -557,14 +560,15 @@ async function createCheckin(userId, streak, xpEarned) {
     console.log('Кэш последнего чекина обновлен');
 
     // Обновляем кэш пользователя
-    const cachedUser = userCache.get(userId);
+    const cacheKey = `user:${userId}`;
+    const cachedUser = CacheManager.get(cacheKey);
     if (cachedUser) {
       cachedUser.last_checkin = now;
       cachedUser.current_streak = streak;
       if ((cachedUser.max_streak || 0) < streak) {
         cachedUser.max_streak = streak;
       }
-      userCache.set(userId, cachedUser);
+      CacheManager.set(cacheKey, cachedUser);
       console.log('Кэш пользователя обновлен:', cachedUser);
     }
 
