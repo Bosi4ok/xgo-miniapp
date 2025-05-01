@@ -1,3 +1,16 @@
 {
-  "type": "module"
+  "type": "module",
+  "name": "2048",
+  "description": "[![Vercel Status](https://img.shields.io/github/deployments/Bosi4ok/xgo-miniapp/Production?label=vercel&logo=vercel)](https://xgo-miniapp-git-main-artems-projects-e7783d6f.vercel.app/)",
+  "version": "1.0.0",
+  "main": "supabase-config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4"
+  }
 }
