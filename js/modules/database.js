@@ -181,17 +181,32 @@ async function createUser(userData) {
   }
 }
 
-async function updateUser(telegramId, updates) {
-  const userId = String(telegramId);
-  console.log('Обновление пользователя:', userId, 'с данными:', updates);
+async function updateUser(userId, updates) {
+  console.log(`Обновление пользователя ${userId} данными:`, updates);
 
+  // Гарантируем, что userId - это строка
+  let finalUserId = userId;
+  if (typeof finalUserId === 'object' && finalUserId !== null && finalUserId.id) {
+    finalUserId = String(finalUserId.id);
+  } else {
+    finalUserId = String(finalUserId);
+  }
+
+  if (!finalUserId) {
+    console.error('updateUser: Не предоставлен ID пользователя.');
+    return null;
+  }
+
+  // 1. Попытка обновить в базе данных
+  let dbError = null;
+  let updatedData = null;
   try {
-    console.log('Отправляем запрос на обновление пользователя...');
     const { data, error } = await supabaseClient
       .from('users')
       .update(updates)
-      .eq('telegram_id', userId)
-      .select();
+      .eq('telegram_id', finalUserId) // Используем исправленный ID
+      .select()
+      .single(); // Ожидаем одну запись
 
     if (error) {
       console.error('Ошибка при обновлении пользователя:', error);
@@ -201,7 +216,7 @@ async function updateUser(telegramId, updates) {
       const { data: userData, error: userError } = await supabaseClient
         .from('users')
         .select('*')
-        .eq('telegram_id', userId)
+        .eq('telegram_id', finalUserId)
         .single();
       
       if (userError && userError.code !== 'PGRST116') { // Не ошибка "не найдено"
@@ -213,7 +228,7 @@ async function updateUser(telegramId, updates) {
         // Создаем нового пользователя
         console.log('Пользователь не найден, создаем нового...');
         const newUser = {
-          telegram_id: userId,
+          telegram_id: finalUserId,
           ...updates
         };
         
@@ -231,10 +246,11 @@ async function updateUser(telegramId, updates) {
       }
     } else {
       console.log('Пользователь успешно обновлен:', data);
+      updatedData = data;
     }
 
     // Обновляем кэш
-    const cacheKey = `user:${userId}`;
+    const cacheKey = `user:${finalUserId}`;
     const cachedUser = CacheManager.get(cacheKey);
     if (cachedUser) {
       const updatedCachedUser = { ...cachedUser, ...updates };
@@ -245,29 +261,29 @@ async function updateUser(telegramId, updates) {
     // Обновляем данные в localStorage
     try {
       if (updates.current_streak) {
-        localStorage.setItem('user_streak_' + userId, updates.current_streak.toString());
+        localStorage.setItem('user_streak_' + finalUserId, updates.current_streak.toString());
         localStorage.setItem('streak', updates.current_streak.toString());
       }
       if (updates.last_checkin) {
-        localStorage.setItem('last_checkin_' + userId, updates.last_checkin);
+        localStorage.setItem('last_checkin_' + finalUserId, updates.last_checkin);
       }
       console.log('Данные пользователя обновлены в localStorage');
     } catch (localStorageError) {
       console.error('Ошибка при обновлении localStorage:', localStorageError);
     }
     
-    return true;
+    return updatedData;
   } catch (error) {
     console.error('Критическая ошибка при обновлении пользователя:', error);
     
     // Обновляем данные в localStorage даже при ошибке
     try {
       if (updates.current_streak) {
-        localStorage.setItem('user_streak_' + userId, updates.current_streak.toString());
+        localStorage.setItem('user_streak_' + finalUserId, updates.current_streak.toString());
         localStorage.setItem('streak', updates.current_streak.toString());
       }
       if (updates.last_checkin) {
-        localStorage.setItem('last_checkin_' + userId, updates.last_checkin);
+        localStorage.setItem('last_checkin_' + finalUserId, updates.last_checkin);
       }
       console.log('Данные пользователя обновлены в localStorage после ошибки');
     } catch (localStorageError) {
@@ -275,129 +291,78 @@ async function updateUser(telegramId, updates) {
     }
     
     // Не выбрасываем ошибку, чтобы не прерывать выполнение функции
-    return false;
+    return null;
   }
 }
 
 async function incrementXP(userId, amount) {
-  userId = String(userId);
-  console.log('Увеличение XP для пользователя:', userId, 'на', amount);
-  console.log('Конфигурация Supabase:', {
-    url: supabaseClient.supabaseUrl,
-    headers: supabaseClient.headers
-  });
-  
+  console.log(`Начисление XP для пользователя ${userId}: ${amount}`);
+
+  // Гарантируем, что userId - это строка
+  let finalUserId = userId;
+  if (typeof finalUserId === 'object' && finalUserId !== null && finalUserId.id) {
+    finalUserId = String(finalUserId.id);
+  } else {
+    finalUserId = String(finalUserId);
+  }
+
+  if (!finalUserId || amount <= 0) {
+    console.error('incrementXP: Неверные параметры.', { finalUserId, amount });
+    return null;
+  }
+
+  // Получаем текущие очки (лучше из БД или кэша, если он надежен)
+  // Избегаем гонки состояний, используя RPC или прямое обновление
+
+  // Вариант 1: RPC (предпочтительно, если есть)
   try {
-    // Используем прямой запрос к таблице вместо RPC-функции
-    console.log('Получаем текущие данные пользователя...');
-    console.log('URL запроса:', `${supabaseClient.supabaseUrl}/rest/v1/users?telegram_id=eq.${userId}&select=points`);
-    
-    const { data: userData, error: userError } = await supabaseClient
-      .from('users')
-      .select('points')
-      .eq('telegram_id', userId)
-      .single();
-    
-    console.log('Результат запроса данных пользователя:', userData, userError);
-    
-    if (userError && userError.code !== 'PGRST116') { // Не ошибка "не найдено"
-      console.error('Ошибка при получении данных пользователя:', userError);
-      throw userError;
-    }
-    
-    const currentPoints = userData?.points || 0;
-    const newPoints = currentPoints + amount;
-    console.log('Текущие очки:', currentPoints, 'Новые очки:', newPoints);
-    
-    if (userData) {
-      // Обновляем существующего пользователя
-      console.log('Обновляем существующего пользователя...');
-      const { error: updateError } = await supabaseClient
-        .from('users')
-        .update({ points: newPoints })
-        .eq('telegram_id', userId);
-      
-      if (updateError) {
-        console.error('Ошибка при обновлении пользователя:', updateError);
-        throw updateError;
-      }
-      console.log('Пользователь успешно обновлен');
+    console.log(`Вызов RPC increment_xp для пользователя ${finalUserId} на сумму ${amount}`);
+    const { data, error } = await supabaseClient.rpc('increment_xp', { user_id_param: finalUserId, xp_amount: amount });
+
+    if (error) {
+      console.error('Ошибка RPC increment_xp:', error);
+      // Фолбэк на ручное обновление
+      return await incrementXpManual(finalUserId, amount);
     } else {
-      // Создаем нового пользователя
-      console.log('Создаем нового пользователя...');
-      const { error: insertError } = await supabaseClient
-        .from('users')
-        .insert([{ telegram_id: userId, points: amount }]);
-      
-      if (insertError) {
-        console.error('Ошибка при создании пользователя:', insertError);
-        throw insertError;
-      }
-      console.log('Новый пользователь успешно создан');
+      console.log('RPC increment_xp успешно выполнен. Результат (новые очки?):', data);
+      // RPC может возвращать новые очки или просто статус успеха
+      // Обновим кэш/localStorage, если нужно
+      const userData = await getUserData(finalUserId); // Получим свежие данные
+      return { success: true, newPoints: userData?.points };
     }
-    
-    // Обновляем кэш
-    const cacheKey = `user:${userId}`;
-    const cachedUser = CacheManager.get(cacheKey);
-    if (cachedUser) {
-      cachedUser.points = (cachedUser.points || 0) + amount;
-      CacheManager.set(cacheKey, cachedUser);
-      console.log('Кэш пользователя обновлен:', cachedUser);
+  } catch (rpcError) {
+    console.error('Исключение при вызове RPC increment_xp:', rpcError);
+    return await incrementXpManual(finalUserId, amount);
+  }
+}
+
+// Вспомогательная функция для ручного обновления XP (фолбэк)
+async function incrementXpManual(userId, amount) {
+  console.warn(`Выполнение ручного обновления XP для пользователя ${userId}`);
+  try {
+    // 1. Получаем текущие данные пользователя
+    const currentUserData = await getUserData(userId); // Используем getUserData, который может использовать кэш
+    if (!currentUserData) {
+      console.error(`incrementXpManual: Не найден пользователь ${userId}`);
+      return null;
     }
-    
-    // Обновляем localStorage для синхронизации между устройствами
-    try {
-      // Получаем текущее значение XP из базы данных
-      console.log('Получаем обновленные данные для localStorage...');
-      const { data, error } = await supabaseClient
-        .from('users')
-        .select('points')
-        .eq('telegram_id', userId)
-        .single();
-      
-      console.log('Результат запроса для localStorage:', data, error);
-      
-      if (!error && data) {
-        const totalXp = data.points || 0;
-        console.log('Обновление totalXp в localStorage по ID:', userId, totalXp);
-        
-        // Сохраняем значение в localStorage с использованием ID пользователя
-        localStorage.setItem('user_points_' + userId, totalXp.toString());
-        
-        // Также обновляем старый ключ для обратной совместимости
-        localStorage.setItem('totalXp', totalXp.toString());
-        console.log('localStorage успешно обновлен');
-      } else {
-        // Если не удалось получить данные из базы, используем локальное значение
-        const currentLocalPoints = parseInt(localStorage.getItem('user_points_' + userId) || '0');
-        const newLocalPoints = currentLocalPoints + amount;
-        localStorage.setItem('user_points_' + userId, newLocalPoints.toString());
-        localStorage.setItem('totalXp', newLocalPoints.toString());
-        console.log('localStorage обновлен с локальными данными:', newLocalPoints);
-      }
-    } catch (localStorageError) {
-      console.error('Ошибка при обновлении localStorage:', localStorageError);
-      // Если произошла ошибка, обновляем localStorage с локальными данными
-      const currentLocalPoints = parseInt(localStorage.getItem('user_points_' + userId) || '0');
-      const newLocalPoints = currentLocalPoints + amount;
-      localStorage.setItem('user_points_' + userId, newLocalPoints.toString());
-      localStorage.setItem('totalXp', newLocalPoints.toString());
-      console.log('localStorage обновлен с локальными данными после ошибки:', newLocalPoints);
+    const currentPoints = currentUserData.points || 0;
+    const newPoints = currentPoints + amount;
+
+    // 2. Обновляем пользователя
+    const updatedUser = await updateUser(userId, { points: newPoints });
+    if (updatedUser) {
+      console.log(`Ручное обновление XP для ${userId} успешно. Новые очки: ${newPoints}`);
+      // Обновляем кэш свежими данными
+      CacheManager.set(`user_${userId}`, updatedUser, USER_CACHE_LIFETIME);
+      return { success: true, newPoints: newPoints };
+    } else {
+      console.error(`incrementXpManual: Ошибка при обновлении очков для пользователя ${userId}`);
+      return null;
     }
-    
-    return true;
   } catch (error) {
-    console.error('Критическая ошибка при начислении XP:', error);
-    
-    // Даже при ошибке обновляем localStorage, чтобы пользователь видел изменения
-    const currentLocalPoints = parseInt(localStorage.getItem('user_points_' + userId) || '0');
-    const newLocalPoints = currentLocalPoints + amount;
-    localStorage.setItem('user_points_' + userId, newLocalPoints.toString());
-    localStorage.setItem('totalXp', newLocalPoints.toString());
-    console.log('localStorage обновлен после критической ошибки:', newLocalPoints);
-    
-    // Не выбрасываем ошибку, чтобы не прерывать выполнение функции
-    return false;
+    console.error(`incrementXpManual: Исключение при ручном обновлении XP для ${userId}:`, error);
+    return null;
   }
 }
 
@@ -645,14 +610,36 @@ async function getLastCheckin(userId) {
 
 async function performCheckin(userData) {
   console.log('Попытка выполнить чекин для пользователя:', userData);
-  if (!userData || !userData.telegram_id) {
-    console.error('performCheckin: Недостаточно данных пользователя для чекина.', userData);
+  if (!userData || (!userData.telegram_id && !userData.id)) { // Проверяем оба варианта
+    console.error('performCheckin: Недостаточно данных пользователя для чекина (отсутствует telegram_id или id).', userData);
     return { success: false, message: 'Недостаточно данных пользователя.' };
   }
 
-  const userId = userData.telegram_id; // Извлекаем ID
+  // Гарантируем, что userId - это строка
+  let userId = userData.telegram_id || userData.id; // Берем telegram_id или id
+  if (typeof userId === 'object' && userId !== null && userId.id) {
+       userId = String(userId.id); // Извлекаем ID если userData.telegram_id был объектом {id: ...}
+  } else {
+       userId = String(userId); // Убеждаемся, что это строка
+  }
+
+  console.log(`Извлечен userId для чекина: ${userId}`);
+
   const now = new Date();
-  const lastCheckinDate = userData.last_checkin ? new Date(userData.last_checkin) : null;
+  // Данные пользователя могут быть неполными из кэша, получим актуальные из БД, если нужно
+  let currentUserData = await getUserData(userId); // Получаем свежие данные
+  if (!currentUserData) {
+      console.error(`performCheckin: Не удалось получить актуальные данные для пользователя ${userId}`);
+      // Можно попробовать использовать переданные userData, если они есть
+      currentUserData = userData; 
+      // Но лучше вернуть ошибку, если базовых данных нет
+      if (!currentUserData.current_streak === undefined) { 
+           return { success: false, message: 'Не удалось получить данные пользователя из БД.' };
+      }
+      console.warn(`Используются переданные данные для пользователя ${userId}, т.к. БД недоступны`);
+  }
+
+  const lastCheckinDate = currentUserData.last_checkin ? new Date(currentUserData.last_checkin) : null;
 
   // Проверяем, прошел ли день с последнего чекина
   if (lastCheckinDate && isSameDay(lastCheckinDate, now)) {
@@ -661,7 +648,7 @@ async function performCheckin(userData) {
   }
 
   // Проверяем, есть ли у пользователя реферальный код
-  const referralCode = userData.referral_code;
+  const referralCode = currentUserData.referral_code;
   if (referralCode) {
     console.log('Пользователь имеет реферальный код:', referralCode);
     // Проверяем, активен ли реферальный код
@@ -682,7 +669,7 @@ async function performCheckin(userData) {
   }
 
   // Выполняем чекин
-  const streakCount = userData.current_streak + 1;
+  const streakCount = currentUserData.current_streak + 1;
   const xpEarned = calculateXpEarned(streakCount);
   console.log('Выполняем чекин для пользователя:', userId, 'стрик:', streakCount, 'XP:', xpEarned);
 
@@ -696,7 +683,7 @@ async function performCheckin(userData) {
       // Обновляем данные пользователя
       const updatedUserData = await updateUser(userId, {
         current_streak: streakCount,
-        max_streak: Math.max(userData.max_streak, streakCount),
+        max_streak: Math.max(currentUserData.max_streak, streakCount),
         last_checkin: now.toISOString()
       });
       if (!updatedUserData) {
@@ -705,24 +692,35 @@ async function performCheckin(userData) {
       }
 
       // Начисляем XP
-      const xpResult = await incrementXP(userId, xpEarned);
-      if (!xpResult) {
-        console.error('Ошибка при начислении XP:', xpResult);
-        return { success: false, message: 'Ошибка при начислении XP.' };
+      const xpResult = await incrementXP(userId, xpEarned); 
+      if (xpResult && xpResult.newPoints !== undefined) {
+        updatedUserData.points = xpResult.newPoints; // Обновляем очки в возвращаемом объекте
+      } else {
+        console.error('Ошибка при начислении XP, очки могут быть неактуальны');
+        // Не возвращаем ошибку, но логируем
       }
 
-      return { success: true, message: 'Чекин успешен.', user: updatedUserData };
+      // Обновляем кэш и localStorage с финальными данными
+      CacheManager.set(`user_${userId}`, updatedUserData, USER_CACHE_LIFETIME);
+      try {
+        localStorage.setItem('last_checkin_' + userId, now.toISOString());
+        localStorage.setItem('user_streak_' + userId, streakCount.toString());
+        // Сохраняем все данные пользователя в localStorage для консистентности?
+        // localStorage.setItem('currentUserData', JSON.stringify(updatedUserData));
+        console.log('LocalStorage обновлен после успешного чекина');
+      } catch (e) { console.error('Ошибка обновления localStorage', e); }
+
+      return { success: true, message: 'Чекин успешен.', user: updatedUserData }; // Возвращаем актуальные данные
     } else {
-      // Ошибка при создании чекина в БД, но данные в localStorage обновлены
-      console.error(`Ошибка при создании записи чекина в БД для пользователя ${userId}, но localStorage обновлен.`);
-      // Возвращаем успех, так как локальные данные обновлены, но с предупреждением
-      return { success: true, message: 'Локальные данные обновлены, но ошибка синхронизации с БД.', user: updatedUserData };
+      // Ошибка при создании чекина в БД
+      console.error(`Ошибка при создании записи чекина в БД для пользователя ${userId}.`);
+      // Локальные данные НЕ обновляем, так как чекин не прошел
+      // CacheManager.set(`user_${userId}`, currentUserData, USER_CACHE_LIFETIME); // Не обновляем кеш
+      return { success: false, message: checkinResult.error || 'Ошибка записи чекина в БД.' };
     }
   } catch (error) {
-    console.error(`Критическая ошибка в performCheckin при вызове createCheckin для пользователя ${userId}:`, error);
-    // Даже если запись чекина не удалась, localStorage уже обновлен выше.
-    // Возвращаем успех, так как локальные данные обновлены, но с предупреждением
-    return { success: true, message: 'Локальные данные обновлены, но критическая ошибка синхронизации с БД.', user: updatedUserData };
+    console.error(`Критическая ошибка в performCheckin для пользователя ${userId}:`, error);
+    return { success: false, message: 'Критическая ошибка во время чекина.' };
   }
 }
 
